@@ -16,7 +16,7 @@ import { LogAdminRouter } from "#authentication/adminLogin";
 import IsAdminLogged from "#authentication/Is_admin_logged";
 import { AdminLogOut, AdminLogOutAll } from "#authentication/logoutAdmin";
 import { GetUsers, UserNumber } from "#adminResources/getUsers";
-import { UserDeleteRoute } from "#authentication/user.delete";
+import { AdminDeleteUser, UserDeleteRoute } from "#authentication/user.delete";
 import RecoverUsers from "#adminResources/recover_users";
 import {
   AdminDeleteNotificationRouter,
@@ -41,11 +41,8 @@ App.use(cookieParser());
 App.use(express.json());
 App.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5502",
-    ],
-    
+    origin: ["http://localhost:5173", "http://localhost:5502"],
+
     allowedHeaders: ["authorization", "Content-Type"],
     credentials: true,
   }),
@@ -56,7 +53,10 @@ App.use("/auth/signUp", signUpRouter);
 App.use("/auth/CBET/user/logout", LogoutRouter);
 App.use("/auth/all/logout", LogOutAll);
 App.use("/auth/recover/account", RecoverUsers);
+// user deleting own account route
 App.use("/auth/delete/account", UserDeleteRoute);
+// admin deleting user account route
+App.use("/auth/admin/delete/user", AdminDeleteUser);
 App.use("/auth/verify/refresh", RefreshRouter);
 App.use("/auth/user/check/logged", IsLoggedRoute);
 App.use("/api/resource/pdf", pdfRouter);
