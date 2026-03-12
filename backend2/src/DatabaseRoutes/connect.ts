@@ -1,6 +1,10 @@
 import { connect } from "mongoose";
 export function DataBaseConnection() {
   let ConnectionString = process.env.MONGO_URI;
+  if (!ConnectionString) {
+    console.log("MONGO_URI is not defined in environment variables");
+    process.exit(1);
+  }
   if (ConnectionString) {
     connect(ConnectionString)
       .then(() => {

@@ -51,14 +51,14 @@ App.use(
   }),
 );
 // authorization routes
-App.use("/auth/login", logRouter);
+App.use("/user/auth/now/login", logRouter);
 App.use("/auth/signUp", signUpRouter);
-App.use("/auth/logout", LogoutRouter);
+App.use("/auth/CBET/user/logout", LogoutRouter);
 App.use("/auth/all/logout", LogOutAll);
 App.use("/auth/recover/account", RecoverUsers);
 App.use("/auth/delete/account", UserDeleteRoute);
 App.use("/auth/verify/refresh", RefreshRouter);
-App.use("/auth/check/logged", IsLoggedRoute);
+App.use("/auth/user/check/logged", IsLoggedRoute);
 App.use("/api/resource/pdf", pdfRouter);
 App.use("/auth/find/users", GetUsers);
 App.use("/auth/logout/admin/logout", AdminLogOut);
