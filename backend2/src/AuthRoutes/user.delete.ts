@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
 import { RefreshToken as DbRefreshToken } from "#models/token.model";
-import { User } from "#models/user.model";
+import { Admin, User } from "#models/user.model";
 
 export let UserDeleteRoute = Router();
 export let AdminDeleteUser = Router();
@@ -21,8 +21,11 @@ AdminDeleteUser.delete(
       return;
     }
     try {
-      User.findOneAndDelete({ email: email });
-      res.status(200).json({ message: "User account deleted successfully" });
+      let adminExists = await Admin.findOne({ email: adminEmail });
+      if (adminExists) {
+        await User.findOneAndDelete({ email: email });
+        res.status(200).json({ message: "User account deleted successfully" });
+      }
     } catch (error) {
       res.status(500).json({ error: "Unable to delete user" });
     }
