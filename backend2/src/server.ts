@@ -29,6 +29,7 @@ import { UserUploadRouter } from "#PdfResources/USER.UPLOAD";
 import { deepSearchRouter } from "#PdfResources/deepSearch.user";
 import { usersGetOwnPDF } from "#PdfResources/users.getPDF";
 import { simpleSearchRoute } from "#PdfResources/simple.search";
+import { CoursesRouter } from "#PdfResources/courses";
 // import { globaLimit } from "#Verification/rate.limit";
 dotenv.config();
 let PORT = Number(process.env.DEV_PORT) || Number(process.env.PORT);
@@ -53,6 +54,8 @@ App.use("/auth/signUp", signUpRouter);
 App.use("/auth/CBET/user/logout", LogoutRouter);
 App.use("/auth/all/logout", LogOutAll);
 App.use("/auth/recover/account", RecoverUsers);
+// admin creating courses
+App.use("/auth/admin/upload/courses", CoursesRouter);
 // user deleting own account route
 App.use("/auth/delete/account", UserDeleteRoute);
 // admin deleting user account route
