@@ -53,4 +53,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
+  "exclude": ["node_modules", "**/node_modules/groq-sdk"],
+  "include": ["src"]
 }
