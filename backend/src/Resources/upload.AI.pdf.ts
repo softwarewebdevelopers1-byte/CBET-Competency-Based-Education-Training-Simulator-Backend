@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { unlink } from "fs/promises";
 import type { Request, Response } from "express";
-import { Groq } from "groq-sdk";
+import { Groq } from "groq-sdk/index.mjs";
 import multer from "multer";
 import path from "path";
 import { PDFParse } from "pdf-parse";
