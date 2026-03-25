@@ -26,7 +26,7 @@ export function Sidebar({ collapsed: collapsedProp, onToggle }) {
 
   // Mock student data - replace with actual user data from props or store
   const student = {
-    name: JSON.parse(localStorage.getItem("cbet_user")) || "User",
+    name: JSON.parse(localStorage.getItem("cbet_user")).user || "User",
     program: "Diploma in ICT",
     year: "Year 2",
     studentId: "ICT-2024-001",

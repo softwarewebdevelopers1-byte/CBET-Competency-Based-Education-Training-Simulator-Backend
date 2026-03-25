@@ -36,13 +36,13 @@ export function LoginRoute() {
       );
 
       const data = await response.json();
-      localStorage.setItem("cbet_user", JSON.stringify(data.user));
 
-      if (response.ok) {
+      if (data.role === "student") {
         setError("Login successful! Redirecting...");
+        localStorage.setItem("cbet_user", JSON.stringify(data));
         navigate("/dashboard");
       } else {
-        setError(data.message || "Invalid UserNumber or password");
+        setError(data.message || "Invalid credentials");
       }
     } catch (err) {
       console.error("Login error:", err);

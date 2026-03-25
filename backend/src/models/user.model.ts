@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 import type { Model } from "mongoose";
 // INTERFACE FOR USER
 interface User {
+  fullName: string;
   UserNumber: string;
+  department: string;
+  programme: string;
   password: string;
   role: string;
   status: string;
@@ -24,8 +27,11 @@ interface OTP {
 }
 //  USER SCHEMA
 const userSchema = new mongoose.Schema<User>({
+  fullName: String,
   UserNumber: { type: String, unique: true, required: true },
   password: { type: String, required: true },
+  department: String,
+  programme: String,
   role: { type: String, default: "Student" },
   status: { type: String, default: "Active" },
   account_state: { type: String, default: "Active" },

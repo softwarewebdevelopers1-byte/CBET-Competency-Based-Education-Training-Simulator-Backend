@@ -73,9 +73,9 @@ class LoginFlow {
           { UserNumber: UserNumber },
           { $set: { status: "Active" } },
           {
-            new: true, // return the updated document
-            runValidators: true, // validate schema rules
-            upsert: false, // create if not found (optional)
+            returnDocument: "after", // to silence the warning
+            runValidators: true,
+            upsert: false,
           },
         );
         // sending access token as cookie
@@ -110,7 +110,9 @@ class LoginFlow {
           secure: true,
           sameSite: "none",
         });
-        res.status(200).json({ user: UserNumber.split("@")[0], success: true });
+        res
+          .status(200)
+          .json({ user: user.fullName, role: user.role, success: true });
       }
     } catch (err) {
       res.status(500).json({ error: err });

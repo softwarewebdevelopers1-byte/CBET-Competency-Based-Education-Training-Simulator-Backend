@@ -1,90 +1,49 @@
 import { Router } from "express";
+import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
-import { RefreshToken as DataBaseRefreshToken } from "#models/token.model";
-import { compare } from "bcrypt";
 import { User } from "#models/user.model";
+
 let IsLoggedRoute = Router();
+
 IsLoggedRoute.post("/", async (req: Request, res: Response): Promise<void> => {
-  const deviceId = req.cookies?.Host_AU1_Auth_2Wa__DeviceId;
-  const UserNumber = req.cookies?.user_1UA_XG;
-  const RefreshToken = req.cookies?.CBET_3ga_auth_RefreshToken;
-  const { user } = req.body;
-  async function deleteCookies(): Promise<void> {
-    try {
-      if (UserNumber) {
-        await User.findOneAndUpdate(
-          { email: UserNumber },
-          { $set: { status: "Inactive" } },
-          {
-            new: true, // return the updated document
-            runValidators: true, // validate schema rules
-            upsert: false, // create if not found (optional)
-          },
-        );
-      }
-    } catch (error) {
-      console.log("Unable to update user status to inactive");
-    }
-    res.clearCookie("user_1UA_XG");
-    res.clearCookie("CBET7U4D_Host_AccessToken");
-    res.clearCookie("CBET_3ga_auth_RefreshToken");
-    res.clearCookie("Host_AU1_Auth_2Wa__DeviceId");
-  }
-  if (!deviceId) {
-    await deleteCookies();
-    res.status(401).json({ error: "Device ID required" });
-    return;
-  }
-  if (!UserNumber) {
-    await deleteCookies();
-    try {
-      await User.findOneAndUpdate(
-        { email: `${user}@gmail.com` },
-        { $set: { status: "Inactive" } },
-        {
-          new: true, // return the updated document
-          runValidators: true, // validate schema rules
-          upsert: false, // create if not found (optional)
-        },
-      );
-    } catch (error) {
-      console.log("Unable to update user status to inactive");
-    }
+  const accessToken = req.cookies?.CBET7U4D_Host_AccessToken;
+  const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
-    res.status(401).json({ error: "User email is required" });
+  if (!ACCESS_TOKEN_SECRET || !accessToken) {
+    res.status(401).json({ message: "Session expired", isLoggedIn: false });
     return;
   }
-  if (!RefreshToken) {
-    await deleteCookies();
-    res.status(401).json({ error: "Refresh token is required" });
-    return;
-  }
-  // if (user === "user") {
-  //   res.status(400).json({ error: "User type not specified" });
-  //   return;
-  // }
+
   try {
-    const entry = await DataBaseRefreshToken.findOne({
-      deviceId: deviceId,
+    jwt.verify(
+      accessToken,
+      ACCESS_TOKEN_SECRET,
+      async (err: any, load: any) => {
+        if (err) {
+          res.status(401).json({ message: "Token verification failed" });
+          return;
+        }
+        let existingUser = await User.findOne({ UserNumber: load.name });
+        if (!existingUser) {
+          res.status(401).json({ message: "Unauthorized" });
+          return;
+        }
+      },
+    );
+
+    res.status(200).json({
+      message: "User is logged in",
+      isLoggedIn: true,
     });
-
-    if (!entry) {
-      await deleteCookies();
-      res.status(401).json({ error: "Invalid device ID" });
-      return;
-    }
-    const isValid = await compare(RefreshToken, entry.refreshToken);
-    if (!isValid) {
-      await deleteCookies();
-      res.status(401).json({ error: "Invalid refresh token" });
-      return; // stop execution here
-    }
-
-    // Only reached if comparison succeeded
-    res.status(200).json({ loggedIn: true });
   } catch (error) {
-    await deleteCookies();
-    res.status(401).json({ error: "Invalid/expired refresh token" });
+    res.status(401).json({
+      message: "Session expired",
+      isLoggedIn: false,
+      error:
+        error instanceof jwt.JsonWebTokenError
+          ? error.message
+          : "Invalid token",
+    });
   }
 });
 

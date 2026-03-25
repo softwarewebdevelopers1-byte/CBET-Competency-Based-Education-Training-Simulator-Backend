@@ -5,12 +5,13 @@ export function AuthRoutes({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let CbetUser = JSON.parse(localStorage.getItem("cbet_user"))?.user;
     async function checkAuth() {
       let res = await fetch("http://localhost:8000/auth/user/check/logged", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user: JSON.parse(localStorage.getItem("cbet_user")),
+          user: CbetUser,
         }),
         credentials: "include",
       });
@@ -21,7 +22,9 @@ export function AuthRoutes({ children }) {
         navigate("/dashboard");
       }
     }
-    checkAuth();
+    if (CbetUser) {
+      checkAuth();
+    }
   }, []);
   return <>{children}</>;
 }

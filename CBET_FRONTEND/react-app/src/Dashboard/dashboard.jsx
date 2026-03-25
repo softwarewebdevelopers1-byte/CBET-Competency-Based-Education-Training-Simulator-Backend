@@ -11,7 +11,7 @@ export function Dashboard({ children }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user: JSON.parse(localStorage.getItem("cbet_user")),
+          user: JSON.parse(localStorage.getItem("cbet_user"))?.user,
         }),
         credentials: "include",
       });
