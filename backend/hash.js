@@ -1,5 +1,4 @@
-const bcrypt = require('bcrypt');
-
+import bcrypt from "bcrypt"
 const password = 'student123';
 const saltRounds = 10;
 
