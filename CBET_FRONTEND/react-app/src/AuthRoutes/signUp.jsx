@@ -7,7 +7,7 @@ import { FiUser, FiMail, FiLock, FiUserPlus } from "react-icons/fi";
 
 export function SignUpRoute() {
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [UserNumber, setUserNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -18,7 +18,7 @@ export function SignUpRoute() {
   const navigate = useNavigate();
 
   const validateForm = () => {
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!fullName || !UserNumber || !password || !confirmPassword) {
       setError("Please fill in all fields");
       return false;
     }
@@ -33,9 +33,9 @@ export function SignUpRoute() {
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+    const UserNumberRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!UserNumberRegex.test(UserNumber)) {
+      setError("Please enter a valid UserNumber address");
       return false;
     }
 
@@ -50,12 +50,12 @@ export function SignUpRoute() {
     setLoading(true);
     setError("");
     (async () => {
-      console.log(email, password);
+      console.log(UserNumber, password);
 
       try {
         let res = await fetch("http://localhost:8000/auth/signUp", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ UserNumber, password }),
           credentials: "include",
         });
         console.log(await res.json());
@@ -124,18 +124,18 @@ export function SignUpRoute() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="UserNumber">UserNumber</label>
             <div className={styles.inputWrapper}>
               <FiMail className={styles.icon} />
               <input
-                type="email"
-                id="email"
-                value={email}
+                type="UserNumber"
+                id="UserNumber"
+                value={UserNumber}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setUserNumber(e.target.value);
                   if (error) setError("");
                 }}
-                placeholder="Enter your email"
+                placeholder="Enter your UserNumber"
                 disabled={loading}
                 required
               />

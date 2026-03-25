@@ -6,7 +6,7 @@ import styles from "../css/login.module.css";
 import { FiMail, FiLock, FiLogIn } from "react-icons/fi";
 
 export function LoginRoute() {
-  const [email, setEmail] = useState("");
+  const [UserNumber, setUserNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -16,7 +16,7 @@ export function LoginRoute() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
+    if (!UserNumber || !password) {
       setError("Please fill in all fields");
       return;
     }
@@ -31,7 +31,7 @@ export function LoginRoute() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ UserNumber, password }),
         },
       );
 
@@ -42,7 +42,7 @@ export function LoginRoute() {
         setError("Login successful! Redirecting...");
         navigate("/dashboard");
       } else {
-        setError(data.message || "Invalid email or password");
+        setError(data.message || "Invalid UserNumber or password");
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -64,19 +64,19 @@ export function LoginRoute() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="UserNumber">UserNumber</label>
             <div className={styles.inputWrapper}>
               <FiMail className={styles.icon} />
               <input
                 type="email"
-                id="email"
-                name="email"
-                value={email}
+                id="UserNumber"
+                name="UserNumber"
+                value={UserNumber}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setUserNumber(e.target.value);
                   if (error) setError("");
                 }}
-                placeholder="Enter your email"
+                placeholder="Enter your UserNumber"
                 disabled={loading}
                 required
               />

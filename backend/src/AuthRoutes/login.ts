@@ -12,7 +12,7 @@ import { RefreshToken } from "#models/token.model";
 let logRouter = Router();
 // constructing interface blueprint
 interface LoginFace {
-  email: string;
+  UserNumber: string;
   password: string;
 }
 // login class flow
@@ -23,8 +23,8 @@ class LoginFlow {
         res.status(403).json({ issue: "Unauthorized access" });
         return;
       }
-      const { email, password }: LoginFace = req.body;
-      if (!email || !password) {
+      const { UserNumber, password }: LoginFace = req.body;
+      if (!UserNumber || !password) {
         res.status(400).json({
           message: "Email and password are required ",
           success: false,
@@ -32,7 +32,7 @@ class LoginFlow {
         return;
       }
       let user = await User.findOne({
-        email: email,
+        UserNumber: UserNumber,
         account_state: "Active",
       });
       if (!user) {
@@ -65,12 +65,12 @@ class LoginFlow {
         let DeviceId = uuidv4();
         let HashedRefreshToken = await hash(RefreshTokenAccess, 10);
         await RefreshToken.create({
-          email: email,
+          UserNumber: UserNumber,
           refreshToken: HashedRefreshToken,
           deviceId: DeviceId,
         });
         await User.findOneAndUpdate(
-          { email: email },
+          { UserNumber: UserNumber },
           { $set: { status: "Active" } },
           {
             new: true, // return the updated document
@@ -88,7 +88,7 @@ class LoginFlow {
           sameSite: "none",
         });
 
-        res.cookie("user_1UA_XG", email, {
+        res.cookie("user_1UA_XG", UserNumber, {
           httpOnly: true,
           maxAge: duration,
           secure: true,
@@ -110,7 +110,7 @@ class LoginFlow {
           secure: true,
           sameSite: "none",
         });
-        res.status(200).json({ user: email.split("@")[0], success: true });
+        res.status(200).json({ user: UserNumber.split("@")[0], success: true });
       }
     } catch (err) {
       res.status(500).json({ error: err });

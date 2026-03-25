@@ -12,22 +12,22 @@ class SignUpFlow {
       // validating if user sends data
       if (!req.body)
         return res.status(403).json({ issue: "Unauthorized access" });
-      const { email, password } = req.body;
-      if (!email || !password) {
+      const { UserNumber, password } = req.body;
+      if (!UserNumber || !password) {
         return res
           .status(400)
-          .send({ message: "Email and password are required" });
+          .send({ message: "UserNumber and password are required" });
       }
       // validating ig user already exists
       let userExists = await User.findOne({
-        email: email,
+        UserNumber: UserNumber,
       });
       if (userExists) {
-        return res.status(409).send({ message: "email already exists" });
+        return res.status(409).send({ message: "UserNumber already exists" });
       }
       // Create user directly (no OTP verification)
       const hashPassword = await bcrypt.hash(password, 10);
-      await User.create({ email: email, password: hashPassword });
+      await User.create({ UserNumber: UserNumber, password: hashPassword });
 
       // generate short-lived access token and set cookie
       let accessToken = generateAccessToken(req);
@@ -38,7 +38,9 @@ class SignUpFlow {
         sameSite: "none",
       });
 
-      res.status(201).json({ message: "User created", user: email.split("@")[0] });
+      res
+        .status(201)
+        .json({ message: "User created", user: UserNumber.split("@")[0] });
     } catch (error) {
       res.status(500).send({ success: false });
       console.log(error);

@@ -1,14 +1,14 @@
 import mongoose, { Model } from "mongoose";
 // INTERFACE FOR RFERESH TOKEN
 interface RefreshTokenFace {
-  email: string;
+  UserNumber: string;
   refreshToken: string;
   deviceId: string;
   createdAt: Date;
 }
 
 const refreshTokenSchema = new mongoose.Schema<RefreshTokenFace>({
-  email: {
+  UserNumber: {
     type: String,
     required: true,
   },
@@ -28,7 +28,7 @@ const refreshTokenSchema = new mongoose.Schema<RefreshTokenFace>({
 // TTL indexing
 refreshTokenSchema.index({ createdAt: 1 }, { expireAfterSeconds: 604800 }); // 7 days in seconds
 const AdminRefreshTokenSchema = new mongoose.Schema<RefreshTokenFace>({
-  email: {
+  UserNumber: {
     type: String,
     required: true,
   },

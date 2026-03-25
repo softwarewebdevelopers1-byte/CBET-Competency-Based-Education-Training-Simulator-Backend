@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import type { Model } from "mongoose";
 // INTERFACE FOR USER
 interface User {
-  email: string;
+  UserNumber: string;
   password: string;
   role: string;
   status: string;
@@ -11,20 +11,20 @@ interface User {
 }
 // INTERFACE FOR ADMIN
 interface Admin {
-  email: string;
+  UserNumber: string;
   password: string;
   role: string;
 }
 // INTERFACE FOR OTP
 interface OTP {
-  email: string;
+  UserNumber: string;
   password: string;
   otp: string;
   createdAt: Date;
 }
 //  USER SCHEMA
 const userSchema = new mongoose.Schema<User>({
-  email: { type: String, unique: true, required: true },
+  UserNumber: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   role: { type: String, default: "Student" },
   status: { type: String, default: "Active" },
@@ -34,13 +34,13 @@ const userSchema = new mongoose.Schema<User>({
 userSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // ADMIN SCHEMA
 const AdminSchema = new mongoose.Schema<Admin>({
-  email: { type: String, required: true },
+  UserNumber: { type: String, required: true },
   password: { type: String, required: true },
   role: { type: String, default: "Admin" },
 });
 // OTP SCHEMA
 const otpSchema = new mongoose.Schema<OTP>({
-  email: { type: String, unique: true, required: true },
+  UserNumber: { type: String, unique: true, required: true },
   otp: { type: String, required: true },
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now, expires: 300 },
