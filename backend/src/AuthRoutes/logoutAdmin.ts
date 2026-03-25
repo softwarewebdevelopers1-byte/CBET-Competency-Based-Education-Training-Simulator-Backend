@@ -18,10 +18,10 @@ export const AdminLogOutAll = Router();
 AdminLogOutAll.post("/", async (req: Request, res: Response) => {
   // clearing cookies on logout both refresh and access tokens and device ID and deleting the Device ID refresh token
   try {
-    let email = req.cookies?.Q_user_1334G_XG;
-    // email = email.replace("%40", "@");
+    let UserNumber = req.cookies?.Q_user_1334G_XG;
+    // UserNumber = UserNumber.replace("%40", "@");
     await AdminRefreshToken.deleteMany({
-      email: email,
+      UserNumber: UserNumber,
     });
     res.clearCookie("Q_user_1334G_XG");
     res.clearCookie("dCa_Host_AccessToken");

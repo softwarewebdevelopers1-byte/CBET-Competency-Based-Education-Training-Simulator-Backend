@@ -26,14 +26,14 @@ class LoginFlow {
       const { UserNumber, password }: LoginFace = req.body;
       if (!UserNumber || !password) {
         res.status(400).json({
-          message: "Email and password are required ",
+          message: "UserNumber and password are required ",
           success: false,
         });
         return;
       }
       let user = await User.findOne({
         UserNumber: UserNumber,
-        account_state: "Active",
+        account_state: "active",
       });
       if (!user) {
         res.status(401).json({

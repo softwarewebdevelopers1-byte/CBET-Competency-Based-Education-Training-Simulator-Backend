@@ -6,13 +6,13 @@ let LogoutRouter = Router();
 LogoutRouter.post("/", async (req: Request, res: Response): Promise<void> => {
   // clearing cookies on logout both refresh and access tokens and device ID and deleting the Device ID refresh token
   const Device = req.cookies?.Host_AU1_Auth_2Wa__DeviceId;
-  const email = req.cookies?.user_1UA_XG;
+  const UserNumber = req.cookies?.user_1UA_XG;
   await RefreshToken.findOneAndDelete({
     deviceId: Device,
   });
   // updtaing user status to inactive
   await User.findOneAndUpdate(
-    { email: email },
+    { UserNumber: UserNumber },
     { $set: { status: "Inactive" } },
     {
       new: true, // return the updated document

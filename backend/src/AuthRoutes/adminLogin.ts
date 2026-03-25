@@ -12,7 +12,7 @@ import { AdminRefreshToken } from "#models/token.model";
 let LogAdminRouter = Router();
 // constructing interface blueprint
 interface LoginFace {
-  email: string;
+  UserNumber: string;
   password: string;
 }
 // login class flow
@@ -23,15 +23,15 @@ class LoginFlow {
         res.status(403).json({ issue: "Unauthorized access" });
         return;
       }
-      const { email, password }: LoginFace = req.body;
-      if (!email || !password) {
+      const { UserNumber, password }: LoginFace = req.body;
+      if (!UserNumber || !password) {
         res.status(400).json({
-          message: "Email and password are required ",
+          message: "UserNumber and password are required ",
           success: false,
         });
         return;
       }
-      let user = await Admin.findOne({ email: email } );
+      let user = await Admin.findOne({ UserNumber: UserNumber } );
       if (!user) {
         res
           .status(401)
@@ -61,7 +61,7 @@ class LoginFlow {
         let DeviceId = uuidv4();
         let HashedRefreshToken = await hash(RefreshTokenAccess, 10);
         await AdminRefreshToken.create({
-          email: email,
+          UserNumber: UserNumber,
           refreshToken: HashedRefreshToken,
           deviceId: DeviceId,
         });
@@ -72,7 +72,7 @@ class LoginFlow {
           secure: true,
           sameSite: "strict",
         });
-        res.cookie("Q_user_1334G_XG", email, {
+        res.cookie("Q_user_1334G_XG", UserNumber, {
           httpOnly: true,
           maxAge: duration,
           secure: true,
@@ -95,7 +95,7 @@ class LoginFlow {
         res
           .status(200)
           .json({
-            user: `${email.split("@")[0]?.slice(0, 3)}*****${email.split("@")[1]?.split(".")[0]}`,
+            user: `${UserNumber.split("@")[0]?.slice(0, 3)}*****${UserNumber.split("@")[1]?.split(".")[0]}`,
             success: true,
           });
       }

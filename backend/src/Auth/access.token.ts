@@ -6,7 +6,7 @@ type tokens = string;
 // function for creating an access token
 function generateAccessToken(req: Request): tokens {
   // casting user to string
-  let User: JwtLoad = { name: req.body.email };
+  let User: JwtLoad = { name: req.body.UserNumber };
   // getting the .env file variable
   const AccessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
   // checking if the variable exists in the .env file
@@ -22,7 +22,7 @@ function generateAccessToken(req: Request): tokens {
 }
 // generating access token
 function generateRefreshToken(req: Request): tokens {
-  let User = { name: req.body.email };
+  let User = { name: req.body.UserNumber };
   const RefreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
   if (RefreshTokenSecret) {
     let RefreshToken = jwt.sign(User, RefreshTokenSecret, { expiresIn: "7d" });
@@ -39,7 +39,7 @@ function AuthenticateToken(
 ): void {
   const accessToken = req.cookies?.CBET7U4D_Host_AccessToken;
   // const Device = req.cookies?.Host_AU1_Auth_2Wa__DeviceId;
-  // let email = req.cookies?.user_1UA_XG;
+  // let UserNumber = req.cookies?.user_1UA_XG;
   const accessSecret = process.env.ACCESS_TOKEN_SECRET;
   try {
     if (!accessSecret) {

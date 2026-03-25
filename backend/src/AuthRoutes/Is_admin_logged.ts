@@ -5,7 +5,7 @@ import { compare } from "bcrypt";
 let IsAdminLogged = Router();
 IsAdminLogged.get("/", async (req: Request, res: Response): Promise<void> => {
   const deviceId = req.cookies?.Host_wqc_Auth_4rt__DeviceId;
-  const UserEmail = req.cookies?.Q_user_1334G_XG;
+  const UserNumber = req.cookies?.Q_user_1334G_XG;
   const RefreshToken = req.cookies?.ptq2_was_auth_RefreshToken;
   // const AccessToken = req.cookies?.dCa_Host_AccessToken;
 
@@ -21,7 +21,7 @@ IsAdminLogged.get("/", async (req: Request, res: Response): Promise<void> => {
     res.status(401).json({ error: "Device ID required" });
     return;
   }
-  if (!UserEmail) {
+  if (!UserNumber) {
     deleteCookies();
     res.status(401).json({ error: "User email is required" });
     return;

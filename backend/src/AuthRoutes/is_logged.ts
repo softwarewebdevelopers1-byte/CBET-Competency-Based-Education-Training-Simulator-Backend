@@ -6,14 +6,14 @@ import { User } from "#models/user.model";
 let IsLoggedRoute = Router();
 IsLoggedRoute.post("/", async (req: Request, res: Response): Promise<void> => {
   const deviceId = req.cookies?.Host_AU1_Auth_2Wa__DeviceId;
-  const UserEmail = req.cookies?.user_1UA_XG;
+  const UserNumber = req.cookies?.user_1UA_XG;
   const RefreshToken = req.cookies?.CBET_3ga_auth_RefreshToken;
   const { user } = req.body;
   async function deleteCookies(): Promise<void> {
     try {
-      if (UserEmail) {
+      if (UserNumber) {
         await User.findOneAndUpdate(
-          { email: UserEmail },
+          { email: UserNumber },
           { $set: { status: "Inactive" } },
           {
             new: true, // return the updated document
@@ -35,7 +35,7 @@ IsLoggedRoute.post("/", async (req: Request, res: Response): Promise<void> => {
     res.status(401).json({ error: "Device ID required" });
     return;
   }
-  if (!UserEmail) {
+  if (!UserNumber) {
     await deleteCookies();
     try {
       await User.findOneAndUpdate(

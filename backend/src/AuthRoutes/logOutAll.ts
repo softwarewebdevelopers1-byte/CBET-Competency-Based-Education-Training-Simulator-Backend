@@ -6,14 +6,14 @@ let LogOutAll = Router();
 LogOutAll.post("/", async (req: Request, res: Response) => {
   // clearing cookies on logout both refresh and access tokens and device ID and deleting the Device ID refresh token
   try {
-    let email = req.cookies?.user_1UA_XG;
-    // email = email.replace("%40", "@");
+    let UserNumber = req.cookies?.user_1UA_XG;
+    // UserNumber = UserNumber.replace("%40", "@");
     await RefreshToken.deleteMany({
-      email: email,
+      UserNumber: UserNumber,
     }) ;
     // update user status to inactive
     await User.findOneAndUpdate(
-      { email: email } ,
+      { UserNumber: UserNumber } ,
       { $set: { status: "Inactive" } },
       {
         new: true, // return the updated document

@@ -8,22 +8,22 @@ export let AdminDeleteUser = Router();
 AdminDeleteUser.delete(
   "/",
   async (req: Request, res: Response): Promise<void> => {
-    let adminEmail = req.cookies?.Q_user_1334G_XG;
+    let adminUserNumber = req.cookies?.Q_user_1334G_XG;
     let adminDeviceId = req.cookies?.Host_wqc_Auth_4rt__DeviceId;
     let adminRefreshToken = req.cookies?.ptq2_was_auth_RefreshToken;
-    const { email } = req.body;
-    if (!adminEmail || !adminDeviceId || !adminRefreshToken) {
+    const { UserNumber } = req.body;
+    if (!adminUserNumber || !adminDeviceId || !adminRefreshToken) {
       res.status(401).json({ error: "Unauthorized access" });
       return;
     }
-    if (!email) {
-      res.status(400).json({ error: "Email is required" });
+    if (!UserNumber) {
+      res.status(400).json({ error: "UserNumber is required" });
       return;
     }
     try {
-      let adminExists = await Admin.findOne({ email: adminEmail });
+      let adminExists = await Admin.findOne({ UserNumber: adminUserNumber });
       if (adminExists) {
-        await User.findOneAndDelete({ email: email });
+        await User.findOneAndDelete({ UserNumber: UserNumber });
         res.status(200).json({ message: "User account deleted successfully" });
       }
     } catch (error) {
@@ -35,15 +35,15 @@ UserDeleteRoute.post(
   "/",
   async (req: Request, res: Response): Promise<void> => {
     const deviceId = req.cookies?.Host_AU1_Auth_2Wa__DeviceId;
-    const UserEmail = req.cookies?.user_1UA_XG;
+    const UserUserNumber = req.cookies?.user_1UA_XG;
     const RefreshToken = req.cookies?.CBET_3ga_auth_RefreshToken;
-    if (!deviceId || !UserEmail || !RefreshToken) {
+    if (!deviceId || !UserUserNumber || !RefreshToken) {
       res.status(401).json({ error: "Unauthorized access" });
       return;
     }
     try {
       await User.findOneAndUpdate(
-        { email: UserEmail },
+        { UserNumber: UserUserNumber },
         {
           $set: {
             account_state: "Inactive",
@@ -58,7 +58,7 @@ UserDeleteRoute.post(
           upsert: false,
         },
       );
-      await DbRefreshToken.deleteMany({ email: UserEmail });
+      await DbRefreshToken.deleteMany({ UserNumber: UserUserNumber });
       // all other info am supposed to delete comes here
       res.clearCookie("CBET7U4D_Host_AccessToken");
       res.clearCookie("CBET_3ga_auth_RefreshToken");

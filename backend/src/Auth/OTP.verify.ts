@@ -11,14 +11,14 @@ function GenerateOTP() {
 // limits number of requests sent by the client
 let OTPLimiter = OTPLimit();
 OTPRouter.post("/", AuthenticateToken, OTPLimiter, async (req:Request, res:Response) => {
-  const { email, otp } = req.body;
+  const { UserNumber, otp } = req.body;
   try {
     // checking if valid data is sent to the server
-    if (!email || !otp) {
+    if (!UserNumber || !otp) {
       return res.status(403).json({ status: "Unauthorized" });
     }
     // getting verified user
-    let verifiedUser = await OTP.findOne({ email: email } as any);
+    let verifiedUser = await OTP.findOne({ UserNumber: UserNumber } as any);
     if (!verifiedUser)
       return res.status(401).send({ success: false, message: "Invalid OTP" });
     // comparing OTP
@@ -26,11 +26,11 @@ OTPRouter.post("/", AuthenticateToken, OTPLimiter, async (req:Request, res:Respo
     if (!isMatch)
       return res.status(401).send({ success: false, message: "Invalid OTP" });
     // on reaching here the user credentials are correct and generating access token and user created on the database
-    let userEmail = verifiedUser.email;
+    let userEmail = verifiedUser.UserNumber;
     let userPassword = verifiedUser.password;
-    await User.create({ email: userEmail, password: userPassword });
+    await User.create({ UserNumber: userEmail, password: userPassword });
 
-    await OTP.findOneAndDelete({ email: email } as any);
+    await OTP.findOneAndDelete({ UserNumber: UserNumber } as any);
     res.clearCookie("CBET7U4D_Host_AccessToken");
     res.status(200).json({ success: true, message: "SignUp successful!" });
   } catch (err) {
