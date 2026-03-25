@@ -3,9 +3,7 @@ interface CoursesInterface {
   courseTitle: string;
   unitCode: string;
   unitName: string;
-  description: string;
   department: string;
-  duration: string;
   status: string;
 }
 let CourseSchema = new mongoose.Schema<CoursesInterface>({
@@ -23,15 +21,7 @@ let CourseSchema = new mongoose.Schema<CoursesInterface>({
     type: String,
     required: true,
   },
-  description: {
-    type: String,
-    required: true,
-  },
   department: {
-    type: String,
-    required: true,
-  },
-  duration: {
     type: String,
     required: true,
   },
