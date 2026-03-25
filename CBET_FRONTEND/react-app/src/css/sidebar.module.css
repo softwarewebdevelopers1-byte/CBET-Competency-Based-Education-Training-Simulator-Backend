@@ -1,0 +1,663 @@
+/* src/css/sidebar.module.css */
+
+.sidebar {
+  width: 280px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  left: 0;
+  top: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+}
+
+/* Sidebar Header */
+.sidebarHeader {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.logoIcon {
+  font-size: 1.8rem;
+}
+
+.logoIconSmall {
+  font-size: 2rem;
+  margin: 0 auto;
+}
+
+.logoText {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.toggleBtn {
+  background: none;
+  border: none;
+  color: #4a5568;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.toggleBtn:hover {
+  background: #f7fafc;
+  color: #667eea;
+}
+
+/* Student Info */
+.studentInfo {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.studentAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.studentDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.studentName {
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studentProgram {
+  color: #667eea;
+  margin: 0.1rem 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.studentId {
+  color: #718096;
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+/* Quick Stats */
+.quickStats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  display: block;
+  font-weight: 700;
+  color: #1a202c;
+  font-size: 1.1rem;
+}
+
+.statLabel {
+  color: #718096;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statDivider {
+  width: 1px;
+  height: 30px;
+  background: #e2e8f0;
+}
+
+/* Navigation */
+.nav {
+  flex: 1;
+  padding: 1.5rem 0;
+  overflow-y: auto;
+}
+.nav::-webkit-scrollbar {
+  width: 8px;
+}
+.nav::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  color: #4a5568;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.navItem:hover {
+  background: #f7fafc;
+  color: #667eea;
+}
+
+.navItem.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.navItem.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: white;
+}
+
+.navIcon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+}
+
+.navLabel {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Notifications Section */
+.notifications {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.notificationHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+.notificationBadge {
+  background: #f56565;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
+.notificationList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notificationItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #718096;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.notificationItem:hover {
+  color: #667eea;
+}
+
+.notificationDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #667eea;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.notificationText {
+  flex: 1;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* Sidebar Footer */
+.sidebarFooter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footerItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  color: #4a5568;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-radius: 5px;
+}
+
+.footerItem:hover {
+  background: #f7fafc;
+  color: #667eea;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 5px;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.logoutBtn:hover {
+  background: #fff5f5;
+}
+
+/* Collapsed State Stats */
+.collapsedStats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  margin: 1rem 0;
+}
+
+.collapsedStat {
+  width: 40px;
+  height: 40px;
+  background: #f8fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.collapsedStat:hover {
+  background: #667eea;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Collapsed State Adjustments */
+.sidebar.collapsed .studentInfo {
+  justify-content: center;
+  padding: 1rem;
+}
+
+.sidebar.collapsed .studentAvatar {
+  margin: 0;
+  width: 40px;
+  height: 40px;
+  font-size: 1rem;
+}
+
+.sidebar.collapsed .navItem {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.sidebar.collapsed .navIcon {
+  margin: 0;
+}
+
+.sidebar.collapsed .sidebarFooter {
+  align-items: center;
+  padding: 1rem;
+}
+
+.sidebar.collapsed .logoutBtn {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+/* Scrollbar Styling */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* ========== FIXED RESPONSIVE DESIGN ========== */
+
+/* Hide toggle button on mobile */
+@media (max-width: 768px) {
+  .toggleBtn {
+    display: none;
+  }
+
+  /* Make sidebar visible but smaller on tablets */
+  .sidebar {
+    width: 240px;
+    transform: none; /* Remove transform that was hiding it */
+    position: fixed;
+    left: 0;
+    top: 0;
+  }
+
+  /* Adjust collapsed state for tablets */
+  .sidebar.collapsed {
+    width: 70px;
+  }
+
+  /* Adjust padding for better mobile view */
+  .sidebarHeader {
+    padding: 1.2rem;
+  }
+
+  .studentInfo {
+    padding: 1.2rem;
+  }
+
+  .studentAvatar {
+    width: 45px;
+    height: 45px;
+    font-size: 1.1rem;
+  }
+
+  .quickStats {
+    padding: 0.8rem 1.2rem;
+  }
+
+  .navItem {
+    padding: 0.7rem 1.2rem;
+  }
+
+  .notifications {
+    padding: 0.8rem 1.2rem;
+  }
+
+  .sidebarFooter {
+    padding: 0.8rem 1.2rem;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 85%;
+    max-width: 260px;
+  }
+
+  .sidebar.collapsed {
+    width: 70px;
+  }
+
+  .sidebarHeader {
+    padding: 1rem;
+  }
+
+  .logoIcon {
+    font-size: 1.5rem;
+  }
+
+  .logoText {
+    font-size: 1rem;
+  }
+
+  .studentInfo {
+    padding: 1rem;
+  }
+
+  .studentAvatar {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+  }
+
+  .studentName {
+    font-size: 0.9rem;
+  }
+
+  .studentProgram {
+    font-size: 0.75rem;
+  }
+
+  .studentId {
+    font-size: 0.65rem;
+  }
+
+  .quickStats {
+    padding: 0.7rem 1rem;
+  }
+
+  .statValue {
+    font-size: 0.95rem;
+  }
+
+  .statLabel {
+    font-size: 0.6rem;
+  }
+
+  .statDivider {
+    height: 25px;
+  }
+
+  .navItem {
+    padding: 0.6rem 1rem;
+  }
+
+  .navIcon {
+    font-size: 1.1rem;
+    min-width: 22px;
+  }
+
+  .navLabel {
+    font-size: 0.85rem;
+  }
+
+  .notifications {
+    padding: 0.7rem 1rem;
+  }
+
+  .notificationItem {
+    font-size: 0.8rem;
+  }
+
+  .sidebarFooter {
+    padding: 0.7rem 1rem;
+  }
+
+  .footerItem {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .logoutBtn {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .sidebar {
+    background: #1a202c;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebarHeader,
+  .studentInfo,
+  .quickStats,
+  .notifications,
+  .sidebarFooter {
+    border-color: #2d3748;
+  }
+
+  .studentName {
+    color: #e2e8f0;
+  }
+
+  .studentId {
+    color: #a0aec0;
+  }
+
+  .quickStats {
+    background: #2d3748;
+  }
+
+  .statValue {
+    color: #e2e8f0;
+  }
+
+  .statLabel {
+    color: #a0aec0;
+  }
+
+  .navItem {
+    color: #a0aec0;
+  }
+
+  .navItem:hover {
+    background: #2d3748;
+    color: #a78bfa;
+  }
+
+  .navItem.active {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  }
+
+  .notificationHeader {
+    color: #e2e8f0;
+  }
+
+  .notificationItem {
+    color: #a0aec0;
+  }
+
+  .notificationItem:hover {
+    color: #a78bfa;
+  }
+
+  .notifications {
+    background: #1a202c;
+  }
+
+  .footerItem {
+    color: #a0aec0;
+  }
+
+  .footerItem:hover {
+    background: #2d3748;
+    color: #a78bfa;
+  }
+
+  .toggleBtn {
+    color: #a0aec0;
+  }
+
+  .toggleBtn:hover {
+    background: #2d3748;
+    color: #a78bfa;
+  }
+
+  .collapsedStat {
+    background: #2d3748;
+    color: #a0aec0;
+  }
+
+  .collapsedStat:hover {
+    background: #4f46e5;
+    color: white;
+  }
+
+  .sidebar::-webkit-scrollbar-track {
+    background: #2d3748;
+  }
+
+  .sidebar::-webkit-scrollbar-thumb {
+    background: #4a5568;
+  }
+
+  .sidebar::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+}

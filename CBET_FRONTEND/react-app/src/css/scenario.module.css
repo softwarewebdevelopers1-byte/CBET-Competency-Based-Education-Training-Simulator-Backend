@@ -1,0 +1,1060 @@
+/* src/css/scenario.module.css */
+
+/* Global */
+.scenarioContainer {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading State */
+.loadingContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.loadingSpinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-radius: 50%;
+  border-top-color: #667eea;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Header */
+.scenarioHeader {
+  background: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.backBtn:hover {
+  background: #edf2f7;
+  border-color: #667eea;
+}
+
+.scenarioInfo h1 {
+  font-size: 1.3rem;
+  color: #1a202c;
+  margin-bottom: 0.25rem;
+}
+
+.scenarioMeta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #718096;
+}
+
+.headerRight {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.iconBtn:hover {
+  background: #edf2f7;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.iconBtn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Progress Bar */
+.progressBar {
+  height: 4px;
+  background: #e2e8f0;
+  position: sticky;
+  top: 73px;
+  z-index: 99;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.3s ease;
+}
+
+/* Main Content */
+.scenarioMain {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Left Column - Scenario Content */
+.scenarioContent {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stageIndicator {
+  margin-bottom: 1.5rem;
+}
+
+.stageNumber {
+  display: inline-block;
+  padding: 0.25rem 1rem;
+  background: #667eea;
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.stageTitle {
+  font-size: 1.8rem;
+  color: #1a202c;
+  margin-bottom: 1rem;
+}
+
+.scenarioImage {
+  margin-bottom: 1.5rem;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.scenarioImage img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+}
+
+.scenarioDescription {
+  margin-bottom: 1.5rem;
+}
+
+.scenarioDescription p {
+  color: #4a5568;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.scenarioContext {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #667eea;
+}
+
+.scenarioContext h3 {
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.scenarioContext pre {
+  color: #4a5568;
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Options */
+.optionsSection h3 {
+  color: #1a202c;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.optionBtn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.optionBtn:hover {
+  background: white;
+  border-color: #667eea;
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.optionLetter {
+  width: 32px;
+  height: 32px;
+  background: #667eea;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.optionText {
+  color: #1a202c;
+  font-size: 1rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Feedback */
+.feedback {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 10px;
+  animation: slideIn 0.3s ease;
+}
+
+.feedback.correct {
+  background: #d1fae5;
+  border: 2px solid #10b981;
+}
+
+.feedback.incorrect {
+  background: #fee2e2;
+  border: 2px solid #ef4444;
+}
+
+.feedbackHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.feedbackIcon {
+  font-size: 1.5rem;
+}
+
+.feedback.correct .feedbackIcon {
+  color: #10b981;
+}
+
+.feedback.incorrect .feedbackIcon {
+  color: #ef4444;
+}
+
+.feedbackTitle {
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex: 1;
+}
+
+.feedbackPoints {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.feedbackMessage {
+  color: #1a202c;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.feedbackConsequences {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 1rem;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.continueBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: auto;
+}
+
+.continueBtn:hover {
+  background: #5a67d8;
+  transform: translateX(5px);
+}
+
+/* Right Column - Sidebar */
+.scenarioSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.timerCard,
+.scoreCard {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.timerIcon,
+.scoreIcon {
+  font-size: 2rem;
+  color: #667eea;
+}
+
+.timerInfo,
+.scoreInfo {
+  flex: 1;
+}
+
+.timerLabel,
+.scoreLabel {
+  display: block;
+  color: #718096;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.timerValue,
+.scoreValue {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.timerWarning {
+  color: #ef4444;
+}
+
+.objectivesCard,
+.hintsCard,
+.actionsCard {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.objectivesCard h3,
+.hintsCard h3 {
+  color: #1a202c;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.objectivesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.objectivesList li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.objectiveIcon {
+  color: #10b981;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Hints */
+.hintsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.hintBtn {
+  padding: 0.25rem 1rem;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  color: #4a5568;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hintBtn:hover {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.hintBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hintsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-left: 4px solid #fbbf24;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.hint svg {
+  color: #fbbf24;
+  flex-shrink: 0;
+}
+
+/* Actions */
+.actionsCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.actionBtn:hover {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Results Page */
+.resultsContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  padding: 2rem;
+}
+
+.resultsCard {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.5s ease;
+}
+
+.resultsHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.successIcon,
+.timeoutIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.successIcon {
+  color: #10b981;
+}
+
+.timeoutIcon {
+  color: #ef4444;
+}
+
+.resultsHeader h2 {
+  font-size: 2rem;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.resultsHeader p {
+  color: #718096;
+}
+
+.scoreBreakdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 15px;
+}
+
+.scoreItem {
+  text-align: center;
+}
+
+.scoreLabel {
+  display: block;
+  color: #718096;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.scoreValue {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.feedbackSection,
+.badgesEarned,
+.recommendations {
+  margin-bottom: 2rem;
+}
+
+.feedbackSection h3,
+.badgesEarned h3,
+.recommendations h3 {
+  color: #1a202c;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.feedbackSection p {
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recommendations ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recommendations li {
+  padding: 0.5rem 0;
+  color: #4a5568;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.recommendations li:last-child {
+  border-bottom: none;
+}
+
+.resultsActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.retryBtn,
+.browseBtn,
+.dashboardBtn {
+  flex: 1;
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.retryBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.retryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.browseBtn {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.browseBtn:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+.dashboardBtn {
+  background: #f8fafc;
+  color: #4a5568;
+  border: 2px solid #e2e8f0;
+}
+
+.dashboardBtn:hover {
+  background: #edf2f7;
+  transform: translateY(-2px);
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(5px);
+}
+
+.helpModal {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+}
+
+.helpModal h2 {
+  color: #1a202c;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.helpContent {
+  margin-bottom: 2rem;
+}
+
+.helpSection {
+  margin-bottom: 1.5rem;
+}
+
+.helpSection h3 {
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.helpSection p,
+.helpSection li {
+  color: #718096;
+  line-height: 1.6;
+}
+
+.helpSection ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.helpSection li {
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.helpSection li::before {
+  content: "•";
+  color: #667eea;
+  font-weight: bold;
+}
+
+.closeBtn {
+  width: 100%;
+  padding: 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.closeBtn:hover {
+  background: #5a67d8;
+  transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .scenarioMain {
+    grid-template-columns: 1fr;
+  }
+
+  .scoreBreakdown {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .resultsActions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .scenarioHeader {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .headerLeft {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .backBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .scenarioInfo {
+    width: 100%;
+  }
+
+  .scenarioMeta {
+    flex-wrap: wrap;
+  }
+
+  .headerRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stageTitle {
+    font-size: 1.5rem;
+  }
+
+  .resultsCard {
+    padding: 1.5rem;
+  }
+
+  .scoreBreakdown {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .scenarioContent {
+    padding: 1rem;
+  }
+
+  .optionBtn {
+    flex-wrap: wrap;
+  }
+
+  .optionLetter {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .feedbackHeader {
+    flex-wrap: wrap;
+  }
+
+  .resultsActions button {
+    width: 100%;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .scenarioContainer {
+    background: #1a202c;
+  }
+
+  .loadingContainer {
+    background: #1a202c;
+    color: white;
+  }
+
+  .scenarioHeader {
+    background: #2d3748;
+  }
+
+  .backBtn {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+
+  .scenarioInfo h1 {
+    color: #e2e8f0;
+  }
+
+  .iconBtn {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #a0aec0;
+  }
+
+  .scenarioContent {
+    background: #2d3748;
+  }
+
+  .stageTitle {
+    color: #e2e8f0;
+  }
+
+  .scenarioDescription p {
+    color: #a0aec0;
+  }
+
+  .scenarioContext {
+    background: #1a202c;
+  }
+
+  .scenarioContext h3 {
+    color: #e2e8f0;
+  }
+
+  .scenarioContext pre {
+    color: #a0aec0;
+  }
+
+  .optionBtn {
+    background: #1a202c;
+    border-color: #4a5568;
+  }
+
+  .optionBtn:hover {
+    background: #2d3748;
+  }
+
+  .optionText {
+    color: #e2e8f0;
+  }
+
+  .timerCard,
+  .scoreCard,
+  .objectivesCard,
+  .hintsCard,
+  .actionsCard {
+    background: #2d3748;
+  }
+
+  .timerLabel,
+  .scoreLabel {
+    color: #a0aec0;
+  }
+
+  .timerValue,
+  .scoreValue {
+    color: #e2e8f0;
+  }
+
+  .objectivesCard h3,
+  .hintsCard h3 {
+    color: #e2e8f0;
+  }
+
+  .objectivesList li {
+    color: #a0aec0;
+  }
+
+  .resultsCard {
+    background: #2d3748;
+  }
+
+  .resultsHeader h2 {
+    color: #e2e8f0;
+  }
+
+  .scoreBreakdown {
+    background: #1a202c;
+  }
+
+  .feedbackSection h3,
+  .badgesEarned h3,
+  .recommendations h3 {
+    color: #e2e8f0;
+  }
+
+  .feedbackSection p {
+    color: #a0aec0;
+  }
+
+  .recommendations li {
+    color: #a0aec0;
+    border-color: #4a5568;
+  }
+
+  .browseBtn {
+    background: #2d3748;
+  }
+
+  .dashboardBtn {
+    background: #1a202c;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+
+  .helpModal {
+    background: #2d3748;
+  }
+
+  .helpModal h2 {
+    color: #e2e8f0;
+  }
+
+  .helpSection h3 {
+    color: #e2e8f0;
+  }
+
+  .helpSection p,
+  .helpSection li {
+    color: #a0aec0;
+  }
+}
