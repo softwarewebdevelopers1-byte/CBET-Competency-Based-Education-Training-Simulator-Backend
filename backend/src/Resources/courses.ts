@@ -11,9 +11,8 @@ CoursesRouter.post("/", async (req: Request, res: Response) => {
     courseTitle,
     unitCode,
     unitName,
-    description,
     department,
-    duration,
+
     status,
   } = req.body;
   //   creating courses
@@ -21,9 +20,7 @@ CoursesRouter.post("/", async (req: Request, res: Response) => {
     courseTitle,
     unitCode,
     unitName,
-    description,
     department,
-    duration,
     status,
   });
 });
