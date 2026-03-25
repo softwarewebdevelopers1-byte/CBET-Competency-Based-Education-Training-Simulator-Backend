@@ -68,7 +68,7 @@ export function LoginRoute() {
             <div className={styles.inputWrapper}>
               <FiMail className={styles.icon} />
               <input
-                type="email"
+                type="text"
                 id="UserNumber"
                 name="UserNumber"
                 value={UserNumber}
