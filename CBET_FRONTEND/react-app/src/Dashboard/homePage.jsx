@@ -35,7 +35,7 @@ export function Homepage() {
   const user = {
     name: JSON.parse(localStorage.getItem("cbet_user")).user || "User",
     role: "student", // or "trainer", "admin"
-    institution: "Nairobi TVET Institute",
+    institution: " TVET Institute",
     avatar: "JD",
     points: 1250,
     streak: 7,
