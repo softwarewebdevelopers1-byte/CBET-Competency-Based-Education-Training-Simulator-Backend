@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from "react";
-import { Sidebar } from "./sidebar";
+import { Sidebar } from "./sidebar.jsx";
 import { useNavigate } from "react-router-dom";
 export let CourseContext = createContext();
 
@@ -40,7 +40,7 @@ export function Dashboard({ children }) {
 
   return (
     <div className="dashboard">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar collapsed={collapsed} coursesInfo={courses} onToggle={() => setCollapsed((c) => !c)} />
 
       <div
         className="dashboard-content"

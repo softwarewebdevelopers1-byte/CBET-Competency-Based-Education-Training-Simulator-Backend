@@ -18,7 +18,9 @@ import {
   FiSettings,
 } from "react-icons/fi";
 
-export function Sidebar({ collapsed: collapsedProp, onToggle }) {
+export function Sidebar({ collapsed: collapsedProp, onToggle, coursesInfo }) {
+  console.log("course info", coursesInfo);
+
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed =
     typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
