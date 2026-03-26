@@ -36,6 +36,19 @@ export function MyCourses() {
 
   const navigate = useNavigate();
   let data = useContext(CourseContext);
+  console.log(data);
+  function getCompletedCourses() {
+    try {
+      if (data && data.count && Array.isArray(data.count)) {
+        return data.count.length > 0 ? data.completedCourses[0].count : 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error("CBET error happenned", error);
+      return 0;
+    }
+  }
+
   useEffect(() => {
     async function GetData() {
       try {
@@ -197,7 +210,7 @@ export function MyCourses() {
           <h1 className={styles.pageTitle}>My Courses</h1>
           <p className={styles.pageSubtitle}>
             You are enrolled in {courses.length} courses •{" "}
-            {courses.filter((c) => c.progress === 100).length} completed
+            {getCompletedCourses()} completed
           </p>
         </div>
         <button className={styles.browseBtn}>
