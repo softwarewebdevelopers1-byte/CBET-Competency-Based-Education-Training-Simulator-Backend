@@ -25,13 +25,13 @@ export function Sidebar({ collapsed: collapsedProp, onToggle, coursesInfo }) {
   const collapsed =
     typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
   const navigate = useNavigate();
-
+  let userInfo = JSON.parse(localStorage.getItem("cbet_user"));
   // Mock student data - replace with actual user data from props or store
   const student = {
     name: JSON.parse(localStorage.getItem("cbet_user")).user || "User",
-    program: "Diploma in ICT",
+    program: userInfo.programme,
     year: "Year 2",
-    studentId: "ICT-2024-001",
+    studentId: userInfo.code,
   };
 
   const handleLogout = async () => {

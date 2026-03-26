@@ -110,9 +110,13 @@ class LoginFlow {
           secure: true,
           sameSite: "none",
         });
-        res
-          .status(200)
-          .json({ user: user.fullName, role: user.role, success: true });
+        res.status(200).json({
+          user: user.fullName,
+          role: user.role,
+          code: user.UserNumber,
+          programme: user.programme,
+          success: true,
+        });
       }
     } catch (err) {
       res.status(500).json({ error: err });
