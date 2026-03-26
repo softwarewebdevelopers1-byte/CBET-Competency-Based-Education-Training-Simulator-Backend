@@ -27,7 +27,7 @@ import {
 export function MyCourses() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
@@ -36,166 +36,99 @@ export function MyCourses() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate loading courses
-    setTimeout(() => {
-      setCourses(mockCourses);
-      setLoading(false);
-    }, 1000);
+    async function GetData() {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          "http://localhost:8000/auth/admin/upload/courses/my/courses",
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
+
+        const data = await res.json();
+
+        // Extract courses from the response
+        const studentCourses = data.courses || [];
+
+        // Transform the data to match the expected format
+        const transformedCourses = studentCourses.map((course, index) => ({
+          id: course._id || index,
+          code: course.unitCode || "N/A",
+          title: course.unitName || course.courseTitle || "Untitled Course",
+          instructor: course.instructor || "Staff",
+          description:
+            course.description || course.unitName || "No description available",
+          progress: course.progress || Math.floor(Math.random() * 100), // You'll need to implement actual progress tracking
+          totalModules: course.totalModules || 1,
+          completedModules: course.completedModules || 0,
+          status: course.status || "in-progress",
+          thumbnail: getThumbnailIcon(course.unitName || course.courseTitle),
+          category: course.department || course.courseTitle || "General",
+          enrolledDate:
+            course.enrolledDate || new Date().toISOString().split("T")[0],
+          lastAccessed: course.lastAccessed || "Recently",
+          nextDeadline: course.nextDeadline || "No upcoming deadlines",
+          grade: course.grade || "N/A",
+          materials: course.materials || 0,
+          assessments: course.assessments || 0,
+          students: course.students || 0,
+          rating: course.rating || 4.0,
+          tags: course.tags || extractTags(course),
+          department: course.department,
+          courseTitle: course.courseTitle,
+          unitCode: course.unitCode,
+          unitName: course.unitName,
+        }));
+
+        setCourses(transformedCourses);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        setLoading(false);
+      }
+    }
+
+    GetData();
   }, []);
 
-  const mockCourses = [
-    {
-      id: 1,
-      code: "ICT 304",
-      title: "Network Security Fundamentals",
-      instructor: "Dr. Sarah Kimani",
-      description:
-        "Learn the fundamentals of network security, including encryption, firewalls, and security protocols.",
-      progress: 75,
-      totalModules: 12,
-      completedModules: 9,
-      status: "in-progress",
-      thumbnail: "🔒",
-      category: "Information Technology",
-      enrolledDate: "2026-01-15",
-      lastAccessed: "2 hours ago",
-      nextDeadline: "Network Security Quiz - Tomorrow",
-      grade: "B+",
-      materials: 24,
-      assessments: 6,
-      students: 45,
-      rating: 4.5,
-      tags: ["Security", "Networking", "Certification"],
-    },
-    {
-      id: 2,
-      code: "ICT 302",
-      title: "Web Development with React",
-      instructor: "Prof. John Omondi",
-      description:
-        "Master modern web development using React, Redux, and related technologies.",
-      progress: 45,
-      totalModules: 16,
-      completedModules: 7,
-      status: "in-progress",
-      thumbnail: "⚛️",
-      category: "Information Technology",
-      enrolledDate: "2026-02-01",
-      lastAccessed: "1 day ago",
-      nextDeadline: "Portfolio Project - Due Dec 15",
-      grade: "A-",
-      materials: 32,
-      assessments: 8,
-      students: 38,
-      rating: 4.8,
-      tags: ["React", "JavaScript", "Frontend"],
-    },
-    {
-      id: 3,
-      code: "ICT 301",
-      title: "Database Management Systems",
-      instructor: "Eng. Mary Wanjiku",
-      description:
-        "Comprehensive study of database design, SQL, and database administration.",
-      progress: 90,
-      totalModules: 10,
-      completedModules: 9,
-      status: "almost-done",
-      thumbnail: "🗄️",
-      category: "Information Technology",
-      enrolledDate: "2025-11-10",
-      lastAccessed: "3 days ago",
-      nextDeadline: "Final Exam - Dec 20",
-      grade: "A",
-      materials: 18,
-      assessments: 5,
-      students: 52,
-      rating: 4.6,
-      tags: ["SQL", "Database", "Backend"],
-    },
-    {
-      id: 4,
-      code: "ICT 401",
-      title: "Software Engineering",
-      instructor: "Dr. James Kariuki",
-      description:
-        "Learn software development lifecycle, methodologies, and best practices.",
-      progress: 100,
-      totalModules: 14,
-      completedModules: 14,
-      status: "completed",
-      thumbnail: "💻",
-      category: "Information Technology",
-      enrolledDate: "2025-09-05",
-      lastAccessed: "1 week ago",
-      completedDate: "2026-11-30",
-      grade: "A",
-      materials: 28,
-      assessments: 7,
-      students: 41,
-      rating: 4.7,
-      tags: ["Software", "Development", "Agile"],
-    },
-    {
-      id: 5,
-      code: "ICT 303",
-      title: "Python Programming",
-      instructor: "Ms. Lucy Njeri",
-      description:
-        "Introduction to Python programming for data analysis and automation.",
-      progress: 15,
-      totalModules: 20,
-      completedModules: 3,
-      status: "just-started",
-      thumbnail: "🐍",
-      category: "Programming",
-      enrolledDate: "2026-03-01",
-      lastAccessed: "5 hours ago",
-      nextDeadline: "Assignment 1 - Dec 10",
-      grade: "N/A",
-      materials: 40,
-      assessments: 10,
-      students: 67,
-      rating: 4.9,
-      tags: ["Python", "Programming", "Data Science"],
-    },
-    {
-      id: 6,
-      code: "ICT 402",
-      title: "Cloud Computing",
-      instructor: "Prof. David Otieno",
-      description:
-        "Study cloud architecture, AWS, Azure, and deployment strategies.",
-      progress: 0,
-      totalModules: 15,
-      completedModules: 0,
-      status: "not-started",
-      thumbnail: "☁️",
-      category: "Information Technology",
-      enrolledDate: "2026-03-10",
-      lastAccessed: "Never",
-      nextDeadline: "Course starts Jan 2027",
-      grade: "N/A",
-      materials: 30,
-      assessments: 6,
-      students: 28,
-      rating: 4.4,
-      tags: ["Cloud", "AWS", "DevOps"],
-    },
-  ];
+  // Helper function to get thumbnail icon based on course name
+  const getThumbnailIcon = (courseName) => {
+    if (!courseName) return "📚";
+    const name = courseName.toLowerCase();
+    if (
+      name.includes("programming") ||
+      name.includes("python") ||
+      name.includes("javascript")
+    )
+      return "💻";
+    if (name.includes("database")) return "🗄️";
+    if (name.includes("network") || name.includes("security")) return "🔒";
+    if (name.includes("web")) return "🌐";
+    if (name.includes("cloud")) return "☁️";
+    if (name.includes("software")) return "⚙️";
+    if (name.includes("informatics")) return "📊";
+    return "📚";
+  };
 
+  // Helper function to extract tags from course data
+  const extractTags = (course) => {
+    const tags = [];
+    if (course.department) tags.push(course.department);
+    if (course.courseTitle) tags.push(course.courseTitle.split(" ")[0]);
+    if (course.unitCode) tags.push(course.unitCode.split("")[0]);
+    return tags.slice(0, 3); // Return at most 3 tags
+  };
+
+  // Get unique categories from actual courses
   const categories = [
     "All",
-    "Information Technology",
-    "Programming",
-    "Networking",
-    "Database",
-    "Security",
-    "Cloud Computing",
+    ...new Set(courses.map((course) => course.category).filter(Boolean)),
   ];
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case "completed":
         return styles.statusCompleted;
       case "in-progress":
@@ -207,12 +140,12 @@ export function MyCourses() {
       case "not-started":
         return styles.statusNotStarted;
       default:
-        return "";
+        return styles.statusInProgress;
     }
   };
 
   const getStatusText = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case "completed":
         return "Completed";
       case "in-progress":
@@ -224,7 +157,7 @@ export function MyCourses() {
       case "not-started":
         return "Not Started";
       default:
-        return status;
+        return status || "In Progress";
     }
   };
 
@@ -237,7 +170,8 @@ export function MyCourses() {
       (course) =>
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.instructor.toLowerCase().includes(searchTerm.toLowerCase()),
+        (course.instructor &&
+          course.instructor.toLowerCase().includes(searchTerm.toLowerCase())),
     )
     .sort((a, b) => {
       switch (sortBy) {
@@ -248,7 +182,7 @@ export function MyCourses() {
         case "alphabetical":
           return a.title.localeCompare(b.title);
         case "deadline":
-          return a.nextDeadline.localeCompare(b.nextDeadline);
+          return (a.nextDeadline || "").localeCompare(b.nextDeadline || "");
         default:
           return 0;
       }
@@ -348,16 +282,6 @@ export function MyCourses() {
               <option value="deadline">Upcoming Deadline</option>
             </select>
           </div>
-
-          <div className={styles.filterGroup}>
-            <label>Status</label>
-            <div className={styles.statusFilter}>
-              <button className={styles.statusFilterBtn}>All</button>
-              <button className={styles.statusFilterBtn}>In Progress</button>
-              <button className={styles.statusFilterBtn}>Completed</button>
-              <button className={styles.statusFilterBtn}>Not Started</button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -419,13 +343,15 @@ export function MyCourses() {
             </div>
 
             {/* Tags */}
-            <div className={styles.tags}>
-              {course.tags.map((tag, index) => (
-                <span key={index} className={styles.tag}>
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {course.tags && course.tags.length > 0 && (
+              <div className={styles.tags}>
+                {course.tags.slice(0, 3).map((tag, index) => (
+                  <span key={index} className={styles.tag}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Status and Deadline */}
             <div className={styles.cardFooter}>
@@ -435,18 +361,19 @@ export function MyCourses() {
                 >
                   {getStatusText(course.status)}
                 </span>
-                {course.grade !== "N/A" && (
+                {course.grade !== "N/A" && course.grade && (
                   <span className={styles.gradeBadge}>
                     Grade: {course.grade}
                   </span>
                 )}
               </div>
 
-              {course.nextDeadline && (
-                <div className={styles.deadline}>
-                  <FiClock /> {course.nextDeadline}
-                </div>
-              )}
+              {course.nextDeadline &&
+                course.nextDeadline !== "No upcoming deadlines" && (
+                  <div className={styles.deadline}>
+                    <FiClock /> {course.nextDeadline}
+                  </div>
+                )}
             </div>
 
             {/* Action Buttons */}

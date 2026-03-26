@@ -23,7 +23,7 @@ IsLoggedRoute.post("/", async (req: Request, res: Response): Promise<void> => {
           res.status(401).json({ message: "Token verification failed" });
           return;
         }
-        let existingUser = await User.findOne({ UserNumber: load.name });
+        let existingUser = await User.findOne({ UserNumber: load.userNumber });
         if (!existingUser) {
           res.status(401).json({ message: "Unauthorized" });
           return;

@@ -6,14 +6,14 @@ type tokens = string;
 // function for creating an access token
 function generateAccessToken(req: Request): tokens {
   // casting user to string
-  let User: JwtLoad = { name: req.body.UserNumber };
+  let User: JwtLoad = { userNumber: req.body.UserNumber };
   // getting the .env file variable
   const AccessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
   // checking if the variable exists in the .env file
   if (AccessTokenSecret) {
     // assigning user to an access token
     const AccessToken = jwt.sign(User, AccessTokenSecret, {
-      expiresIn: "15m",
+      expiresIn: "15d",
     });
     return AccessToken;
   } else {

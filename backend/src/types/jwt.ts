@@ -1,3 +1,4 @@
 export interface JwtLoad{
-    name:string
+    name?:string
+    userNumber?:string
 }
