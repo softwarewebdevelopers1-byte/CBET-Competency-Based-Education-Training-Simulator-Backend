@@ -1,6 +1,6 @@
 // src/components/common/Sidebar.jsx
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "../css/sidebar.module.css";
 import {
@@ -16,19 +16,57 @@ import {
   FiUser,
   FiBell,
   FiSettings,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 
-export function Sidebar({ collapsed: collapsedProp, onToggle, coursesInfo }) {
+const clearStoredAuthData = () => {
+  localStorage.removeItem("cbet_user");
+  localStorage.removeItem("token");
+  localStorage.removeItem("admin_user");
+  sessionStorage.removeItem("cbet_user");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("admin_user");
+};
+
+const readStoredUser = () => {
+  try {
+    const rawUser = localStorage.getItem("cbet_user");
+    return rawUser ? JSON.parse(rawUser) : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export function Sidebar({
+  collapsed: collapsedProp,
+  onToggle,
+  coursesInfo,
+  themeMode,
+  onToggleTheme,
+}) {
   console.log("course info", coursesInfo);
 
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed =
     typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
   const navigate = useNavigate();
-  let userInfo = JSON.parse(localStorage.getItem("cbet_user"));
+  let userInfo = readStoredUser();
+
+  useEffect(() => {
+    if (!userInfo) {
+      clearStoredAuthData();
+      navigate("/login");
+    }
+  }, [navigate, userInfo]);
+
+  if (!userInfo) {
+    return null;
+  }
+
   // Mock student data - replace with actual user data from props or store
   const student = {
-    name: JSON.parse(localStorage.getItem("cbet_user")).user || "User",
+    name: userInfo.user || "User",
     program: userInfo.programme,
     year: "Year 2",
     studentId: userInfo.code,
@@ -40,7 +78,7 @@ export function Sidebar({ collapsed: collapsedProp, onToggle, coursesInfo }) {
       headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
-    localStorage.removeItem("cbet_user");
+    clearStoredAuthData();
     navigate("/login");
   };
 
@@ -167,6 +205,14 @@ export function Sidebar({ collapsed: collapsedProp, onToggle, coursesInfo }) {
       <div className={styles.sidebarFooter}>
         {!collapsed && (
           <>
+            <button
+              onClick={onToggleTheme}
+              className={styles.footerActionBtn}
+              type="button"
+            >
+              {themeMode === "dark" ? <FiSun /> : <FiMoon />}
+              <span>{themeMode === "dark" ? "Light Mode" : "Dark Mode"}</span>
+            </button>
             <NavLink to="/profile" className={styles.footerItem}>
               <FiUser />
               <span>My Profile</span>

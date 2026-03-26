@@ -306,6 +306,26 @@
   color: #667eea;
 }
 
+.footerActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 5px;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.footerActionBtn:hover {
+  background: #eef2ff;
+  color: #667eea;
+}
+
 .logoutBtn {
   display: flex;
   align-items: center;
@@ -555,6 +575,75 @@
     padding: 0.4rem;
     font-size: 0.85rem;
   }
+
+  .footerActionBtn {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+  }
+}
+
+:global([data-theme="dark"]) .sidebar {
+  background: #1a202c;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .sidebarHeader,
+:global([data-theme="dark"]) .studentInfo,
+:global([data-theme="dark"]) .quickStats,
+:global([data-theme="dark"]) .notifications,
+:global([data-theme="dark"]) .sidebarFooter,
+:global([data-theme="dark"]) .collapsedStats {
+  border-color: #2d3748;
+}
+
+:global([data-theme="dark"]) .studentName,
+:global([data-theme="dark"]) .notificationHeader {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .studentId,
+:global([data-theme="dark"]) .notificationItem,
+:global([data-theme="dark"]) .footerItem,
+:global([data-theme="dark"]) .toggleBtn,
+:global([data-theme="dark"]) .footerActionBtn {
+  color: #a0aec0;
+}
+
+:global([data-theme="dark"]) .quickStats,
+:global([data-theme="dark"]) .notifications,
+:global([data-theme="dark"]) .collapsedStat,
+:global([data-theme="dark"]) .footerActionBtn {
+  background: #2d3748;
+}
+
+:global([data-theme="dark"]) .statValue {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .statLabel,
+:global([data-theme="dark"]) .studentProgram,
+:global([data-theme="dark"]) .notificationText {
+  color: #a0aec0;
+}
+
+:global([data-theme="dark"]) .navItem {
+  color: #a0aec0;
+}
+
+:global([data-theme="dark"]) .navItem:hover,
+:global([data-theme="dark"]) .footerItem:hover,
+:global([data-theme="dark"]) .toggleBtn:hover,
+:global([data-theme="dark"]) .footerActionBtn:hover {
+  background: #374151;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .navItem.active {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+:global([data-theme="dark"]) .logoutBtn:hover {
+  background: rgba(127, 29, 29, 0.3);
 }
 
 /* Dark Mode Support */

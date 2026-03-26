@@ -7,6 +7,8 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Sun,
+  Moon,
 } from "lucide-react";
 import styles from "../styles/header.module.css";
 
@@ -19,7 +21,13 @@ const clearStoredAuthData = () => {
   sessionStorage.removeItem("admin_user");
 };
 
-const Header = ({ onMenuClick, sidebarCollapsed, isMobile }) => {
+const Header = ({
+  onMenuClick,
+  sidebarCollapsed,
+  isMobile,
+  themeMode,
+  onToggleTheme,
+}) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [adminName, setAdminName] = useState("Admin User");
   const [notifications, setNotifications] = useState([
@@ -91,6 +99,14 @@ const Header = ({ onMenuClick, sidebarCollapsed, isMobile }) => {
       </div>
 
       <div className={styles.headerActions}>
+        <button
+          className={styles.themeToggle}
+          onClick={onToggleTheme}
+          aria-label={`Switch to ${themeMode === "dark" ? "light" : "dark"} mode`}
+          type="button"
+        >
+          {themeMode === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <button
           className={styles.notificationBtn}
           onClick={handleNotificationClick}

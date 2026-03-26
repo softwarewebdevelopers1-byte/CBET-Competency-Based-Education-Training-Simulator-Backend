@@ -69,6 +69,25 @@
   gap: 1.5rem;
 }
 
+.themeToggle {
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  cursor: pointer;
+  padding: 0.55rem;
+  border-radius: 0.65rem;
+  color: #475569;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.themeToggle:hover {
+  background: #eef4ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
 /* Notification Button */
 .notificationBtn {
   position: relative;
@@ -196,11 +215,73 @@
     padding: 0.375rem;
   }
 
+  .themeToggle {
+    padding: 0.42rem;
+  }
+
   .badge {
     min-width: 16px;
     height: 16px;
     font-size: 0.5rem;
   }
+}
+
+:global([data-theme="dark"]) .adminHeader {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid #334155;
+}
+
+:global([data-theme="dark"]) .headerSearch input {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .headerSearch input:focus {
+  border-color: #3b82f6;
+  background: #0f172a;
+}
+
+:global([data-theme="dark"]) .headerSearch input::placeholder,
+:global([data-theme="dark"]) .searchIcon,
+:global([data-theme="dark"]) .userRole,
+:global([data-theme="dark"]) .dropdownIcon {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .notificationBtn,
+:global([data-theme="dark"]) .themeToggle {
+  color: #cbd5e1;
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .notificationBtn:hover,
+:global([data-theme="dark"]) .themeToggle:hover,
+:global([data-theme="dark"]) .userProfile:hover {
+  background: #1e293b;
+  color: #60a5fa;
+}
+
+:global([data-theme="dark"]) .userName {
+  color: #f8fafc;
+}
+
+:global([data-theme="dark"]) .userDropdown {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+:global([data-theme="dark"]) .userDropdownItem {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .userDropdownItem:hover {
+  background: #0f172a;
+}
+
+:global([data-theme="dark"]) .divider {
+  background: #334155;
 }
 
 /* Tablet Responsive */
