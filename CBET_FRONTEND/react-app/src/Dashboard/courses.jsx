@@ -1,6 +1,6 @@
 // src/components/courses/MyCourses.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../css/courses.module.css";
 import {
@@ -23,6 +23,7 @@ import {
   FiCalendar,
   FiBarChart2,
 } from "react-icons/fi";
+import { CourseContext } from "./dashboard.jsx";
 
 export function MyCourses() {
   const [loading, setLoading] = useState(true);
@@ -34,20 +35,12 @@ export function MyCourses() {
   const [showFilters, setShowFilters] = useState(false);
 
   const navigate = useNavigate();
+  let data = useContext(CourseContext);
 
   useEffect(() => {
     async function GetData() {
       try {
         setLoading(true);
-        const res = await fetch(
-          "http://localhost:8000/auth/admin/upload/courses/my/courses",
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        );
-
-        const data = await res.json();
 
         // Extract courses from the response
         const studentCourses = data.courses || [];

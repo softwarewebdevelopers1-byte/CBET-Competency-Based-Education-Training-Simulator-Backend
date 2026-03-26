@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { Sidebar } from "./sidebar";
 import { useNavigate } from "react-router-dom";
+export let CourseContext = createContext();
 
 export function Dashboard({ children }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [courses, setCourses] = useState({});
   let location = useNavigate();
   useEffect(() => {
     async function checkAuth() {
@@ -20,6 +22,15 @@ export function Dashboard({ children }) {
       }
       if (res.ok) {
         location("/dashboard");
+        const res = await fetch(
+          "http://localhost:8000/auth/admin/upload/courses/my/courses",
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
+        const data = await res.json();
+        setCourses(data);
       }
     }
     checkAuth();
@@ -37,7 +48,7 @@ export function Dashboard({ children }) {
           minHeight: "100vh",
         }}
       >
-        {children}
+        <CourseContext value={courses}>{children}</CourseContext>
       </div>
     </div>
   );

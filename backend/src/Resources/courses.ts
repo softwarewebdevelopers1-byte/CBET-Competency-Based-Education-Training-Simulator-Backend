@@ -58,12 +58,23 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
           res.status(401).json({ message: "Unauthorized" });
           return;
         }
-        let userCourses = await Courses.find({
-          courseTitle: existingUser.programme,
-        });
+        // getting active courses
+        let [userCourses] = await Courses.aggregate([
+          { $match: { courseTitle: existingUser.programme, status: "active" } },
+          {
+            $facet: {
+              data: [{ $limit: 5 }],
+              totalCount: [{ $count: "count" }],
+            },
+          },
+        ]);
+
+        // courseTitle: existingUser.programme,
+
         return res.status(200).json({
           success: true,
-          courses: userCourses,
+          courses: userCourses.data,
+          count: userCourses.totalCount,
         });
       },
     );

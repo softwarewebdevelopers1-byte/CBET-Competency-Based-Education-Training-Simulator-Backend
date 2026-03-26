@@ -1,6 +1,6 @@
 // src/components/home/Homepage.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../css/homepage.module.css";
 import {
@@ -20,6 +20,7 @@ import {
   FiChevronRight,
   FiBell,
 } from "react-icons/fi";
+import { CourseContext } from "./dashboard";
 
 export function Homepage() {
   const [loading, setLoading] = useState(true);
@@ -30,10 +31,13 @@ export function Homepage() {
   const [notifications, setNotifications] = useState([]);
 
   const navigate = useNavigate();
+  const coursesCount = useContext(CourseContext);
 
   // Mock user data - replace with actual user data
   const user = {
-    name: JSON.parse(localStorage.getItem("cbet_user")).user || "User",
+    name:
+      JSON.parse(localStorage.getItem("cbet_user") || '{"user": "User"}')
+        .user || "User",
     role: "student", // or "trainer", "admin"
     institution: " TVET Institute",
     avatar: "JD",
@@ -43,11 +47,31 @@ export function Homepage() {
     rank: "Gold Learner",
   };
 
+  // Function to safely get course count
+  const getCourseCount = () => {
+    try {
+      // Check if coursesCount exists and has count property
+      if (
+        coursesCount &&
+        coursesCount.count &&
+        Array.isArray(coursesCount.count)
+      ) {
+        return coursesCount.count.length > 0 ? coursesCount.count[0].count : 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error("Error getting course count:", error);
+      return 0;
+    }
+  };
+
   useEffect(() => {
+    const counts = getCourseCount();
+
     // Simulate loading data
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setStats({
-        coursesInProgress: 4,
+        coursesInProgress: counts,
         completedCourses: 8,
         pendingAssessments: 2,
         averageScore: 85,
@@ -169,7 +193,9 @@ export function Homepage() {
 
       setLoading(false);
     }, 1000);
-  }, []);
+
+    return () => clearTimeout(timer);
+  }, [coursesCount]); // Re-run when coursesCount changes
 
   if (loading) {
     return (
@@ -228,7 +254,9 @@ export function Homepage() {
             <FiBookOpen />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.coursesInProgress}</span>
+            <span className={styles.statValue}>
+              {stats.coursesInProgress || 0}
+            </span>
             <span className={styles.statLabel}>Courses in Progress</span>
           </div>
         </div>
@@ -241,7 +269,9 @@ export function Homepage() {
             <FiCheckCircle />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.completedCourses}</span>
+            <span className={styles.statValue}>
+              {stats.completedCourses || 0}
+            </span>
             <span className={styles.statLabel}>Completed Courses</span>
           </div>
         </div>
@@ -254,7 +284,9 @@ export function Homepage() {
             <FiFileText />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.pendingAssessments}</span>
+            <span className={styles.statValue}>
+              {stats.pendingAssessments || 0}
+            </span>
             <span className={styles.statLabel}>Pending Assessments</span>
           </div>
         </div>
@@ -267,7 +299,7 @@ export function Homepage() {
             <FiTrendingUp />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.averageScore}%</span>
+            <span className={styles.statValue}>{stats.averageScore || 0}%</span>
             <span className={styles.statLabel}>Average Score</span>
           </div>
         </div>
@@ -280,7 +312,7 @@ export function Homepage() {
           <div>
             <span className={styles.gamificationLabel}>Total Points</span>
             <span className={styles.gamificationValue}>
-              {stats.totalPoints}
+              {stats.totalPoints || 0}
             </span>
           </div>
         </div>
@@ -290,7 +322,7 @@ export function Homepage() {
           <div>
             <span className={styles.gamificationLabel}>Current Rank</span>
             <span className={styles.gamificationValue}>
-              {stats.currentRank}
+              {stats.currentRank || "N/A"}
             </span>
           </div>
         </div>
@@ -300,7 +332,7 @@ export function Homepage() {
           <div>
             <span className={styles.gamificationLabel}>Streak Days</span>
             <span className={styles.gamificationValue}>
-              {stats.streakDays} 🔥
+              {stats.streakDays || 0} 🔥
             </span>
           </div>
         </div>
@@ -310,7 +342,7 @@ export function Homepage() {
           <div>
             <span className={styles.gamificationLabel}>Badges Earned</span>
             <span className={styles.gamificationValue}>
-              {stats.badgesEarned}
+              {stats.badgesEarned || 0}
             </span>
           </div>
         </div>
