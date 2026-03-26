@@ -21,6 +21,16 @@ const INITIAL_FORM_STATE = {
   role: "student",
 };
 
+const INITIAL_EDIT_FORM_STATE = {
+  fullName: "",
+  UserNumber: "",
+  department: "",
+  programme: "",
+  yearOfStudy: "1",
+  role: "student",
+  password: "",
+};
+
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,8 +40,11 @@ const UserManagement = () => {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newUserForm, setNewUserForm] = useState(INITIAL_FORM_STATE);
+  const [editUserForm, setEditUserForm] = useState(INITIAL_EDIT_FORM_STATE);
+  const [selectedUserNumber, setSelectedUserNumber] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -74,7 +87,26 @@ const UserManagement = () => {
   };
 
   const handleEditUser = (userId) => {
-    console.log("Edit user:", userId);
+    const selectedUser = users.find((user) => user.UserNumber === userId);
+
+    if (!selectedUser) {
+      setError("Unable to load selected user");
+      return;
+    }
+
+    setError("");
+    setSuccessMessage("");
+    setSelectedUserNumber(userId);
+    setEditUserForm({
+      fullName: selectedUser.fullName || "",
+      UserNumber: selectedUser.UserNumber || "",
+      department: selectedUser.department || "",
+      programme: selectedUser.programme || "",
+      yearOfStudy: String(selectedUser.yearOfStudy || 1),
+      role: selectedUser.role || "student",
+      password: "",
+    });
+    setIsEditModalOpen(true);
   };
 
   const handleDeleteUser = async (userId) => {
@@ -184,6 +216,15 @@ const UserManagement = () => {
     }));
   };
 
+  const handleEditInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setEditUserForm((currentForm) => ({
+      ...currentForm,
+      [name]: value,
+    }));
+  };
+
   const handleCreateUser = async (event) => {
     event.preventDefault();
 
@@ -216,6 +257,55 @@ const UserManagement = () => {
         createError instanceof Error
           ? createError.message
           : "Unable to create user",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateUser = async (event) => {
+    event.preventDefault();
+
+    try {
+      setIsSubmitting(true);
+      setError("");
+      setSuccessMessage("");
+      const encodedUserNumber = encodeURIComponent(selectedUserNumber);
+
+      const response = await fetch(
+        `http://localhost:8000/auth/admin/users/${encodedUserNumber}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(editUserForm),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update user");
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.UserNumber === selectedUserNumber ? data.user : user,
+        ),
+      );
+      setIsEditModalOpen(false);
+      setSelectedUserNumber("");
+      setEditUserForm(INITIAL_EDIT_FORM_STATE);
+      setSuccessMessage(
+        data.passwordUpdated
+          ? "User updated successfully. Password was re-hashed."
+          : "User details updated successfully.",
+      );
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Unable to update user",
       );
     } finally {
       setIsSubmitting(false);
@@ -492,6 +582,118 @@ const UserManagement = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Creating..." : "Create User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Edit User</h2>
+              <p>
+                Update the selected user details. Leave password empty to keep
+                the current hashed password unchanged.
+              </p>
+            </div>
+
+            <form className={styles.createUserForm} onSubmit={handleUpdateUser}>
+              <div className={styles.formGrid}>
+                <label className={styles.formField}>
+                  <span>Full Name</span>
+                  <input
+                    name="fullName"
+                    value={editUserForm.fullName}
+                    onChange={handleEditInputChange}
+                    required
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>User Number</span>
+                  <input
+                    name="UserNumber"
+                    value={editUserForm.UserNumber}
+                    onChange={handleEditInputChange}
+                    required
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Role</span>
+                  <select
+                    name="role"
+                    value={editUserForm.role}
+                    onChange={handleEditInputChange}
+                  >
+                    <option value="student">Student</option>
+                    <option value="trainer">Trainer / Trainee</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Year of Study</span>
+                  <input
+                    name="yearOfStudy"
+                    type="number"
+                    min="1"
+                    value={editUserForm.yearOfStudy}
+                    onChange={handleEditInputChange}
+                    disabled={editUserForm.role !== "student"}
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Department</span>
+                  <input
+                    name="department"
+                    value={editUserForm.department}
+                    onChange={handleEditInputChange}
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Programme</span>
+                  <input
+                    name="programme"
+                    value={editUserForm.programme}
+                    onChange={handleEditInputChange}
+                  />
+                </label>
+
+                <label className={`${styles.formField} ${styles.fullWidthField}`}>
+                  <span>New Password</span>
+                  <input
+                    name="password"
+                    type="password"
+                    value={editUserForm.password}
+                    onChange={handleEditInputChange}
+                    placeholder="Leave empty to keep existing password"
+                  />
+                </label>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.primaryBtn}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>

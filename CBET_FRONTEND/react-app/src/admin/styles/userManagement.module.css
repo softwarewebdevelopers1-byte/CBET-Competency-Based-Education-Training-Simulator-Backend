@@ -751,6 +751,10 @@
   gap: 0.45rem;
 }
 
+.fullWidthField {
+  grid-column: 1 / -1;
+}
+
 .formField span {
   font-size: 0.82rem;
   font-weight: 600;

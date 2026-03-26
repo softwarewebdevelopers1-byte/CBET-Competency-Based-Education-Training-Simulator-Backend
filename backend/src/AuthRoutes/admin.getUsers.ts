@@ -159,6 +159,111 @@ AdminUsersRouter.post(
   },
 );
 
+AdminUsersRouter.put(
+  "/:userNumber",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const hasAdminAccess = await requireAdminUser(req, res);
+
+      if (!hasAdminAccess) {
+        return;
+      }
+
+      const currentUserNumber = String(req.params.userNumber ?? "").trim();
+      const nextUserNumber = String(req.body?.UserNumber ?? currentUserNumber).trim();
+      const fullName = String(req.body?.fullName ?? "").trim();
+      const department = String(req.body?.department ?? "").trim();
+      const programme = String(req.body?.programme ?? "").trim();
+      const password = String(req.body?.password ?? "").trim();
+      const normalizedRole = normalizeRole(String(req.body?.role ?? ""));
+      const parsedYearOfStudy = Number(req.body?.yearOfStudy);
+
+      if (!currentUserNumber || !nextUserNumber || !fullName || !normalizedRole) {
+        res.status(400).json({
+          error: "fullName, UserNumber, and a valid role are required",
+        });
+        return;
+      }
+
+      const existingUser = await User.findOne({ UserNumber: currentUserNumber });
+
+      if (!existingUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      if (currentUserNumber !== nextUserNumber) {
+        const duplicateUser = await User.findOne({ UserNumber: nextUserNumber });
+
+        if (duplicateUser) {
+          res.status(409).json({ error: "UserNumber already exists" });
+          return;
+        }
+      }
+
+      const updatePayload: {
+        fullName: string;
+        UserNumber: string;
+        yearOfStudy: number;
+        department: string;
+        programme: string;
+        role: AllowedRole;
+        password?: string;
+      } = {
+        fullName,
+        UserNumber: nextUserNumber,
+        yearOfStudy:
+          normalizedRole === "student" && Number.isFinite(parsedYearOfStudy)
+            ? Math.max(1, parsedYearOfStudy)
+            : 1,
+        department,
+        programme,
+        role: normalizedRole,
+      };
+
+      if (password) {
+        updatePayload.password = await bcrypt.hash(password, 10);
+      }
+
+      const updatedUser = await User.findOneAndUpdate(
+        { UserNumber: currentUserNumber },
+        {
+          $set: updatePayload,
+        },
+        {
+          new: true,
+          runValidators: true,
+          upsert: false,
+        },
+      );
+
+      if (!updatedUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "User updated successfully",
+        passwordUpdated: Boolean(password),
+        user: {
+          fullName: updatedUser.fullName,
+          UserNumber: updatedUser.UserNumber,
+          yearOfStudy: updatedUser.yearOfStudy,
+          department: updatedUser.department,
+          programme: updatedUser.programme,
+          role: updatedUser.role,
+          status: updatedUser.status,
+          account_state: updatedUser.account_state,
+          expiresAt: updatedUser.expiresAt ?? null,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Unable to update user" });
+    }
+  },
+);
+
 UserNumber.get("/", async (_req: Request, res: Response): Promise<void> => {
   try {
     const count = await User.countDocuments({});
