@@ -169,6 +169,17 @@
   transform: translateY(-1px);
 }
 
+.errorBanner {
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 /* Table Container */
 .usersTableContainer {
   background: #ffffff;
@@ -242,6 +253,11 @@
 }
 
 .userEmail {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.userMeta {
   font-size: 0.75rem;
   color: #64748b;
 }
@@ -449,6 +465,10 @@
   .userEmail {
     font-size: 0.6875rem;
   }
+
+  .userMeta {
+    font-size: 0.6875rem;
+  }
 }
 
 /* Dark Mode Support */
@@ -499,6 +519,12 @@
     background: #1e293b;
   }
 
+  .errorBanner {
+    background: rgba(127, 29, 29, 0.25);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #fecaca;
+  }
+
   .usersTable thead {
     background: #0f172a;
     border-bottom-color: #334155;
@@ -522,6 +548,10 @@
   }
 
   .userEmail {
+    color: #94a3b8;
+  }
+
+  .userMeta {
     color: #94a3b8;
   }
 

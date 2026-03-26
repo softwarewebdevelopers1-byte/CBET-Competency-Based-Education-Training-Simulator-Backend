@@ -15,7 +15,7 @@ import LogOutAll from "#authentication/logOutAll";
 import { LogAdminRouter } from "#authentication/adminLogin";
 import IsAdminLogged from "#authentication/Is_admin_logged";
 import { AdminLogOut, AdminLogOutAll } from "#authentication/logoutAdmin";
-import { GetUsers, UserNumber } from "#adminResources/getUsers";
+import { GetUsers, UserNumber } from "#authentication/admin.getUsers";
 import { AdminDeleteUser, UserDeleteRoute } from "#authentication/user.delete";
 import RecoverUsers from "#adminResources/recover_users";
 import {

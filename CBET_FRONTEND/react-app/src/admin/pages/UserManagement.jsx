@@ -1,5 +1,5 @@
 // pages/UserManagement.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Filter,
@@ -12,53 +12,45 @@ import {
 import styles from "../styles/userManagement.module.css";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "Student",
-      status: "Active",
-      lastActive: "2 mins ago",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "Trainer",
-      status: "Active",
-      lastActive: "1 hour ago",
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      role: "Student",
-      status: "Inactive",
-      lastActive: "2 days ago",
-    },
-    {
-      id: 4,
-      name: "Sarah Wilson",
-      email: "sarah@example.com",
-      role: "Student",
-      status: "Active",
-      lastActive: "5 mins ago",
-    },
-    {
-      id: 5,
-      name: "Robert Brown",
-      email: "robert@example.com",
-      role: "Trainer",
-      status: "Active",
-      lastActive: "30 mins ago",
-    },
-  ]);
-
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch("http://localhost:8000/auth/find/users", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to fetch users");
+        }
+
+        setUsers(Array.isArray(data.users) ? data.users : []);
+      } catch (fetchError) {
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Unable to fetch users",
+        );
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleAddUser = () => {
     console.log("Add new user");
@@ -72,7 +64,9 @@ const UserManagement = () => {
 
   const handleDeleteUser = (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
-      setUsers(users.filter((user) => user.id !== userId));
+      setUsers((currentUsers) =>
+        currentUsers.filter((user) => user.UserNumber !== userId),
+      );
     }
   };
 
@@ -82,12 +76,14 @@ const UserManagement = () => {
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.UserNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.programme?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole =
-      roleFilter === "all" || user.role.toLowerCase() === roleFilter;
+      roleFilter === "all" || user.role?.toLowerCase() === roleFilter;
     const matchesStatus =
-      statusFilter === "all" || user.status.toLowerCase() === statusFilter;
+      statusFilter === "all" || user.status?.toLowerCase() === statusFilter;
 
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -112,7 +108,7 @@ const UserManagement = () => {
           <Search size={20} />
           <input
             type="text"
-            placeholder="Search users by name or email..."
+            placeholder="Search by name, user number, department, or programme..."
             value={searchTerm}
             onChange={handleSearch}
           />
@@ -140,10 +136,12 @@ const UserManagement = () => {
 
           <button className={styles.filterBtn}>
             <Filter size={20} />
-            More Filters
+            Total: {filteredUsers.length}
           </button>
         </div>
       </div>
+
+      {error && <div className={styles.errorBanner}>{error}</div>}
 
       <div className={styles.usersTableContainer}>
         {loading ? (
@@ -154,60 +152,69 @@ const UserManagement = () => {
         ) : filteredUsers.length === 0 ? (
           <div className={styles.emptyState}>
             <Users size={64} />
-            <p>No users found</p>
+            <p>{error ? "Unable to load users" : "No users found"}</p>
           </div>
         ) : (
           <table className={styles.usersTable}>
             <thead>
               <tr>
                 <th>User</th>
+                <th>User Number</th>
+                <th>Department</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th>Last Active</th>
+                <th>Programme</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.UserNumber}>
                   <td>
                     <div className={styles.userCell}>
                       <div className={styles.userAvatar}>
-                        {user.name.charAt(0)}
+                        {(user.fullName || user.UserNumber || "U").charAt(0)}
                       </div>
                       <div>
-                        <div className={styles.userName}>{user.name}</div>
-                        <div className={styles.userEmail}>{user.email}</div>
+                        <div className={styles.userName}>
+                          {user.fullName || "Unnamed User"}
+                        </div>
+                        <div className={styles.userMeta}>
+                          Year {user.yearOfStudy || 1} |{" "}
+                          {user.account_state || "active"}
+                        </div>
                       </div>
                     </div>
                   </td>
+                  <td>{user.UserNumber}</td>
+                  <td>{user.department || "Not set"}</td>
                   <td>
                     <span
-                      className={`${styles.roleBadge} ${styles[user.role.toLowerCase()]}`}
+                      className={`${styles.roleBadge} ${styles[(user.role || "").toLowerCase()]}`}
                     >
                       {user.role}
                     </span>
                   </td>
                   <td>
                     <span
-                      className={`${styles.statusBadge} ${styles[user.status.toLowerCase()]}`}
+                      className={`${styles.statusBadge} ${styles[(user.status || "").toLowerCase()]}`}
                     >
                       {user.status}
                     </span>
                   </td>
-                  <td>{user.lastActive}</td>
+                  <td>{user.programme || "Not set"}</td>
                   <td>
                     <div className={styles.actionButtons}>
                       <button
                         className={`${styles.iconBtn} ${styles.edit}`}
-                        onClick={() => handleEditUser(user.id)}
+                        onClick={() => handleEditUser(user.UserNumber)}
                         data-tooltip="Edit user"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         className={`${styles.iconBtn} ${styles.delete}`}
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => handleDeleteUser(user.UserNumber)}
                         data-tooltip="Delete user"
                       >
                         <Trash2 size={16} />
