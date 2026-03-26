@@ -15,7 +15,7 @@ import LogOutAll from "#authentication/logOutAll";
 import { LogAdminRouter } from "#authentication/adminLogin";
 import IsAdminLogged from "#authentication/Is_admin_logged";
 import { AdminLogOut, AdminLogOutAll } from "#authentication/logoutAdmin";
-import { GetUsers, UserNumber } from "#authentication/admin.getUsers";
+import { AdminUsersRouter, UserNumber } from "#authentication/admin.getUsers";
 import { AdminDeleteUser, UserDeleteRoute } from "#authentication/user.delete";
 import RecoverUsers from "#adminResources/recover_users";
 import {
@@ -63,7 +63,7 @@ App.use("/auth/admin/delete/user", AdminDeleteUser);
 App.use("/auth/verify/refresh", RefreshRouter);
 App.use("/auth/user/check/logged", IsLoggedRoute);
 App.use("/api/resource/pdf", pdfRouter);
-App.use("/auth/find/users", GetUsers);
+App.use("/auth/admin/users", AdminUsersRouter);
 App.use("/auth/logout/admin/logout", AdminLogOut);
 App.use("/auth/check/admin/logged", IsAdminLogged);
 App.use("/auth/all/admin/logout/all", AdminLogOutAll);

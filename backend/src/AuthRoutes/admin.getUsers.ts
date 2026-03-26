@@ -1,18 +1,69 @@
+import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import { Router } from "express";
 import { AuthenticateToken } from "#Verification/access.token";
 import { User } from "#models/user.model";
 
-export const GetUsers = Router();
+type AllowedRole = "student" | "trainer" | "admin";
+
+export const AdminUsersRouter = Router();
 export const UserNumber = Router();
 
-GetUsers.get(
+const normalizeRole = (role: string): AllowedRole | null => {
+  const normalizedRole = role.trim().toLowerCase();
+
+  if (normalizedRole === "student") {
+    return "student";
+  }
+
+  if (normalizedRole === "trainer" || normalizedRole === "trainee") {
+    return "trainer";
+  }
+
+  if (normalizedRole === "admin") {
+    return "admin";
+  }
+
+  return null;
+};
+
+const requireAdminUser = async (
+  req: Request,
+  res: Response,
+): Promise<boolean> => {
+  const adminUserNumber = req.cookies?.user_1UA_XG;
+
+  if (!adminUserNumber) {
+    res.status(401).json({ error: "Unauthorized access" });
+    return false;
+  }
+
+  const adminUser = await User.findOne({
+    UserNumber: adminUserNumber,
+    role: "admin",
+  });
+
+  if (!adminUser) {
+    res.status(403).json({ error: "Admin privileges required" });
+    return false;
+  }
+
+  return true;
+};
+
+AdminUsersRouter.get(
   "/",
   AuthenticateToken,
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
+      const hasAdminAccess = await requireAdminUser(req, res);
+
+      if (!hasAdminAccess) {
+        return;
+      }
+
       const users = await User.find(
-        {},
+        { role: { $ne: "admin" } },
         {
           _id: false,
           fullName: true,
@@ -23,6 +74,7 @@ GetUsers.get(
           role: true,
           status: true,
           account_state: true,
+          expiresAt: true,
         },
       )
         .sort({ fullName: 1, UserNumber: 1 })
@@ -32,6 +84,77 @@ GetUsers.get(
       res.status(200).json({ users });
     } catch (error) {
       res.status(500).json({ error: "Unable to fetch users" });
+    }
+  },
+);
+
+AdminUsersRouter.post(
+  "/",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const hasAdminAccess = await requireAdminUser(req, res);
+
+      if (!hasAdminAccess) {
+        return;
+      }
+
+      const normalizedRole = normalizeRole(String(req.body?.role ?? ""));
+      const fullName = String(req.body?.fullName ?? "").trim();
+      const userNumber = String(req.body?.UserNumber ?? "").trim();
+      const department = String(req.body?.department ?? "").trim();
+      const programme = String(req.body?.programme ?? "").trim();
+      const parsedYearOfStudy = Number(req.body?.yearOfStudy);
+
+      if (!fullName || !userNumber || !normalizedRole) {
+        res.status(400).json({
+          error: "fullName, UserNumber, and a valid role are required",
+        });
+        return;
+      }
+
+      const existingUser = await User.findOne({ UserNumber: userNumber });
+
+      if (existingUser) {
+        res.status(409).json({ error: "UserNumber already exists" });
+        return;
+      }
+
+      const defaultPassword =
+        normalizedRole === "student" ? "student123" : "staff123";
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+      const createdUser = await User.create({
+        fullName,
+        UserNumber: userNumber,
+        yearOfStudy:
+          normalizedRole === "student" && Number.isFinite(parsedYearOfStudy)
+            ? Math.max(1, parsedYearOfStudy)
+            : 1,
+        department,
+        programme,
+        password: hashedPassword,
+        role: normalizedRole,
+        status: "active",
+        account_state: "approved",
+      });
+
+      res.status(201).json({
+        message: "User created successfully",
+        defaultPassword,
+        user: {
+          fullName: createdUser.fullName,
+          UserNumber: createdUser.UserNumber,
+          yearOfStudy: createdUser.yearOfStudy,
+          department: createdUser.department,
+          programme: createdUser.programme,
+          role: createdUser.role,
+          status: createdUser.status,
+          account_state: createdUser.account_state,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Unable to create user" });
     }
   },
 );

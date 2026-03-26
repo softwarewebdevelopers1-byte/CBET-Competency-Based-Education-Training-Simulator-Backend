@@ -1,5 +1,5 @@
 // components/Header.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Bell,
   Search,
@@ -10,8 +10,18 @@ import {
 } from "lucide-react";
 import styles from "../styles/header.module.css";
 
+const clearStoredAuthData = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("cbet_user");
+  localStorage.removeItem("admin_user");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("cbet_user");
+  sessionStorage.removeItem("admin_user");
+};
+
 const Header = ({ onMenuClick, sidebarCollapsed, isMobile }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [adminName, setAdminName] = useState("Admin User");
   const [notifications, setNotifications] = useState([
     { id: 1, message: "New user registered", read: false },
     { id: 2, message: "Course enrollment completed", read: false },
@@ -20,10 +30,42 @@ const Header = ({ onMenuClick, sidebarCollapsed, isMobile }) => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("cbet_user");
-    window.location.href = "/login";
+  useEffect(() => {
+    const loadAdminProfile = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:8000/auth/user/check/logged",
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
+
+        const data = await response.json();
+
+        if (response.ok && data?.fullName) {
+          setAdminName(data.fullName);
+        }
+      } catch (error) {
+        console.error("Unable to load admin profile:", error);
+      }
+    };
+
+    loadAdminProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8000/auth/CBET/user/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      clearStoredAuthData();
+      window.location.href = "/login";
+    }
   };
 
   const handleNotificationClick = () => {
@@ -68,7 +110,7 @@ const Header = ({ onMenuClick, sidebarCollapsed, isMobile }) => {
             <User size={20} />
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Admin User</span>
+            <span className={styles.userName}>{adminName}</span>
             <span className={styles.userRole}>Administrator</span>
           </div>
           <ChevronDown size={16} className={styles.dropdownIcon} />

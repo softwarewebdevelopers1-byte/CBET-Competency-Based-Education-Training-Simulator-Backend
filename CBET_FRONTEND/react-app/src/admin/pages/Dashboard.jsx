@@ -1,142 +1,234 @@
 // pages/Dashboard.jsx
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
-  Gamepad2,
-  BookOpen,
-  TrendingUp,
-  Award,
-  Clock,
+  UserCheck,
+  UserX,
+  ShieldCheck,
+  GraduationCap,
+  Briefcase,
+  ArrowRight,
 } from "lucide-react";
 import styles from "../styles/dashboard.module.css";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch("http://localhost:8000/auth/admin/users", {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to fetch dashboard data");
+        }
+
+        setUsers(Array.isArray(data.users) ? data.users : []);
+      } catch (fetchError) {
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Unable to fetch dashboard data",
+        );
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const analytics = useMemo(() => {
+    const totalUsers = users.length;
+    const activeUsers = users.filter(
+      (user) => user.status?.toLowerCase() === "active",
+    ).length;
+    const suspendedUsers = users.filter(
+      (user) => user.status?.toLowerCase() === "suspended",
+    ).length;
+    const adminUsers = users.filter(
+      (user) => user.role?.toLowerCase() === "admin",
+    ).length;
+    const trainerUsers = users.filter(
+      (user) => user.role?.toLowerCase() === "trainer",
+    ).length;
+    const studentUsers = users.filter(
+      (user) => user.role?.toLowerCase() === "student",
+    ).length;
+
+    return {
+      totalUsers,
+      activeUsers,
+      suspendedUsers,
+      adminUsers,
+      trainerUsers,
+      studentUsers,
+      staffUsers: adminUsers + trainerUsers,
+    };
+  }, [users]);
+
   const stats = [
     {
       icon: Users,
       label: "Total Users",
-      value: "2,543",
-      change: "+12%",
+      value: analytics.totalUsers,
+      helper: "Accounts in the database",
       color: "blue",
     },
     {
-      icon: Gamepad2,
-      label: "Active Simulations",
-      value: "156",
-      change: "+5%",
+      icon: UserCheck,
+      label: "Active Users",
+      value: analytics.activeUsers,
+      helper: "Approved and usable accounts",
       color: "green",
     },
     {
-      icon: BookOpen,
-      label: "Learning Materials",
-      value: "892",
-      change: "+23%",
+      icon: UserX,
+      label: "Suspended Users",
+      value: analytics.suspendedUsers,
+      helper: "Will auto-delete after 7 days",
+      color: "red",
+    },
+    {
+      icon: Briefcase,
+      label: "Staff Accounts",
+      value: analytics.staffUsers,
+      helper: "Admin and trainer accounts",
       color: "purple",
     },
+  ];
+
+  const roleBreakdown = [
     {
-      icon: Award,
-      label: "Certificates Issued",
-      value: "431",
-      change: "+18%",
-      color: "orange",
+      label: "Students",
+      value: analytics.studentUsers,
+      icon: GraduationCap,
+      tone: "student",
+    },
+    {
+      label: "Trainers",
+      value: analytics.trainerUsers,
+      icon: Briefcase,
+      tone: "trainer",
+    },
+    {
+      label: "Admins",
+      value: analytics.adminUsers,
+      icon: ShieldCheck,
+      tone: "admin",
     },
   ];
 
-  const recentActivities = [
-    {
-      user: "John Doe",
-      action: "Completed Simulation",
-      time: "5 minutes ago",
-      type: "simulation",
-    },
-    {
-      user: "Jane Smith",
-      action: "Uploaded Portfolio",
-      time: "15 minutes ago",
-      type: "portfolio",
-    },
-    {
-      user: "Mike Johnson",
-      action: "Passed Assessment",
-      time: "1 hour ago",
-      type: "assessment",
-    },
-    {
-      user: "Sarah Wilson",
-      action: "Earned Badge",
-      time: "2 hours ago",
-      type: "gamification",
-    },
-  ];
-
-  const handleQuickAction = (action) => {
-    console.log(`Quick action: ${action}`);
-    // Add navigation or modal logic here
-  };
+  const visibleUsers = users.slice(0, 6);
 
   return (
-    <div className={styles.dashboard}>
+    <div className={`${styles.dashboard} ${loading ? styles.loading : ""}`}>
       <div className={styles.pageHeader}>
-        <h1>Dashboard</h1>
-        <div className={styles.dateRange}>
-          <select defaultValue="today">
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
+        <div>
+          <h1 className={styles.pageTitle}>Admin Dashboard</h1>
+          <p className={styles.pageSubtitle}>
+            Live overview of user accounts currently stored in the database.
+          </p>
         </div>
       </div>
 
+      {error && <div className={styles.errorBanner}>{error}</div>}
+
       <div className={styles.statsGrid}>
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className={`${styles.statCard} ${styles[stat.color]}`}
-          >
+        {stats.map((stat) => (
+          <div key={stat.label} className={`${styles.statCard} ${styles[stat.color]}`}>
             <div className={styles.statIcon}>
-              <stat.icon size={24} />
+              <stat.icon size={22} />
             </div>
             <div className={styles.statDetails}>
               <span className={styles.statLabel}>{stat.label}</span>
               <span className={styles.statValue}>{stat.value}</span>
-              <span className={styles.statChange}>{stat.change}</span>
+              <span className={styles.statHelper}>{stat.helper}</span>
             </div>
           </div>
         ))}
       </div>
 
       <div className={styles.dashboardGrid}>
-        <div className={styles.chartCard}>
-          <h3>User Activity</h3>
-          <div className={styles.chartPlaceholder}>
-            <div className={styles.placeholderContent}>
-              <TrendingUp size={48} />
-              <p>Activity chart visualization</p>
+        <section className={styles.dataCard}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h3>Users In Database</h3>
+              <p>Actual records fetched from the backend user collection.</p>
+            </div>
+            <button
+              className={styles.inlineAction}
+              onClick={() => navigate("/admin/users")}
+            >
+              Manage Users
+              <ArrowRight size={16} />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className={styles.placeholderBox}>Loading users...</div>
+          ) : visibleUsers.length === 0 ? (
+            <div className={styles.placeholderBox}>No users available.</div>
+          ) : (
+            <div className={styles.userList}>
+              {visibleUsers.map((user) => (
+                <div key={user.UserNumber} className={styles.userListItem}>
+                  <div className={styles.userAvatar}>
+                    {(user.fullName || user.UserNumber || "U").charAt(0)}
+                  </div>
+                  <div className={styles.userListContent}>
+                    <span className={styles.userListName}>
+                      {user.fullName || "Unnamed User"}
+                    </span>
+                    <span className={styles.userListMeta}>
+                      {user.UserNumber} | {user.department || "No department"}
+                    </span>
+                  </div>
+                  <span
+                    className={`${styles.rolePill} ${styles[(user.role || "").toLowerCase()]}`}
+                  >
+                    {user.role}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className={styles.dataCard}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h3>Role Breakdown</h3>
+              <p>How accounts are distributed by user role.</p>
             </div>
           </div>
-        </div>
 
-        <div className={styles.recentActivities}>
-          <h3>Recent Activities</h3>
-          <div className={styles.activityList}>
-            {recentActivities.map((activity, index) => (
-              <div key={index} className={styles.activityItem}>
-                <div
-                  className={`${styles.activityIcon} ${styles[activity.type]}`}
-                >
-                  <Clock size={16} />
+          <div className={styles.breakdownList}>
+            {roleBreakdown.map((entry) => (
+              <div key={entry.label} className={styles.breakdownItem}>
+                <div className={`${styles.breakdownIcon} ${styles[entry.tone]}`}>
+                  <entry.icon size={18} />
                 </div>
-                <div className={styles.activityDetails}>
-                  <p>
-                    <strong>{activity.user}</strong> {activity.action}
-                  </p>
-                  <span className={styles.activityTime}>{activity.time}</span>
+                <div className={styles.breakdownContent}>
+                  <span>{entry.label}</span>
+                  <strong>{entry.value}</strong>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
 
       <div className={styles.quickActions}>
@@ -144,27 +236,15 @@ const AdminDashboard = () => {
         <div className={styles.actionButtons}>
           <button
             className={styles.actionBtn}
-            onClick={() => handleQuickAction("Create Simulation")}
+            onClick={() => navigate("/admin/users")}
           >
-            Create Simulation
+            Add or Manage Users
           </button>
           <button
             className={styles.actionBtn}
-            onClick={() => handleQuickAction("Upload Materials")}
+            onClick={() => navigate("/admin/simulations")}
           >
-            Upload Materials
-          </button>
-          <button
-            className={styles.actionBtn}
-            onClick={() => handleQuickAction("Generate Assessment")}
-          >
-            Generate Assessment
-          </button>
-          <button
-            className={styles.actionBtn}
-            onClick={() => handleQuickAction("Review Portfolios")}
-          >
-            Review Portfolios
+            Manage Simulations
           </button>
         </div>
       </div>

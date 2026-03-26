@@ -18,6 +18,21 @@ const AdminLayout = ({ children }) => {
 
   // Check screen size on resize
   useEffect(() => {
+    (async () => {
+      let res = await fetch("http://localhost:8000/auth/user/check/logged", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      console.log(await res.json());
+
+      if (!res.ok) {
+        navigate("/login");
+      }
+      if (res.ok) {
+        navigate("/dashboard/admin");
+      }
+    })();
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);

@@ -17,6 +17,15 @@ import {
 } from "lucide-react";
 import styles from "../styles/Sidebar.module.css";
 
+const clearStoredAuthData = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("cbet_user");
+  localStorage.removeItem("admin_user");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("cbet_user");
+  sessionStorage.removeItem("admin_user");
+};
+
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
     { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -30,10 +39,18 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     { path: "/admin/settings", icon: Settings, label: "Settings" },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("cbet_user");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8000/auth/CBET/user/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      clearStoredAuthData();
+      window.location.href = "/login";
+    }
   };
 
   // Close sidebar when clicking a link on mobile

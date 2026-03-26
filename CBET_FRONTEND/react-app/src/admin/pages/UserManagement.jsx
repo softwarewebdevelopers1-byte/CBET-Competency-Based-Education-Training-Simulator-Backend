@@ -8,8 +8,18 @@ import {
   Trash2,
   MoreVertical,
   Users,
+  RotateCcw,
 } from "lucide-react";
 import styles from "../styles/userManagement.module.css";
+
+const INITIAL_FORM_STATE = {
+  fullName: "",
+  UserNumber: "",
+  department: "",
+  programme: "",
+  yearOfStudy: "1",
+  role: "student",
+};
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -18,55 +28,197 @@ const UserManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newUserForm, setNewUserForm] = useState(INITIAL_FORM_STATE);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch("http://localhost:8000/auth/admin/users", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to fetch users");
+      }
+
+      setUsers(Array.isArray(data.users) ? data.users : []);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to fetch users",
+      );
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch("http://localhost:8000/auth/find/users", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Unable to fetch users");
-        }
-
-        setUsers(Array.isArray(data.users) ? data.users : []);
-      } catch (fetchError) {
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Unable to fetch users",
-        );
-        setUsers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
 
   const handleAddUser = () => {
-    console.log("Add new user");
-    // Implement add user modal/logic
+    setSuccessMessage("");
+    setError("");
+    setNewUserForm(INITIAL_FORM_STATE);
+    setIsCreateModalOpen(true);
   };
 
   const handleEditUser = (userId) => {
     console.log("Edit user:", userId);
-    // Implement edit user logic
   };
 
-  const handleDeleteUser = (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      setUsers((currentUsers) =>
-        currentUsers.filter((user) => user.UserNumber !== userId),
+  const handleDeleteUser = async (userId) => {
+    const confirmed = window.confirm(
+      "Suspend this account now? It will be deleted automatically after 7 days.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        "http://localhost:8000/auth/admin/delete/user",
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ UserNumber: userId }),
+        },
       );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to suspend user");
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.UserNumber === userId
+            ? {
+                ...user,
+                status: data.user?.status || "suspended",
+                account_state: data.user?.account_state || "suspended",
+                expiresAt: data.user?.expiresAt,
+              }
+            : user,
+        ),
+      );
+
+      setSuccessMessage(
+        "User suspended successfully. The record will be deleted after 7 days.",
+      );
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to suspend user",
+      );
+    }
+  };
+
+  const handleRestoreUser = async (userId) => {
+    try {
+      setError("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        "http://localhost:8000/auth/recover/account",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ UserNumber: userId }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to restore user");
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.UserNumber === userId
+            ? {
+                ...user,
+                status: data.user?.status || "active",
+                account_state: data.user?.account_state || "approved",
+                expiresAt: null,
+              }
+            : user,
+        ),
+      );
+
+      setSuccessMessage("User account restored successfully.");
+    } catch (restoreError) {
+      setError(
+        restoreError instanceof Error
+          ? restoreError.message
+          : "Unable to restore user",
+      );
+    }
+  };
+
+  const handleCreateInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setNewUserForm((currentForm) => ({
+      ...currentForm,
+      [name]: value,
+    }));
+  };
+
+  const handleCreateUser = async (event) => {
+    event.preventDefault();
+
+    try {
+      setIsSubmitting(true);
+      setError("");
+      setSuccessMessage("");
+
+      const response = await fetch("http://localhost:8000/auth/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(newUserForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to create user");
+      }
+
+      setSuccessMessage(
+        `User created successfully. Default password: ${data.defaultPassword}`,
+      );
+      setIsCreateModalOpen(false);
+      setNewUserForm(INITIAL_FORM_STATE);
+      await fetchUsers();
+    } catch (createError) {
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Unable to create user",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -131,7 +283,7 @@ const UserManagement = () => {
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
           </select>
 
           <button className={styles.filterBtn}>
@@ -141,6 +293,9 @@ const UserManagement = () => {
         </div>
       </div>
 
+      {successMessage && (
+        <div className={styles.successBanner}>{successMessage}</div>
+      )}
       {error && <div className={styles.errorBanner}>{error}</div>}
 
       <div className={styles.usersTableContainer}>
@@ -215,10 +370,19 @@ const UserManagement = () => {
                       <button
                         className={`${styles.iconBtn} ${styles.delete}`}
                         onClick={() => handleDeleteUser(user.UserNumber)}
-                        data-tooltip="Delete user"
+                        data-tooltip="Suspend user"
                       >
                         <Trash2 size={16} />
                       </button>
+                      {user.status?.toLowerCase() === "suspended" && (
+                        <button
+                          className={`${styles.iconBtn} ${styles.restore}`}
+                          onClick={() => handleRestoreUser(user.UserNumber)}
+                          data-tooltip="Restore user"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      )}
                       <button
                         className={`${styles.iconBtn} ${styles.more}`}
                         data-tooltip="More options"
@@ -233,6 +397,107 @@ const UserManagement = () => {
           </table>
         )}
       </div>
+
+      {isCreateModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setIsCreateModalOpen(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Create User</h2>
+              <p>
+                Students get <strong>student123</strong>. Staff accounts
+                (`admin` and `trainer/trainee`) get <strong>staff123</strong>.
+              </p>
+            </div>
+
+            <form className={styles.createUserForm} onSubmit={handleCreateUser}>
+              <div className={styles.formGrid}>
+                <label className={styles.formField}>
+                  <span>Full Name</span>
+                  <input
+                    name="fullName"
+                    value={newUserForm.fullName}
+                    onChange={handleCreateInputChange}
+                    required
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>User Number</span>
+                  <input
+                    name="UserNumber"
+                    value={newUserForm.UserNumber}
+                    onChange={handleCreateInputChange}
+                    required
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Role</span>
+                  <select
+                    name="role"
+                    value={newUserForm.role}
+                    onChange={handleCreateInputChange}
+                  >
+                    <option value="student">Student</option>
+                    <option value="trainer">Trainer / Trainee</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Year of Study</span>
+                  <input
+                    name="yearOfStudy"
+                    type="number"
+                    min="1"
+                    value={newUserForm.yearOfStudy}
+                    onChange={handleCreateInputChange}
+                    disabled={newUserForm.role !== "student"}
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Department</span>
+                  <input
+                    name="department"
+                    value={newUserForm.department}
+                    onChange={handleCreateInputChange}
+                  />
+                </label>
+
+                <label className={styles.formField}>
+                  <span>Programme</span>
+                  <input
+                    name="programme"
+                    value={newUserForm.programme}
+                    onChange={handleCreateInputChange}
+                  />
+                </label>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={() => setIsCreateModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.primaryBtn}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating..." : "Create User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -13,9 +13,6 @@ export function Dashboard({ children }) {
       let res = await fetch("http://localhost:8000/auth/user/check/logged", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user: JSON.parse(localStorage.getItem("cbet_user"))?.user,
-        }),
         credentials: "include",
       });
       let studentInfo = await res.json();

@@ -57,7 +57,7 @@ class LoginFlow {
         //
         let AccessToken = generateAccessToken(req);
         // duration for refresh token
-        const duration = 7 * 24 * 60 * 60 * 1000;
+        // const duration = 7 * 24 * 60 * 60 * 1000;
         // duration for access token
         const duration2 = 60 * 1000 * 15;
 
@@ -90,7 +90,7 @@ class LoginFlow {
 
         res.cookie("user_1UA_XG", UserNumber, {
           httpOnly: true,
-          maxAge: duration,
+          maxAge: duration2,
           secure: true,
           sameSite: "none",
         });
@@ -98,7 +98,7 @@ class LoginFlow {
         // sending refresh token as cookie
         res.cookie("CBET_3ga_auth_RefreshToken", RefreshTokenAccess, {
           httpOnly: true,
-          maxAge: duration,
+          maxAge: duration2,
           secure: true,
           sameSite: "none",
         });
@@ -106,7 +106,7 @@ class LoginFlow {
         // sending device Id as cookie
         res.cookie("Host_AU1_Auth_2Wa__DeviceId", DeviceId, {
           httpOnly: true,
-          maxAge: duration,
+          maxAge: duration2,
           secure: true,
           sameSite: "none",
         });

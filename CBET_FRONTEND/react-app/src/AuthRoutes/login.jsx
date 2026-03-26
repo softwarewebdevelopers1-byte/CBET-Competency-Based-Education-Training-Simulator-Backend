@@ -113,7 +113,7 @@ export function LoginRoute() {
         </form>
 
         <div className={styles.links}>
-          <Link to="/signup">Create an account</Link>
+          {/* <Link to="/signup">Create an account</Link> */}
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
 

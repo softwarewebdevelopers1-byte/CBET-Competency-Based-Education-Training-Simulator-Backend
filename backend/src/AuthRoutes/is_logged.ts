@@ -31,6 +31,7 @@ IsLoggedRoute.post("/", async (req: Request, res: Response): Promise<void> => {
         res.status(200).json({
           message: "User is logged in",
           role: existingUser.role,
+          fullName: existingUser.fullName,
           userNumber: existingUser.UserNumber,
           isLoggedIn: true,
         });

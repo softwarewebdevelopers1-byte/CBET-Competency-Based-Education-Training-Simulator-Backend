@@ -169,6 +169,38 @@
   transform: translateY(-1px);
 }
 
+.secondaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #dbe4f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryBtn:hover {
+  background: #eef4fb;
+  border-color: #94a3b8;
+}
+
+.successBanner {
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .errorBanner {
   margin-bottom: 1rem;
   padding: 0.875rem 1rem;
@@ -316,6 +348,11 @@
   color: #f59e0b;
 }
 
+.statusBadge.suspended {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
 /* Action Buttons */
 .actionButtons {
   display: flex;
@@ -358,6 +395,15 @@
 
 .iconBtn.more:hover {
   background: rgba(100, 116, 139, 0.1);
+  transform: scale(1.1);
+}
+
+.iconBtn.restore {
+  color: #059669;
+}
+
+.iconBtn.restore:hover {
+  background: rgba(16, 185, 129, 0.12);
   transform: scale(1.1);
 }
 
@@ -447,6 +493,18 @@
     width: 100%;
   }
 
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalActions button {
+    width: 100%;
+  }
+
   .usersTable th,
   .usersTable td {
     padding: 0.75rem 1rem;
@@ -519,6 +577,12 @@
     background: #1e293b;
   }
 
+  .successBanner {
+    background: rgba(6, 95, 70, 0.24);
+    border-color: rgba(52, 211, 153, 0.28);
+    color: #a7f3d0;
+  }
+
   .errorBanner {
     background: rgba(127, 29, 29, 0.25);
     border-color: rgba(248, 113, 113, 0.3);
@@ -558,6 +622,41 @@
   .emptyState {
     color: #94a3b8;
   }
+
+  .secondaryBtn,
+  .modal {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+
+  .secondaryBtn {
+    border-color: #334155;
+  }
+
+  .modalHeader {
+    border-bottom-color: #334155;
+  }
+
+  .modalHeader h2 {
+    color: #f1f5f9;
+  }
+
+  .modalHeader p,
+  .formField span {
+    color: #94a3b8;
+  }
+
+  .formField input,
+  .formField select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .formField input:focus,
+  .formField select:focus {
+    background: #111827;
+  }
 }
 
 /* Animations */
@@ -592,4 +691,88 @@
   white-space: nowrap;
   margin-bottom: 0.5rem;
   z-index: 1000;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1200;
+}
+
+.modal {
+  width: min(100%, 760px);
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+}
+
+.modalHeader {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modalHeader h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.modalHeader p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.createUserForm {
+  padding: 1.5rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.formField span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.formField input,
+.formField select {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 0.6rem;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.formField input:focus,
+.formField select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  background: #ffffff;
+}
+
+.modalActions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
