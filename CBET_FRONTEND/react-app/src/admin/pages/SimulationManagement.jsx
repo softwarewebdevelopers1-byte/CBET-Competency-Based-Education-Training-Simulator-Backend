@@ -104,7 +104,12 @@ const SimulationManagement = () => {
   return (
     <div className={styles.simulationManagement}>
       <div className={styles.pageHeader}>
-        <h1>Simulation Management</h1>
+        <div className={styles.titleBlock}>
+          <h1 className={styles.pageTitle}>Simulation Management</h1>
+          <p className={styles.pageDescription}>
+            Track, update, and launch practical training simulations.
+          </p>
+        </div>
         <div className={styles.headerActions}>
           <button className={styles.secondaryBtn} onClick={handleFilter}>
             <Filter size={20} />

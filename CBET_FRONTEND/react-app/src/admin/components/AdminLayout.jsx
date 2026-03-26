@@ -7,6 +7,14 @@ import styles from "../styles/AdminLayout.module.css";
 const AdminLayout = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Start collapsed on mobile
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const mainContentClassName = [
+    styles.mainContent,
+    !isMobile && sidebarCollapsed ? styles.desktopCollapsed : "",
+    !isMobile && !sidebarCollapsed ? styles.desktopExpanded : "",
+    !sidebarCollapsed && isMobile ? styles.sidebarOpen : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   // Check screen size on resize
   useEffect(() => {
@@ -47,15 +55,15 @@ const AdminLayout = ({ children }) => {
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
       />
-      <div
-        className={`${styles.mainContent} ${!sidebarCollapsed && isMobile ? styles.sidebarOpen : ""}`}
-      >
+      <div className={mainContentClassName}>
         <Header
           onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           sidebarCollapsed={sidebarCollapsed}
           isMobile={isMobile}
         />
-        <div className={styles.contentWrapper}>{children}</div>
+        <div className={styles.contentWrapper}>
+          <div className={styles.pageSurface}>{children}</div>
+        </div>
       </div>
     </div>
   );

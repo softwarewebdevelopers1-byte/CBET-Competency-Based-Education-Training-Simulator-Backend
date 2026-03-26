@@ -15,7 +15,7 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react";
-import styles from "../styles/sidebar.module.css";
+import styles from "../styles/Sidebar.module.css";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [

@@ -95,7 +95,12 @@ const UserManagement = () => {
   return (
     <div className={styles.userManagement}>
       <div className={styles.pageHeader}>
-        <h1>User Management</h1>
+        <div className={styles.titleBlock}>
+          <h1 className={styles.pageTitle}>User Management</h1>
+          <p className={styles.pageDescription}>
+            Manage learners, trainers, and administrators from one place.
+          </p>
+        </div>
         <button className={styles.primaryBtn} onClick={handleAddUser}>
           <Plus size={20} />
           Add New User

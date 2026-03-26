@@ -14,17 +14,28 @@
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dbe4f0;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
 .pageHeader h1 {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #0f172a !important ;
   margin: 0;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  letter-spacing: -0.02em;
+}
+
+.titleBlock p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
 }
 
 .headerActions {
@@ -379,6 +390,10 @@
     font-size: 1.5rem;
   }
 
+  .titleBlock p {
+    font-size: 0.875rem;
+  }
+
   .headerActions {
     width: 100%;
     flex-direction: column;
@@ -421,9 +436,15 @@
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   .pageHeader h1 {
-    background: linear-gradient(135deg, #f1f5f9, #cbd5e1);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: #f1f5f9;
+  }
+
+  .pageHeader {
+    border-bottom-color: #334155;
+  }
+
+  .titleBlock p {
+    color: #94a3b8;
   }
 
   .simulationCard {
