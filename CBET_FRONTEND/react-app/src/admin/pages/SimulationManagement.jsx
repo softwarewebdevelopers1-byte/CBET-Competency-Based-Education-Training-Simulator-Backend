@@ -1,9 +1,19 @@
 // pages/SimulationManagement.jsx
 import React, { useState } from "react";
-import { Plus, Play, Edit2, Copy, Trash2, Eye, Filter } from "lucide-react";
+import {
+  Plus,
+  Play,
+  Edit2,
+  Copy,
+  Trash2,
+  Eye,
+  Filter,
+  Gamepad2,
+} from "lucide-react";
+import styles from "../styles/simulationManagement.module.css";
 
 const SimulationManagement = () => {
-  const [simulations] = useState([
+  const [simulations, setSimulations] = useState([
     {
       id: 1,
       title: "Electrical Installation Safety",
@@ -42,74 +52,168 @@ const SimulationManagement = () => {
     },
   ]);
 
+  const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState("all");
+
+  const handleCreateSimulation = () => {
+    console.log("Create new simulation");
+    // Implement create simulation modal/logic
+  };
+
+  const handleEditSimulation = (id) => {
+    console.log("Edit simulation:", id);
+    // Implement edit logic
+  };
+
+  const handleDuplicateSimulation = (id) => {
+    console.log("Duplicate simulation:", id);
+    const simulationToDuplicate = simulations.find((sim) => sim.id === id);
+    if (simulationToDuplicate) {
+      const newSimulation = {
+        ...simulationToDuplicate,
+        id: Date.now(),
+        title: `${simulationToDuplicate.title} (Copy)`,
+        status: "Draft",
+        lastUpdated: "Just now",
+      };
+      setSimulations([...simulations, newSimulation]);
+    }
+  };
+
+  const handleDeleteSimulation = (id) => {
+    if (window.confirm("Are you sure you want to delete this simulation?")) {
+      setSimulations(simulations.filter((sim) => sim.id !== id));
+    }
+  };
+
+  const handlePreviewSimulation = (id) => {
+    console.log("Preview simulation:", id);
+    // Implement preview logic
+  };
+
+  const handleFilter = () => {
+    console.log("Open filter options");
+    // Implement filter modal
+  };
+
+  const filteredSimulations =
+    filterType === "all"
+      ? simulations
+      : simulations.filter((sim) => sim.type.toLowerCase() === filterType);
+
   return (
-    <div className="simulation-management">
-      <div className="page-header">
+    <div className={styles.simulationManagement}>
+      <div className={styles.pageHeader}>
         <h1>Simulation Management</h1>
-        <div className="header-actions">
-          <button className="secondary-btn">
+        <div className={styles.headerActions}>
+          <button className={styles.secondaryBtn} onClick={handleFilter}>
             <Filter size={20} />
             Filter
           </button>
-          <button className="primary-btn">
+          <button
+            className={styles.primaryBtn}
+            onClick={handleCreateSimulation}
+          >
             <Plus size={20} />
             Create Simulation
           </button>
         </div>
       </div>
 
-      <div className="simulations-grid">
-        {simulations.map((sim) => (
-          <div key={sim.id} className="simulation-card">
-            <div className="card-header">
-              <span className={`sim-type ${sim.type.toLowerCase()}`}>
-                {sim.type}
-              </span>
-              <span className={`sim-status ${sim.status.toLowerCase()}`}>
-                {sim.status}
-              </span>
-            </div>
-
-            <h3>{sim.title}</h3>
-
-            <div className="sim-stats">
-              <div className="stat">
-                <span className="stat-label">Participants</span>
-                <span className="stat-value">{sim.participants}</span>
+      {loading ? (
+        <div className={styles.loadingState}>
+          <div className={styles.spinner}></div>
+          <p>Loading simulations...</p>
+        </div>
+      ) : filteredSimulations.length === 0 ? (
+        <div className={styles.emptyState}>
+          <Gamepad2 size={80} />
+          <h3>No simulations found</h3>
+          <p>Create your first simulation to get started</p>
+          <button
+            className={styles.primaryBtn}
+            onClick={handleCreateSimulation}
+          >
+            <Plus size={20} />
+            Create Simulation
+          </button>
+        </div>
+      ) : (
+        <div className={styles.simulationsGrid}>
+          {filteredSimulations.map((sim) => (
+            <div key={sim.id} className={styles.simulationCard}>
+              <div className={styles.cardHeader}>
+                <span
+                  className={`${styles.simType} ${styles[sim.type.toLowerCase().replace(" ", "")]}`}
+                >
+                  {sim.type}
+                </span>
+                <span
+                  className={`${styles.simStatus} ${styles[sim.status.toLowerCase()]}`}
+                >
+                  {sim.status}
+                </span>
               </div>
-              <div className="stat">
-                <span className="stat-label">Completion</span>
-                <span className="stat-value">{sim.completion}</span>
+
+              <h3>{sim.title}</h3>
+
+              <div className={styles.simStats}>
+                <div className={styles.stat}>
+                  <span className={styles.statLabel}>Participants</span>
+                  <span className={styles.statValue}>{sim.participants}</span>
+                </div>
+                <div className={styles.stat}>
+                  <span className={styles.statLabel}>Completion</span>
+                  <span className={styles.statValue}>{sim.completion}</span>
+                </div>
+              </div>
+
+              <div className={styles.progressBar}>
+                <div
+                  className={styles.progressFill}
+                  style={{ width: sim.completion }}
+                ></div>
+              </div>
+
+              <div className={styles.cardFooter}>
+                <span className={styles.lastUpdated}>
+                  Updated {sim.lastUpdated}
+                </span>
+                <div className={styles.cardActions}>
+                  <button
+                    className={styles.iconBtn}
+                    title="Preview"
+                    onClick={() => handlePreviewSimulation(sim.id)}
+                  >
+                    <Eye size={16} />
+                  </button>
+                  <button
+                    className={styles.iconBtn}
+                    title="Edit"
+                    onClick={() => handleEditSimulation(sim.id)}
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    className={styles.iconBtn}
+                    title="Duplicate"
+                    onClick={() => handleDuplicateSimulation(sim.id)}
+                  >
+                    <Copy size={16} />
+                  </button>
+                  <button
+                    className={styles.iconBtn}
+                    title="Delete"
+                    onClick={() => handleDeleteSimulation(sim.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </div>
-
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: sim.completion }}
-              ></div>
-            </div>
-
-            <div className="card-footer">
-              <span className="last-updated">Updated {sim.lastUpdated}</span>
-              <div className="card-actions">
-                <button className="icon-btn" title="Preview">
-                  <Eye size={16} />
-                </button>
-                <button className="icon-btn" title="Edit">
-                  <Edit2 size={16} />
-                </button>
-                <button className="icon-btn" title="Duplicate">
-                  <Copy size={16} />
-                </button>
-                <button className="icon-btn" title="Delete">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

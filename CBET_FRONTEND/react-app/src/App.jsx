@@ -13,6 +13,9 @@ import { MyPortfolio } from "./Dashboard/myPortifolio.jsx";
 import { InteractiveScenario } from "./Dashboard/interactivepage.jsx";
 import { AssessmentsPage } from "./Dashboard/assesment.jsx";
 import { AuthRoutes } from "./AuthRoutes/combine.auth.jsx";
+import AdminDashboard from "./admin/pages/Dashboard.jsx";
+import UserManagement from "./admin/pages/UserManagement.jsx";
+import SimulationManagement from "./admin/pages/SimulationManagement.jsx";
 
 function App() {
   return (
@@ -68,7 +71,30 @@ function App() {
           }
         />
         {/* admin dashboard */}
-        <Route path="/admin" element={<AdminLayout />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminLayout>
+              <UserManagement />
+            </AdminLayout>
+          }
+        />
+         <Route
+          path="/admin/simulations"
+          element={
+            <AdminLayout>
+              <SimulationManagement />
+            </AdminLayout>
+          }
+        />
         <Route
           path="/login"
           element={

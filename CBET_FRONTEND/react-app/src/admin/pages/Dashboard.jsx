@@ -8,8 +8,9 @@ import {
   Award,
   Clock,
 } from "lucide-react";
+import styles from "../styles/dashboard.module.css";
 
-const Dashboard = () => {
+const AdminDashboard = () => {
   const stats = [
     {
       icon: Users,
@@ -68,11 +69,16 @@ const Dashboard = () => {
     },
   ];
 
+  const handleQuickAction = (action) => {
+    console.log(`Quick action: ${action}`);
+    // Add navigation or modal logic here
+  };
+
   return (
-    <div className="dashboard">
-      <div className="page-header">
+    <div className={styles.dashboard}>
+      <div className={styles.pageHeader}>
         <h1>Dashboard</h1>
-        <div className="date-range">
+        <div className={styles.dateRange}>
           <select defaultValue="today">
             <option value="today">Today</option>
             <option value="week">This Week</option>
@@ -82,46 +88,50 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="stats-grid">
+      <div className={styles.statsGrid}>
         {stats.map((stat, index) => (
-          <div key={index} className={`stat-card ${stat.color}`}>
-            <div className="stat-icon">
+          <div
+            key={index}
+            className={`${styles.statCard} ${styles[stat.color]}`}
+          >
+            <div className={styles.statIcon}>
               <stat.icon size={24} />
             </div>
-            <div className="stat-details">
-              <span className="stat-label">{stat.label}</span>
-              <span className="stat-value">{stat.value}</span>
-              <span className="stat-change">{stat.change}</span>
+            <div className={styles.statDetails}>
+              <span className={styles.statLabel}>{stat.label}</span>
+              <span className={styles.statValue}>{stat.value}</span>
+              <span className={styles.statChange}>{stat.change}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="dashboard-grid">
-        <div className="chart-card">
+      <div className={styles.dashboardGrid}>
+        <div className={styles.chartCard}>
           <h3>User Activity</h3>
-          <div className="chart-placeholder">
-            {/* Chart component would go here */}
-            <div className="placeholder-content">
+          <div className={styles.chartPlaceholder}>
+            <div className={styles.placeholderContent}>
               <TrendingUp size={48} />
               <p>Activity chart visualization</p>
             </div>
           </div>
         </div>
 
-        <div className="recent-activities">
+        <div className={styles.recentActivities}>
           <h3>Recent Activities</h3>
-          <div className="activity-list">
+          <div className={styles.activityList}>
             {recentActivities.map((activity, index) => (
-              <div key={index} className="activity-item">
-                <div className={`activity-icon ${activity.type}`}>
+              <div key={index} className={styles.activityItem}>
+                <div
+                  className={`${styles.activityIcon} ${styles[activity.type]}`}
+                >
                   <Clock size={16} />
                 </div>
-                <div className="activity-details">
+                <div className={styles.activityDetails}>
                   <p>
                     <strong>{activity.user}</strong> {activity.action}
                   </p>
-                  <span className="activity-time">{activity.time}</span>
+                  <span className={styles.activityTime}>{activity.time}</span>
                 </div>
               </div>
             ))}
@@ -129,17 +139,37 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="quick-actions">
+      <div className={styles.quickActions}>
         <h3>Quick Actions</h3>
-        <div className="action-buttons">
-          <button className="action-btn">Create Simulation</button>
-          <button className="action-btn">Upload Materials</button>
-          <button className="action-btn">Generate Assessment</button>
-          <button className="action-btn">Review Portfolios</button>
+        <div className={styles.actionButtons}>
+          <button
+            className={styles.actionBtn}
+            onClick={() => handleQuickAction("Create Simulation")}
+          >
+            Create Simulation
+          </button>
+          <button
+            className={styles.actionBtn}
+            onClick={() => handleQuickAction("Upload Materials")}
+          >
+            Upload Materials
+          </button>
+          <button
+            className={styles.actionBtn}
+            onClick={() => handleQuickAction("Generate Assessment")}
+          >
+            Generate Assessment
+          </button>
+          <button
+            className={styles.actionBtn}
+            onClick={() => handleQuickAction("Review Portfolios")}
+          >
+            Review Portfolios
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default AdminDashboard;

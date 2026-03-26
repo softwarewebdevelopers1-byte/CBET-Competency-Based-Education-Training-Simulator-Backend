@@ -1,5 +1,5 @@
 // components/Sidebar.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -30,51 +30,88 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     { path: "/admin/settings", icon: Settings, label: "Settings" },
   ];
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("cbet_user");
+    window.location.href = "/login";
+  };
+
+  // Close sidebar when clicking a link on mobile
+  const handleNavClick = () => {
+    if (window.innerWidth <= 768) {
+      setCollapsed(true);
+    }
+  };
+
+  // Prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (!collapsed && window.innerWidth <= 768) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [collapsed]);
+
   return (
-    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
-      <div className={styles["sidebar-header"]}>
-        <div className={styles.logo}>
-          {!collapsed && <span className={styles["logo-text"]}>CBET Simulator</span>}
-          {collapsed && <span className={styles["logo-icon"]}>C</span>}
-        </div>
-        <button
-          className={styles["collapse-btn"]}
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {!collapsed && window.innerWidth <= 768 && (
+        <div
+          className={styles.mobileOverlay}
+          onClick={() => setCollapsed(true)}
+        />
+      )}
 
-      <nav className={styles["sidebar-nav"]}>
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => 
-              `${styles["nav-item"]} ${isActive ? styles.active : ""}`
-            }
-            data-tooltip={collapsed ? item.label : undefined}
+      <aside
+        className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}
+      >
+        <div className={styles.sidebarHeader}>
+          <div className={styles.logo}>
+            <span className={styles.logoText}>CBET Simulator</span>
+            <span className={styles.logoIcon}>C</span>
+          </div>
+          <button
+            className={styles.collapseBtn}
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <item.icon size={20} />
-            {!collapsed && <span className={styles["nav-label"]}>{item.label}</span>}
-          </NavLink>
-        ))}
-      </nav>
+            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        </div>
 
-      <div className={styles["sidebar-footer"]}>
-        <button 
-          className={`${styles["nav-item"]} ${styles["logout-btn"]}`}
-          onClick={() => {
-            // Handle logout logic
-            console.log("Logout clicked");
-          }}
-          data-tooltip={collapsed ? "Logout" : undefined}
-        >
-          <LogOut size={20} />
-          {!collapsed && <span className={styles["nav-label"]}>Logout</span>}
-        </button>
-      </div>
-    </aside>
+        <nav className={styles.sidebarNav}>
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `${styles.navItem} ${isActive ? styles.active : ""}`
+              }
+              data-tooltip={item.label}
+              onClick={handleNavClick}
+            >
+              <item.icon size={20} />
+              <span className={styles.navLabel}>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className={styles.sidebarFooter}>
+          <button
+            className={`${styles.navItem} ${styles.logoutBtn}`}
+            onClick={handleLogout}
+            data-tooltip="Logout"
+          >
+            <LogOut size={20} />
+            <span className={styles.navLabel}>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 };
 

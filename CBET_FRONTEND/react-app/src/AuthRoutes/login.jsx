@@ -43,7 +43,7 @@ export function LoginRoute() {
         localStorage.setItem("cbet_user", JSON.stringify(data));
         navigate("/dashboard");
       } else if (data.role === "admin") {
-        navigate("/admin");
+        navigate("/admin/dashboard");
       } else {
         setError(data.message || "Invalid credentials");
       }

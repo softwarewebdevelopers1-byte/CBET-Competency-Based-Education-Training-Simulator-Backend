@@ -1,64 +1,61 @@
 // components/AdminLayout.jsx
 import React, { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar.jsx";
 import Header from "./Header.jsx";
 import styles from "../styles/AdminLayout.module.css";
 
-const AdminLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const location = useLocation();
+const AdminLayout = ({ children }) => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Start collapsed on mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Check if screen is mobile
+  // Check screen size on resize
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+
+      // On desktop, expand sidebar by default
+      if (!mobile) {
+        setSidebarCollapsed(false);
+      } else {
+        setSidebarCollapsed(true);
+      }
     };
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
+    handleResize(); // Call on mount
+    window.addEventListener("resize", handleResize);
 
-    return () => window.removeEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Close mobile sidebar on route change
+  // Handle body scroll when sidebar opens on mobile
   useEffect(() => {
-    if (isMobile) {
-      setMobileSidebarOpen(false);
-    }
-  }, [location, isMobile]);
-
-  // Handle sidebar toggle for mobile
-  const handleSidebarToggle = () => {
-    if (isMobile) {
-      setMobileSidebarOpen(!mobileSidebarOpen);
+    if (!sidebarCollapsed && isMobile) {
+      document.body.style.overflow = "hidden";
     } else {
-      setSidebarCollapsed(!sidebarCollapsed);
+      document.body.style.overflow = "unset";
     }
-  };
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [sidebarCollapsed, isMobile]);
 
   return (
-    <div
-      className={`${styles.adminLayout} ${mobileSidebarOpen ? styles.mobileSidebarOpen : ""}`}
-    >
+    <div className={styles.adminLayout}>
       <Sidebar
-        collapsed={isMobile ? !mobileSidebarOpen : sidebarCollapsed}
-        setCollapsed={handleSidebarToggle}
-        isMobile={isMobile}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
       />
       <div
-        className={`${styles.mainContent} ${!isMobile && sidebarCollapsed ? styles.expanded : ""}`}
+        className={`${styles.mainContent} ${!sidebarCollapsed && isMobile ? styles.sidebarOpen : ""}`}
       >
         <Header
-          onMenuClick={handleSidebarToggle}
-          isMobile={isMobile}
+          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           sidebarCollapsed={sidebarCollapsed}
+          isMobile={isMobile}
         />
-        <div className={styles.contentWrapper}>
-          <Outlet />
-        </div>
+        <div className={styles.contentWrapper}>{children}</div>
       </div>
     </div>
   );

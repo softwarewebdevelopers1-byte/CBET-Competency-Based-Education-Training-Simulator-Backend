@@ -5,6 +5,7 @@ export let CourseContext = createContext();
 
 export function Dashboard({ children }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [role, resetRole] = useState("");
   const [courses, setCourses] = useState({});
   let location = useNavigate();
   useEffect(() => {
@@ -23,6 +24,7 @@ export function Dashboard({ children }) {
         location("/login");
       }
       if ((res.ok, studentInfo.role === "student")) {
+        resetRole(studentInfo.role);
         location("/dashboard");
         const res = await fetch(
           "http://localhost:8000/auth/admin/upload/courses/my/courses",
@@ -40,7 +42,11 @@ export function Dashboard({ children }) {
 
   return (
     <div className="dashboard">
-      <Sidebar collapsed={collapsed} coursesInfo={courses} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar
+        collapsed={collapsed}
+        coursesInfo={courses}
+        onToggle={() => setCollapsed((c) => !c)}
+      />
 
       <div
         className="dashboard-content"

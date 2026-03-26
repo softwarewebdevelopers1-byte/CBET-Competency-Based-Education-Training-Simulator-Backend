@@ -1,0 +1,383 @@
+/* styles/header.module.css */
+
+/* Header Container */
+.adminHeader {
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+  padding: 0 2rem;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  transition: all 0.3s ease;
+}
+
+/* Search Section */
+.headerSearch {
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.headerSearch input {
+  width: 100%;
+  padding: 0.625rem 1rem 0.625rem 2.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.headerSearch input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.headerSearch input::placeholder {
+  color: #94a3b8;
+}
+
+.headerSearch:hover .searchIcon {
+  color: #3b82f6;
+}
+
+/* Header Actions */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Notification Button */
+.notificationBtn {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: #64748b;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notificationBtn:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+  transform: translateY(-2px);
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: pulse 2s infinite;
+}
+
+/* User Profile */
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.userProfile:hover {
+  background: #f1f5f9;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: transform 0.2s;
+}
+
+.userProfile:hover .userAvatar {
+  transform: scale(1.05);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.userName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .adminHeader {
+    padding: 0 1rem;
+    height: 60px;
+  }
+
+  .headerSearch {
+    max-width: 200px;
+  }
+
+  .headerSearch input {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem 0.5rem 2rem;
+  }
+
+  .searchIcon {
+    left: 0.75rem;
+    width: 16px;
+    height: 16px;
+  }
+
+  .headerActions {
+    gap: 0.75rem;
+  }
+
+  .userInfo {
+    display: none;
+  }
+
+  .userAvatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .notificationBtn {
+    padding: 0.375rem;
+  }
+
+  .badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 0.5rem;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .adminHeader {
+    padding: 0 1.5rem;
+  }
+
+  .headerSearch {
+    max-width: 300px;
+  }
+
+  .userInfo {
+    display: flex;
+  }
+
+  .userName {
+    font-size: 0.8125rem;
+  }
+
+  .userRole {
+    font-size: 0.6875rem;
+  }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+  .adminHeader {
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid #334155;
+  }
+
+  .headerSearch input {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .headerSearch input:focus {
+    border-color: #3b82f6;
+    background: #0f172a;
+  }
+
+  .headerSearch input::placeholder {
+    color: #64748b;
+  }
+
+  .searchIcon {
+    color: #64748b;
+  }
+
+  .notificationBtn {
+    color: #94a3b8;
+  }
+
+  .notificationBtn:hover {
+    background: #1e293b;
+    color: #60a5fa;
+  }
+
+  .userName {
+    color: #f1f5f9;
+  }
+
+  .userRole {
+    color: #94a3b8;
+  }
+
+  .userProfile:hover {
+    background: #1e293b;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Dropdown Menu (Optional - for when clicking user profile) */
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 200px;
+  z-index: 100;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+
+.userDropdownItem {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #1e293b;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.userDropdownItem:hover {
+  background: #f1f5f9;
+}
+
+.userDropdownItem.danger {
+  color: #ef4444;
+}
+
+.userDropdownItem.danger:hover {
+  background: #fee2e2;
+}
+
+.divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0.5rem 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Mobile Menu Button */
+.menuButton {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: #64748b;
+  transition: all 0.2s;
+  margin-right: 0.5rem;
+}
+
+.menuButton:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+@media (max-width: 768px) {
+  .menuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .headerSearch {
+    max-width: none;
+    flex: 1;
+  }
+}
+
+.dropdownIcon {
+  transition: transform 0.2s;
+  color: #94a3b8;
+}
+
+.userProfile:hover .dropdownIcon {
+  transform: rotate(180deg);
+}
