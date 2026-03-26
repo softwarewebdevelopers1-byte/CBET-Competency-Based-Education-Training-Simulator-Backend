@@ -17,10 +17,12 @@ export function Dashboard({ children }) {
         }),
         credentials: "include",
       });
+      let studentInfo = await res.json();
+
       if (!res.ok) {
         location("/login");
       }
-      if (res.ok) {
+      if ((res.ok, studentInfo.role === "student")) {
         location("/dashboard");
         const res = await fetch(
           "http://localhost:8000/auth/admin/upload/courses/my/courses",

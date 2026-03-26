@@ -28,13 +28,13 @@ IsLoggedRoute.post("/", async (req: Request, res: Response): Promise<void> => {
           res.status(401).json({ message: "Unauthorized" });
           return;
         }
+        res.status(200).json({
+          message: "User is logged in",
+          role: existingUser.role,
+          isLoggedIn: true,
+        });
       },
     );
-
-    res.status(200).json({
-      message: "User is logged in",
-      isLoggedIn: true,
-    });
   } catch (error) {
     res.status(401).json({
       message: "Session expired",
