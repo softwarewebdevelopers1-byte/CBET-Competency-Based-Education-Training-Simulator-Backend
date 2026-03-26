@@ -3,6 +3,7 @@ import type { Model } from "mongoose";
 // INTERFACE FOR USER
 interface User {
   fullName: string;
+  yearOfStudy?: number;
   UserNumber: string;
   department: string;
   programme: string;
@@ -28,13 +29,14 @@ interface OTP {
 //  USER SCHEMA
 const userSchema = new mongoose.Schema<User>({
   fullName: String,
+  yearOfStudy: { type: Number, default: 1 },
   UserNumber: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   department: String,
   programme: String,
-  role: { type: String, default: "Student" },
-  status: { type: String, default: "Active" },
-  account_state: { type: String, default: "Active" },
+  role: { type: String, default: "student" },
+  status: { type: String, default: "active" },
+  account_state: { type: String, default: "active" },
   expiresAt: { type: Date },
 });
 userSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

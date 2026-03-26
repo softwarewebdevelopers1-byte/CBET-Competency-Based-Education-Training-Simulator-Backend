@@ -60,7 +60,13 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
         }
         // getting active courses
         let [userCourses] = await Courses.aggregate([
-          { $match: { courseTitle: existingUser.programme, status: "active" } },
+          {
+            $match: {
+              courseTitle: existingUser.programme,
+              status: "active",
+              yearOfStudy: existingUser.yearOfStudy,
+            },
+          },
           {
             $facet: {
               data: [{ $limit: 5 }],
@@ -68,13 +74,27 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
             },
           },
         ]);
-
+        let [completedCourses] = await Courses.aggregate([
+          {
+            $match: {
+              courseTitle: existingUser.programme,
+              yearOfStudy: { $lt: existingUser.yearOfStudy },
+            },
+          },
+          {
+            $facet: {
+              // data: [{ $limit: 5 }],
+              totalCount: [{ $count: "count" }],
+            },
+          },
+        ]);
         // courseTitle: existingUser.programme,
 
         return res.status(200).json({
           success: true,
           courses: userCourses.data,
           count: userCourses.totalCount,
+          completedCourses: completedCourses.totalCount,
         });
       },
     );

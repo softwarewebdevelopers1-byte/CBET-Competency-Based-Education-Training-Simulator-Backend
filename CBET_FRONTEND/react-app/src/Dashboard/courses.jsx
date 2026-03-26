@@ -36,7 +36,6 @@ export function MyCourses() {
 
   const navigate = useNavigate();
   let data = useContext(CourseContext);
-
   useEffect(() => {
     async function GetData() {
       try {

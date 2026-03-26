@@ -64,15 +64,33 @@ export function Homepage() {
       return 0;
     }
   };
+  function getCompletedCourses() {
+    try {
+      if (
+        coursesCount &&
+        coursesCount.count &&
+        Array.isArray(coursesCount.count)
+      ) {
+        return coursesCount.count.length > 0
+          ? coursesCount.completedCourses[0].count
+          : 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error("CBET error happenned", error);
+      return 0;
+    }
+  }
 
   useEffect(() => {
     const counts = getCourseCount();
+    const completedCourses = getCompletedCourses();
 
     // Simulate loading data
     const timer = setTimeout(() => {
       setStats({
         coursesInProgress: counts,
-        completedCourses: 8,
+        completedCourses: completedCourses,
         pendingAssessments: 2,
         averageScore: 85,
         totalPoints: 1250,

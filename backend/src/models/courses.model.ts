@@ -1,12 +1,23 @@
 import mongoose, { Model } from "mongoose";
 interface CoursesInterface {
+  yearOfStudy?: number;
   courseTitle: string;
   unitCode: string;
   unitName: string;
   department: string;
   status: string;
 }
+// interface CompletedCourses {
+//   owner: string;
+//   yearOfStudy: number;
+//   unitName: string;
+//   unitCode: string;
+// }
 let CourseSchema = new mongoose.Schema<CoursesInterface>({
+  yearOfStudy: {
+    type: Number,
+    default: 1,
+  },
   courseTitle: {
     type: String,
     required: true,
