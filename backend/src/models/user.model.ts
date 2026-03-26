@@ -5,7 +5,7 @@ interface User {
   fullName: string;
   yearOfStudy?: number;
   UserNumber: string;
-  department: string;
+  department?: string;
   programme: string;
   password: string;
   role: string;

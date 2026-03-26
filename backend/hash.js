@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt"
-const password = 'student123';
+const password = 'admin123';
 const saltRounds = 10;
 
 // Generate hash

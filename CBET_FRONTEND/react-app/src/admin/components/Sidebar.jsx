@@ -15,6 +15,7 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react";
+import styles from "../styles/sidebar.module.css";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
@@ -30,37 +31,47 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   ];
 
   return (
-    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        <div className="logo">
-          {!collapsed && <span className="logo-text">CBET Simulator</span>}
-          {collapsed && <span className="logo-icon">C</span>}
+    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+      <div className={styles["sidebar-header"]}>
+        <div className={styles.logo}>
+          {!collapsed && <span className={styles["logo-text"]}>CBET Simulator</span>}
+          {collapsed && <span className={styles["logo-icon"]}>C</span>}
         </div>
         <button
-          className="collapse-btn"
+          className={styles["collapse-btn"]}
           onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className={styles["sidebar-nav"]}>
         {menuItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+            className={({ isActive }) => 
+              `${styles["nav-item"]} ${isActive ? styles.active : ""}`
+            }
+            data-tooltip={collapsed ? item.label : undefined}
           >
             <item.icon size={20} />
-            {!collapsed && <span className="nav-label">{item.label}</span>}
+            {!collapsed && <span className={styles["nav-label"]}>{item.label}</span>}
           </NavLink>
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <button className="nav-item logout-btn">
+      <div className={styles["sidebar-footer"]}>
+        <button 
+          className={`${styles["nav-item"]} ${styles["logout-btn"]}`}
+          onClick={() => {
+            // Handle logout logic
+            console.log("Logout clicked");
+          }}
+          data-tooltip={collapsed ? "Logout" : undefined}
+        >
           <LogOut size={20} />
-          {!collapsed && <span className="nav-label">Logout</span>}
+          {!collapsed && <span className={styles["nav-label"]}>Logout</span>}
         </button>
       </div>
     </aside>

@@ -1,0 +1,167 @@
+/* components/AdminLayout.module.css */
+
+.adminLayout {
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
+  position: relative;
+}
+
+/* Main content area */
+.mainContent {
+  flex: 1;
+  margin-left: 280px; /* Width of expanded sidebar */
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* When sidebar is collapsed */
+.mainContent.expanded {
+  margin-left: 80px; /* Width of collapsed sidebar */
+}
+
+/* Content wrapper */
+.contentWrapper {
+  padding: 1.5rem 2rem;
+  flex: 1;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .mainContent {
+    margin-left: 80px;
+  }
+
+  .mainContent.expanded {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0;
+  }
+
+  .contentWrapper {
+    padding: 1rem;
+  }
+
+  /* Overlay for mobile when sidebar is open */
+  .adminLayout::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+
+  .adminLayout.mobileSidebarOpen::before {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page transition effect */
+.contentWrapper > * {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scrollbar styling for main content */
+.mainContent::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mainContent::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+.mainContent::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+.mainContent::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Loading state for content */
+.contentWrapper.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* Optional: Add a subtle gradient background for better visual appeal */
+.adminLayout {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Optional: Card-like appearance for main content */
+.mainContent {
+  background: #ffffff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Optional: Add a border radius to the main content */
+@media (min-width: 768px) {
+  .mainContent {
+    border-radius: 1rem 0 0 0;
+  }
+
+  .contentWrapper {
+    border-radius: 1rem;
+  }
+}
+
+/* Optional: Sticky header support */
+.mainContent {
+  overflow-y: auto;
+}
+
+/* Optional: Add padding adjustment for fixed header */
+.contentWrapper {
+  padding-top: calc(1.5rem + 70px); /* Adjust based on header height */
+}
+
+@media (max-width: 768px) {
+  .contentWrapper {
+    padding-top: calc(1rem + 70px);
+  }
+}

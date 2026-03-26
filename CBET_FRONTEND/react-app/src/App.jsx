@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { LoginRoute } from "./AuthRoutes/login.jsx";
+import AdminLayout from "./admin/components/AdminLayout.jsx";
 import { SignUpRoute } from "./AuthRoutes/signUp.jsx";
 import { LandingPage } from "./others/landingPage.jsx";
 import { Dashboard } from "./Dashboard/dashboard.jsx";
@@ -66,6 +67,8 @@ function App() {
             </Dashboard>
           }
         />
+        {/* admin dashboard */}
+        <Route path="/admin" element={<AdminLayout />} />
         <Route
           path="/login"
           element={

@@ -33,7 +33,7 @@ class LoginFlow {
       }
       let user = await User.findOne({
         UserNumber: UserNumber,
-        account_state: "active",
+        account_state: "approved",
       });
       if (!user) {
         res.status(401).json({
