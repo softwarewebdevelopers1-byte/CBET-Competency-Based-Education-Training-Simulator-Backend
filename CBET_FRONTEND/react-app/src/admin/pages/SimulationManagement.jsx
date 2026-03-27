@@ -1,105 +1,129 @@
-// pages/SimulationManagement.jsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Plus,
-  Play,
-  Edit2,
-  Copy,
-  Trash2,
+  Upload,
   Eye,
   Filter,
   Gamepad2,
+  RefreshCw,
 } from "lucide-react";
 import styles from "../styles/simulationManagement.module.css";
 
+const initialForm = {
+  courseTitle: "",
+  unitName: "",
+  unitCode: "",
+  assignedProgramme: "",
+  assignedDepartment: "",
+  yearOfStudy: 1,
+  questionCount: 8,
+  description: "",
+  instructions: "",
+  file: null,
+};
+
+const formatDate = (value) => {
+  if (!value) return "Just now";
+  return new Date(value).toLocaleString();
+};
+
 const SimulationManagement = () => {
-  const [simulations, setSimulations] = useState([
-    {
-      id: 1,
-      title: "Electrical Installation Safety",
-      type: "Technical",
-      participants: 45,
-      completion: "78%",
-      status: "Active",
-      lastUpdated: "2 days ago",
-    },
-    {
-      id: 2,
-      title: "Workplace Ethics Scenario",
-      type: "Ethical",
-      participants: 32,
-      completion: "92%",
-      status: "Active",
-      lastUpdated: "1 day ago",
-    },
-    {
-      id: 3,
-      title: "Plumbing System Design",
-      type: "Technical",
-      participants: 28,
-      completion: "45%",
-      status: "Draft",
-      lastUpdated: "5 days ago",
-    },
-    {
-      id: 4,
-      title: "Customer Service Excellence",
-      type: "Soft Skills",
-      participants: 56,
-      completion: "63%",
-      status: "Active",
-      lastUpdated: "3 hours ago",
-    },
-  ]);
-
-  const [loading, setLoading] = useState(false);
+  const [simulations, setSimulations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [filterType, setFilterType] = useState("all");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [formData, setFormData] = useState(initialForm);
 
-  const handleCreateSimulation = () => {
-    console.log("Create new simulation");
-    // Implement create simulation modal/logic
-  };
+  const loadSimulations = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+      const response = await fetch(
+        "http://localhost:8000/api/resources/upload/users/data/pdf/admin",
+        {
+          method: "GET",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
 
-  const handleEditSimulation = (id) => {
-    console.log("Edit simulation:", id);
-    // Implement edit logic
-  };
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load simulations");
+      }
 
-  const handleDuplicateSimulation = (id) => {
-    console.log("Duplicate simulation:", id);
-    const simulationToDuplicate = simulations.find((sim) => sim.id === id);
-    if (simulationToDuplicate) {
-      const newSimulation = {
-        ...simulationToDuplicate,
-        id: Date.now(),
-        title: `${simulationToDuplicate.title} (Copy)`,
-        status: "Draft",
-        lastUpdated: "Just now",
-      };
-      setSimulations([...simulations, newSimulation]);
+      setSimulations(data.simulations || []);
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to load simulations");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteSimulation = (id) => {
-    if (window.confirm("Are you sure you want to delete this simulation?")) {
-      setSimulations(simulations.filter((sim) => sim.id !== id));
+  useEffect(() => {
+    loadSimulations();
+  }, []);
+
+  const handleInputChange = (event) => {
+    const { name, value, files } = event.target;
+    setFormData((current) => ({
+      ...current,
+      [name]: files ? files[0] : value,
+    }));
+  };
+
+  const handleCreateSimulation = async (event) => {
+    event.preventDefault();
+    setUploading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          payload.append(key, value);
+        }
+      });
+
+      const response = await fetch(
+        "http://localhost:8000/api/resources/upload/users/data/pdf",
+        {
+          method: "POST",
+          credentials: "include",
+          body: payload,
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to create simulation");
+      }
+
+      setSuccessMessage(data.message || "Simulation generated successfully");
+      setFormData(initialForm);
+      setShowCreateForm(false);
+      await loadSimulations();
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to create simulation");
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handlePreviewSimulation = (id) => {
-    console.log("Preview simulation:", id);
-    // Implement preview logic
-  };
+  const filteredSimulations = useMemo(() => {
+    if (filterType === "all") {
+      return simulations;
+    }
 
-  const handleFilter = () => {
-    console.log("Open filter options");
-    // Implement filter modal
-  };
-
-  const filteredSimulations =
-    filterType === "all"
-      ? simulations
-      : simulations.filter((sim) => sim.type.toLowerCase() === filterType);
+    return simulations.filter(
+      (simulation) =>
+        simulation.status?.toLowerCase() === filterType ||
+        simulation.courseTitle?.toLowerCase().includes(filterType),
+    );
+  }, [filterType, simulations]);
 
   return (
     <div className={styles.simulationManagement}>
@@ -107,23 +131,148 @@ const SimulationManagement = () => {
         <div className={styles.titleBlock}>
           <h1 className={styles.pageTitle}>Simulation Management</h1>
           <p className={styles.pageDescription}>
-            Track, update, and launch practical training simulations.
+            Upload unit PDFs, generate AI questions, and assign them to students.
           </p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.secondaryBtn} onClick={handleFilter}>
+          <button
+            className={styles.secondaryBtn}
+            onClick={() =>
+              setFilterType((current) => (current === "all" ? "active" : "all"))
+            }
+          >
             <Filter size={20} />
-            Filter
+            {filterType === "all" ? "Show Active" : "Show All"}
+          </button>
+          <button
+            className={styles.secondaryBtn}
+            onClick={loadSimulations}
+            type="button"
+          >
+            <RefreshCw size={20} />
+            Refresh
           </button>
           <button
             className={styles.primaryBtn}
-            onClick={handleCreateSimulation}
+            onClick={() => setShowCreateForm((current) => !current)}
+            type="button"
           >
             <Plus size={20} />
-            Create Simulation
+            {showCreateForm ? "Close Form" : "Create Simulation"}
           </button>
         </div>
       </div>
+
+      {errorMessage ? <div className={styles.alertError}>{errorMessage}</div> : null}
+      {successMessage ? (
+        <div className={styles.alertSuccess}>{successMessage}</div>
+      ) : null}
+
+      {showCreateForm ? (
+        <form className={styles.uploadPanel} onSubmit={handleCreateSimulation}>
+          <div className={styles.formGrid}>
+            <label className={styles.field}>
+              <span>Programme</span>
+              <input
+                name="assignedProgramme"
+                value={formData.assignedProgramme}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Department</span>
+              <input
+                name="assignedDepartment"
+                value={formData.assignedDepartment}
+                onChange={handleInputChange}
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Course Title</span>
+              <input
+                name="courseTitle"
+                value={formData.courseTitle}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Unit Name</span>
+              <input
+                name="unitName"
+                value={formData.unitName}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Unit Code</span>
+              <input
+                name="unitCode"
+                value={formData.unitCode}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Year Of Study</span>
+              <input
+                name="yearOfStudy"
+                type="number"
+                min="1"
+                value={formData.yearOfStudy}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Question Count</span>
+              <input
+                name="questionCount"
+                type="number"
+                min="3"
+                max="12"
+                value={formData.questionCount}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              <span>PDF File</span>
+              <input
+                name="file"
+                type="file"
+                accept="application/pdf"
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              <span>Description</span>
+              <textarea
+                name="description"
+                rows="3"
+                value={formData.description}
+                onChange={handleInputChange}
+              />
+            </label>
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              <span>Instructions For Students</span>
+              <textarea
+                name="instructions"
+                rows="3"
+                value={formData.instructions}
+                onChange={handleInputChange}
+              />
+            </label>
+          </div>
+          <button className={styles.primaryBtn} type="submit" disabled={uploading}>
+            <Upload size={18} />
+            {uploading ? "Uploading PDF and generating AI..." : "Upload PDF"}
+          </button>
+        </form>
+      ) : null}
 
       {loading ? (
         <div className={styles.loadingState}>
@@ -134,10 +283,11 @@ const SimulationManagement = () => {
         <div className={styles.emptyState}>
           <Gamepad2 size={80} />
           <h3>No simulations found</h3>
-          <p>Create your first simulation to get started</p>
+          <p>Upload a PDF to generate the first AI simulation for students.</p>
           <button
             className={styles.primaryBtn}
-            onClick={handleCreateSimulation}
+            onClick={() => setShowCreateForm(true)}
+            type="button"
           >
             <Plus size={20} />
             Create Simulation
@@ -145,74 +295,69 @@ const SimulationManagement = () => {
         </div>
       ) : (
         <div className={styles.simulationsGrid}>
-          {filteredSimulations.map((sim) => (
-            <div key={sim.id} className={styles.simulationCard}>
+          {filteredSimulations.map((simulation) => (
+            <div key={simulation.id} className={styles.simulationCard}>
               <div className={styles.cardHeader}>
-                <span
-                  className={`${styles.simType} ${styles[sim.type.toLowerCase().replace(" ", "")]}`}
-                >
-                  {sim.type}
+                <span className={`${styles.simType} ${styles.technical}`}>
+                  {simulation.courseTitle}
                 </span>
                 <span
-                  className={`${styles.simStatus} ${styles[sim.status.toLowerCase()]}`}
+                  className={`${styles.simStatus} ${styles[(simulation.status || "active").toLowerCase()]}`}
                 >
-                  {sim.status}
+                  {simulation.status}
                 </span>
               </div>
 
-              <h3>{sim.title}</h3>
+              <h3>{simulation.title}</h3>
+              <p className={styles.cardMeta}>
+                {simulation.unitCode} • {simulation.assignedProgramme} • Year{" "}
+                {simulation.yearOfStudy}
+              </p>
 
               <div className={styles.simStats}>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Participants</span>
-                  <span className={styles.statValue}>{sim.participants}</span>
+                  <span className={styles.statValue}>{simulation.participants}</span>
                 </div>
                 <div className={styles.stat}>
-                  <span className={styles.statLabel}>Completion</span>
-                  <span className={styles.statValue}>{sim.completion}</span>
+                  <span className={styles.statLabel}>Avg. Score</span>
+                  <span className={styles.statValue}>
+                    {simulation.averageScore || 0}%
+                  </span>
+                </div>
+                <div className={styles.stat}>
+                  <span className={styles.statLabel}>Questions</span>
+                  <span className={styles.statValue}>
+                    {simulation.questionCount}
+                  </span>
+                </div>
+                <div className={styles.stat}>
+                  <span className={styles.statLabel}>Points</span>
+                  <span className={styles.statValue}>{simulation.totalPoints}</span>
                 </div>
               </div>
 
               <div className={styles.progressBar}>
                 <div
                   className={styles.progressFill}
-                  style={{ width: sim.completion }}
+                  style={{ width: simulation.completion || "0%" }}
                 ></div>
               </div>
 
               <div className={styles.cardFooter}>
                 <span className={styles.lastUpdated}>
-                  Updated {sim.lastUpdated}
+                  Updated {formatDate(simulation.updatedAt)}
                 </span>
                 <div className={styles.cardActions}>
-                  <button
+                  <a
                     className={styles.iconBtn}
-                    title="Preview"
-                    onClick={() => handlePreviewSimulation(sim.id)}
+                    title="Preview PDF"
+                    href={simulation.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
                   >
                     <Eye size={16} />
-                  </button>
-                  <button
-                    className={styles.iconBtn}
-                    title="Edit"
-                    onClick={() => handleEditSimulation(sim.id)}
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button
-                    className={styles.iconBtn}
-                    title="Duplicate"
-                    onClick={() => handleDuplicateSimulation(sim.id)}
-                  >
-                    <Copy size={16} />
-                  </button>
-                  <button
-                    className={styles.iconBtn}
-                    title="Delete"
-                    onClick={() => handleDeleteSimulation(sim.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>

@@ -8,6 +8,190 @@
   flex-direction: column;
 }
 
+.catalogSection {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.catalogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.catalogHeader h1 {
+  margin: 0 0 0.35rem;
+  color: #1a202c;
+}
+
+.catalogHeader p {
+  margin: 0;
+  color: #64748b;
+}
+
+.catalogGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+
+.catalogCard,
+.previousAttemptCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.catalogMeta,
+.catalogStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.catalogMeta {
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.catalogCard h3 {
+  margin: 0 0 0.75rem;
+  color: #0f172a;
+}
+
+.catalogCard p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.previousScore {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.startSimulationBtn,
+.submitSimulationBtn {
+  margin-top: 1rem;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitSimulationBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.emptyPanel,
+.inlineAlert,
+.resultsInline {
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.emptyPanel {
+  background: #ffffff;
+  text-align: center;
+  color: #64748b;
+}
+
+.inlineAlert {
+  background: #fee2e2;
+  color: #991b1b;
+  margin-bottom: 1rem;
+}
+
+.scenarioBodyCopy {
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.questionCard {
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.questionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.questionBadge,
+.questionPoints {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.questionBadge {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.questionPoints {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.questionPrompt {
+  margin: 0 0 1rem;
+  color: #0f172a;
+}
+
+.optionSelected {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.optionInput {
+  display: none;
+}
+
+.resultsInline {
+  margin-top: 1.5rem;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+}
+
+.reviewList {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.reviewItem {
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #14532d;
+}
+
 /* Loading State */
 .loadingContainer {
   min-height: 100vh;
@@ -847,6 +1031,10 @@
     padding: 1rem;
   }
 
+  .catalogSection {
+    padding: 1rem;
+  }
+
   .headerLeft {
     flex-direction: column;
     align-items: flex-start;
@@ -890,6 +1078,11 @@
     padding: 1rem;
   }
 
+  .questionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .optionBtn {
     flex-wrap: wrap;
   }
@@ -913,6 +1106,47 @@
 @media (prefers-color-scheme: dark) {
   .scenarioContainer {
     background: #1a202c;
+  }
+
+  .catalogCard,
+  .previousAttemptCard,
+  .emptyPanel,
+  .questionCard {
+    background: #2d3748;
+  }
+
+  .catalogHeader h1,
+  .catalogCard h3,
+  .questionPrompt {
+    color: #e2e8f0;
+  }
+
+  .catalogHeader p,
+  .catalogCard p,
+  .catalogMeta,
+  .catalogStats,
+  .scenarioBodyCopy {
+    color: #a0aec0;
+  }
+
+  .previousScore {
+    background: #1e3a8a;
+    color: #dbeafe;
+  }
+
+  .inlineAlert {
+    background: #7f1d1d;
+    color: #fee2e2;
+  }
+
+  .resultsInline {
+    background: #14532d;
+    border-color: #166534;
+  }
+
+  .reviewItem {
+    background: rgba(15, 23, 42, 0.45);
+    color: #dcfce7;
   }
 
   .loadingContainer {
