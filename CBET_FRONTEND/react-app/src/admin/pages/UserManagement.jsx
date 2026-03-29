@@ -522,7 +522,7 @@ const UserManagement = () => {
                     onChange={handleCreateInputChange}
                     required
                   />
-                </label>
+                </label>   
 
                 <label className={styles.formField}>
                   <span>Role</span>

@@ -144,12 +144,13 @@ const generateQuestionsFromPdf = async (
 
   const completion = await groq.chat.completions.create({
     model: "openai/gpt-oss-20b",
-    temperature: 0.4,
+    temperature: 0.3, // Lower temperature for more consistent formatting
+    response_format: { type: "json_object" }, // Request JSON format if supported
     messages: [
       {
         role: "system",
         content:
-          "You generate CBET multiple-choice assessment questions from learning material. Return valid JSON only.",
+          "You are a JSON generator that creates CBET multiple-choice assessment questions. You MUST return valid, parseable JSON only. Do not include markdown, code blocks, or any text outside the JSON structure.",
       },
       {
         role: "user",
@@ -160,13 +161,32 @@ Unit name: ${metadata.unitName}
 Unit code: ${metadata.unitCode}
 
 Requirements:
-- Return strict JSON with the shape {"questions":[...]} and no markdown.
+- Return strict JSON with the shape {"questions": [...]} and no markdown, no backticks, no extra text.
 - Each question must have: prompt, options, correctOptionId, explanation, points.
 - Each options array must have exactly 4 items, each with id and text.
-- correctOptionId must match one option id.
+- Use 'a', 'b', 'c', 'd' as option ids.
+- correctOptionId must match one option id (e.g., 'a', 'b', 'c', or 'd').
 - Make questions practical and based only on the provided PDF content.
 - Keep each explanation short and clear.
 - Award 10 points per question.
+
+Example format:
+{
+  "questions": [
+    {
+      "prompt": "What is the primary purpose of...?",
+      "options": [
+        {"id": "a", "text": "Option 1"},
+        {"id": "b", "text": "Option 2"},
+        {"id": "c", "text": "Option 3"},
+        {"id": "d", "text": "Option 4"}
+      ],
+      "correctOptionId": "b",
+      "explanation": "The correct answer is B because...",
+      "points": 10
+    }
+  ]
+}
 
 PDF content:
 ${trimmedText}`,
@@ -175,22 +195,77 @@ ${trimmedText}`,
   });
 
   const rawContent = completion.choices[0]?.message?.content ?? "";
-  const jsonStart = rawContent.indexOf("{");
-  const jsonEnd = rawContent.lastIndexOf("}");
-
+  
+  // Sanitize the response
+  let sanitizedContent = rawContent.trim();
+  
+  // Remove markdown code blocks
+  sanitizedContent = sanitizedContent.replace(/```json\n?/g, '');
+  sanitizedContent = sanitizedContent.replace(/```\n?/g, '');
+  sanitizedContent = sanitizedContent.replace(/`/g, '');
+  
+  // Find JSON object in the response
+  const jsonStart = sanitizedContent.indexOf("{");
+  const jsonEnd = sanitizedContent.lastIndexOf("}");
+  
   if (jsonStart < 0 || jsonEnd < 0) {
+    console.error("AI Response (no JSON found):", sanitizedContent.substring(0, 500));
     throw new Error("AI response did not contain JSON");
   }
-
-  const parsed = JSON.parse(rawContent.slice(jsonStart, jsonEnd + 1)) as {
-    questions?: unknown[];
-  };
-  const questions = normalizeQuestions(parsed.questions ?? []);
-
+  
+  let jsonString = sanitizedContent.slice(jsonStart, jsonEnd + 1);
+  
+  // Attempt to fix common JSON issues
+  jsonString = jsonString
+    // Fix trailing commas
+    .replace(/,\s*}/g, '}')
+    .replace(/,\s*]/g, ']')
+    // Fix missing quotes around property names
+    .replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3')
+    // Remove comments if any
+    .replace(/\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString) as { questions?: unknown[] };
+  } catch (parseError:any) {
+    console.error("JSON Parse Error:", parseError.message);
+    console.error("Problematic JSON string:", jsonString.substring(0, 1000));
+    console.error("Error position around 701:", jsonString.substring(690, 710));
+    
+    // Try one more time with aggressive cleaning
+    const cleanedJsonString = jsonString
+      .replace(/\n/g, ' ')
+      .replace(/\r/g, '')
+      .replace(/\t/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']');
+    
+    try {
+      parsed = JSON.parse(cleanedJsonString) as { questions?: unknown[] };
+    } catch (finalError) {
+      throw new Error(`Failed to parse AI response as JSON: ${parseError.message}`);
+    }
+  }
+  
+  // Validate and normalize the questions
+  if (!parsed.questions || !Array.isArray(parsed.questions)) {
+    throw new Error("AI response missing 'questions' array");
+  }
+  
+  const questions = normalizeQuestions(parsed.questions);
+  
   if (questions.length === 0) {
     throw new Error("Unable to generate valid simulation questions");
   }
-
+  
+  // Ensure we have the requested number of questions
+  if (questions.length < metadata.questionCount) {
+    console.warn(`Generated only ${questions.length} out of ${metadata.questionCount} requested questions`);
+  }
+  
   return questions;
 };
 
@@ -232,7 +307,7 @@ const buildSimulationSummary = async (
   const participants = Number(attemptSummary?.participants ?? 0);
   const averageScore = Math.round(Number(attemptSummary?.averageScore ?? 0));
 
-  return {
+  return { 
     participants,
     averageScore,
     completion: totalPoints > 0 ? `${averageScore}%` : "0%",
