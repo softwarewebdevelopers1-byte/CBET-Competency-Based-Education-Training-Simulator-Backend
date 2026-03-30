@@ -357,6 +357,74 @@
   animation: shimmer 1.5s infinite;
 }
 
+.participantsSection {
+  margin-top: 1rem;
+  padding: 0.95rem;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.participantsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.participantsList {
+  display: grid;
+  gap: 0.7rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.participantItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+}
+
+.participantItem strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.participantItem p {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.participantScore {
+  text-align: right;
+}
+
+.participantScore span {
+  display: block;
+  margin-top: 0.15rem;
+  color: #2563eb;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.noParticipants {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
 /* Card Footer */
 .cardFooter {
   display: flex;
@@ -592,6 +660,26 @@
   }
 
   .cardMeta {
+    color: #94a3b8;
+  }
+
+  .participantsSection {
+    background: #0f172a;
+    border-color: #334155;
+  }
+
+  .participantsHeader,
+  .participantItem strong {
+    color: #f1f5f9;
+  }
+
+  .participantItem {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .participantItem p,
+  .noParticipants {
     color: #94a3b8;
   }
 

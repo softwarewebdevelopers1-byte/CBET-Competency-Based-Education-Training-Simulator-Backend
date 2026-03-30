@@ -79,6 +79,12 @@
   font-weight: 600;
 }
 
+.completedNote {
+  margin: -0.25rem 0 0.75rem;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
 .startSimulationBtn,
 .submitSimulationBtn {
   margin-top: 1rem;
@@ -177,6 +183,15 @@
   margin-top: 1.5rem;
   background: #ecfdf5;
   border: 1px solid #bbf7d0;
+}
+
+.completedPanel {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
 }
 
 .reviewList {
@@ -690,6 +705,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.previousAttemptCard span {
+  display: block;
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.88rem;
 }
 
 .actionBtn {

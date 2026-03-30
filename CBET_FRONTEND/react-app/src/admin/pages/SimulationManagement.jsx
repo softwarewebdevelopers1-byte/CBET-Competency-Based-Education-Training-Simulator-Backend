@@ -344,6 +344,39 @@ const SimulationManagement = () => {
                 ></div>
               </div>
 
+              <div className={styles.participantsSection}>
+                <div className={styles.participantsHeader}>
+                  <span>Completed Students</span>
+                  <span>{simulation.completedStudents?.length || 0}</span>
+                </div>
+
+                {simulation.completedStudents?.length ? (
+                  <div className={styles.participantsList}>
+                    {simulation.completedStudents.map((student) => (
+                      <div
+                        key={`${simulation.id}-${student.studentUserNumber}`}
+                        className={styles.participantItem}
+                      >
+                        <div>
+                          <strong>{student.studentName}</strong>
+                          <p>{student.studentUserNumber}</p>
+                        </div>
+                        <div className={styles.participantScore}>
+                          <strong>
+                            {student.score}/{student.totalPoints}
+                          </strong>
+                          <span>{student.percentage}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.noParticipants}>
+                    No student has completed this simulation yet.
+                  </p>
+                )}
+              </div>
+
               <div className={styles.cardFooter}>
                 <span className={styles.lastUpdated}>
                   Updated {formatDate(simulation.updatedAt)}

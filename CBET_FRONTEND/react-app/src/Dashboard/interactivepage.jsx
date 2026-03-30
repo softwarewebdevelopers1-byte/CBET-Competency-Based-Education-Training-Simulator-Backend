@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import styles from "../css/scenario.module.css";
 import {
   FiPlayCircle,
@@ -16,7 +16,6 @@ import {
 } from "react-icons/fi";
 
 export function InteractiveScenario() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSimulationId = searchParams.get("simulationId");
 
@@ -60,7 +59,7 @@ export function InteractiveScenario() {
     }
 
     setScenario(data.simulation);
-    setResults(null);
+    setResults(data.simulation?.previousResult || null);
     setAnswers({});
   };
 
@@ -115,7 +114,7 @@ export function InteractiveScenario() {
   };
 
   const handleSubmit = async () => {
-    if (!scenario) return;
+    if (!scenario || scenario.isCompleted) return;
 
     try {
       setSubmitting(true);
@@ -139,6 +138,10 @@ export function InteractiveScenario() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 409 && data.result) {
+          setResults(data.result);
+          await loadSimulations();
+        }
         throw new Error(data.error || "Unable to submit answers");
       }
 
@@ -210,15 +213,22 @@ export function InteractiveScenario() {
                   </div>
                   {simulation.score !== null ? (
                     <div className={styles.previousScore}>
-                      Your latest score: {simulation.score}/{simulation.totalPoints} (
+                      Completed: {simulation.score}/{simulation.totalPoints} (
                       {simulation.percentage}%)
+                    </div>
+                  ) : null}
+                  {simulation.score !== null ? (
+                    <div className={styles.completedNote}>
+                      You have already completed this simulation. Open it to view
+                      your result.
                     </div>
                   ) : null}
                   <button
                     className={styles.startSimulationBtn}
                     onClick={() => handleStart(simulation.id)}
                   >
-                    <FiPlayCircle /> {simulation.score !== null ? "Retake" : "Start"}
+                    {simulation.score !== null ? <FiCheckCircle /> : <FiPlayCircle />}
+                    {simulation.score !== null ? "View Results" : "Start"}
                   </button>
                 </article>
               ))}
@@ -278,46 +288,61 @@ export function InteractiveScenario() {
 
           {errorMessage ? <div className={styles.inlineAlert}>{errorMessage}</div> : null}
 
-          {scenario.questions.map((question, index) => (
-            <section key={question.id} className={styles.questionCard}>
-              <div className={styles.questionHeader}>
-                <span className={styles.questionBadge}>Question {index + 1}</span>
-                <span className={styles.questionPoints}>{question.points} pts</span>
+          {scenario.isCompleted ? (
+            <div className={styles.completedPanel}>
+              <div className={styles.feedbackHeader}>
+                <FiCheckCircle className={styles.feedbackIcon} />
+                <span className={styles.feedbackTitle}>Simulation Completed</span>
               </div>
-              <h3 className={styles.questionPrompt}>{question.prompt}</h3>
-              <div className={styles.options}>
-                {question.options.map((option) => (
-                  <label
-                    key={option.id}
-                    className={`${styles.optionBtn} ${
-                      answers[index] === option.id ? styles.optionSelected : ""
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${index}`}
-                      value={option.id}
-                      checked={answers[index] === option.id}
-                      onChange={() => handleAnswerChange(index, option.id)}
-                      className={styles.optionInput}
-                    />
-                    <span className={styles.optionLetter}>
-                      {option.id.toUpperCase()}
-                    </span>
-                    <span className={styles.optionText}>{option.text}</span>
-                  </label>
-                ))}
-              </div>
-            </section>
-          ))}
+              <p>
+                This simulation can only be done once. Your saved result is shown
+                below.
+              </p>
+            </div>
+          ) : (
+            <>
+              {scenario.questions.map((question, index) => (
+                <section key={question.id} className={styles.questionCard}>
+                  <div className={styles.questionHeader}>
+                    <span className={styles.questionBadge}>Question {index + 1}</span>
+                    <span className={styles.questionPoints}>{question.points} pts</span>
+                  </div>
+                  <h3 className={styles.questionPrompt}>{question.prompt}</h3>
+                  <div className={styles.options}>
+                    {question.options.map((option) => (
+                      <label
+                        key={option.id}
+                        className={`${styles.optionBtn} ${
+                          answers[index] === option.id ? styles.optionSelected : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${index}`}
+                          value={option.id}
+                          checked={answers[index] === option.id}
+                          onChange={() => handleAnswerChange(index, option.id)}
+                          className={styles.optionInput}
+                        />
+                        <span className={styles.optionLetter}>
+                          {option.id.toUpperCase()}
+                        </span>
+                        <span className={styles.optionText}>{option.text}</span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              ))}
 
-          <button
-            className={styles.submitSimulationBtn}
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? "Submitting Answers..." : "Submit Answers"}
-          </button>
+              <button
+                className={styles.submitSimulationBtn}
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting Answers..." : "Submit Answers"}
+              </button>
+            </>
+          )}
 
           {results ? (
             <div className={styles.resultsInline}>
@@ -392,11 +417,15 @@ export function InteractiveScenario() {
 
           {scenario.previousAttempt ? (
             <div className={styles.previousAttemptCard}>
-              <h3>Latest Attempt</h3>
+              <h3>Your Result</h3>
               <p>
                 {scenario.previousAttempt.score}/{scenario.totalPoints} (
                 {scenario.previousAttempt.percentage}%)
               </p>
+              <span>
+                Submitted{" "}
+                {new Date(scenario.previousAttempt.submittedAt).toLocaleString()}
+              </span>
             </div>
           ) : null}
         </div>

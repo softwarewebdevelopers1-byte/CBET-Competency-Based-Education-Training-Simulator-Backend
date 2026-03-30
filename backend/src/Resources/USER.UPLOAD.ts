@@ -314,6 +314,37 @@ const buildSimulationSummary = async (
   };
 };
 
+const buildAttemptResult = (simulation: any, attempt: any) => {
+  if (!simulation || !attempt) {
+    return null;
+  }
+
+  const feedback = simulation.questions.map((question: any, index: number) => {
+    const savedAnswer = attempt.answers.find(
+      (answer: any) => answer.questionIndex === index,
+    );
+
+    return {
+      questionIndex: index,
+      prompt: question.prompt,
+      isCorrect: savedAnswer?.isCorrect ?? false,
+      selectedOptionId: savedAnswer?.selectedOptionId ?? "",
+      correctOptionId: question.correctOptionId,
+      pointsAwarded: savedAnswer?.pointsAwarded ?? 0,
+      explanation: question.explanation,
+    };
+  });
+
+  return {
+    attemptId: attempt._id,
+    score: attempt.score,
+    totalPoints: attempt.totalPoints,
+    percentage: attempt.percentage,
+    submittedAt: attempt.submittedAt,
+    feedback,
+  };
+};
+
 UserUploadRouter.post(
   "/",
   AuthenticateToken,
@@ -466,6 +497,50 @@ UserUploadRouter.get(
         .lean()
         .exec();
 
+      const attemptRecords = await StudentSimulationAttempts.find({
+        simulationId: { $in: simulations.map((simulation) => simulation._id) },
+      })
+        .sort({ submittedAt: -1, createdAt: -1 })
+        .lean()
+        .exec();
+
+      const participantsBySimulation = new Map<
+        string,
+        Array<{
+          studentName: string;
+          studentUserNumber: string;
+          score: number;
+          totalPoints: number;
+          percentage: number;
+          submittedAt: Date;
+        }>
+      >();
+
+      attemptRecords.forEach((attempt) => {
+        const key = String(attempt.simulationId);
+        const current = participantsBySimulation.get(key) || [];
+
+        if (
+          current.some(
+            (participant) =>
+              participant.studentUserNumber === attempt.studentUserNumber,
+          )
+        ) {
+          return;
+        }
+
+        current.push({
+          studentName: attempt.studentName,
+          studentUserNumber: attempt.studentUserNumber,
+          score: attempt.score,
+          totalPoints: attempt.totalPoints,
+          percentage: attempt.percentage,
+          submittedAt: attempt.submittedAt,
+        });
+
+        participantsBySimulation.set(key, current);
+      });
+
       const response = await Promise.all(
         simulations.map(async (simulation) => {
           const summary = await buildSimulationSummary(
@@ -491,6 +566,8 @@ UserUploadRouter.get(
             pdfUrl: simulation.pdfUrl,
             description: simulation.description,
             instructions: simulation.instructions,
+            completedStudents:
+              participantsBySimulation.get(String(simulation._id)) || [],
             uploadedByName: simulation.uploadedByName,
             createdAt: simulation.createdAt,
             updatedAt: simulation.updatedAt,
@@ -622,6 +699,8 @@ UserUploadRouter.get(
         .lean()
         .exec();
 
+      const previousResult = buildAttemptResult(simulation, previousAttempt);
+
       res.status(200).json({
         success: true,
         simulation: {
@@ -645,6 +724,7 @@ UserUploadRouter.get(
             "Demonstrate understanding of the uploaded PDF material",
             "Earn points by selecting the most accurate answers",
           ],
+          isCompleted: Boolean(previousAttempt),
           questions: simulation.questions.map((question, index) => ({
             id: `question-${index + 1}`,
             prompt: question.prompt,
@@ -658,6 +738,7 @@ UserUploadRouter.get(
                 submittedAt: previousAttempt.submittedAt,
               }
             : null,
+          previousResult,
         },
       });
     } catch (error) {
@@ -689,6 +770,22 @@ UserUploadRouter.post(
 
       if (!simulation) {
         res.status(404).json({ error: "Simulation not found" });
+        return;
+      }
+
+      const existingAttempt = await StudentSimulationAttempts.findOne({
+        simulationId: simulation._id,
+        studentUserNumber: currentUser.UserNumber,
+      })
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec();
+
+      if (existingAttempt) {
+        res.status(409).json({
+          error: "You have already completed this simulation.",
+          result: buildAttemptResult(simulation, existingAttempt),
+        });
         return;
       }
 
