@@ -35,6 +35,8 @@ import {
 export function MyPortfolio() {
   const [loading, setLoading] = useState(true);
   const [portfolioItems, setPortfolioItems] = useState([]);
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,302 +47,36 @@ export function MyPortfolio() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate loading portfolio items
-    setTimeout(() => {
-      setPortfolioItems(mockPortfolioItems);
-      setLoading(false);
-    }, 1000);
+    const loadPortfolio = async () => {
+      try {
+        setLoading(true);
+        setErrorMessage("");
+        const response = await fetch(
+          "http://localhost:8000/api/resources/upload/users/data/pdf/student/portfolio",
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to load portfolio");
+        }
+
+        setPortfolioItems(data.portfolioItems || []);
+        setStudentProfile(data.student || null);
+      } catch (error) {
+        setErrorMessage(error.message || "Unable to load portfolio");
+        setPortfolioItems([]);
+        setStudentProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPortfolio();
   }, []);
-
-  const mockPortfolioItems = [
-    // Projects
-    {
-      id: 1,
-      title: "Network Security Implementation",
-      type: "project",
-      category: "project",
-      description:
-        "Designed and implemented a secure network infrastructure for a small business, including firewall configuration, VPN setup, and security policies.",
-      thumbnail: "🔒",
-      date: "2026-02-15",
-      status: "approved",
-      visibility: "public",
-      skills: ["Network Security", "Firewall", "VPN", "Cisco"],
-      images: 5,
-      documents: 3,
-      videos: 1,
-      feedback: [
-        {
-          from: "Dr. Sarah Kimani",
-          comment: "Excellent implementation of security protocols",
-          rating: 5,
-          date: "2026-02-20",
-        },
-      ],
-      verifications: [
-        {
-          verifier: "ICT Department",
-          date: "2026-02-18",
-          status: "verified",
-        },
-      ],
-      grade: "A",
-      points: 250,
-      badges: ["Security Expert", "Project Excellence"],
-    },
-    {
-      id: 2,
-      title: "E-Commerce Website Development",
-      type: "project",
-      category: "project",
-      description:
-        "Developed a full-stack e-commerce website using React, Node.js, and MongoDB with payment integration and admin dashboard.",
-      thumbnail: "🛒",
-      date: "2026-01-10",
-      status: "approved",
-      visibility: "public",
-      skills: ["React", "Node.js", "MongoDB", "Express", "Stripe API"],
-      images: 8,
-      documents: 4,
-      videos: 2,
-      liveUrl: "https://project-demo.com",
-      githubUrl: "https://github.com/student/ecommerce",
-      feedback: [
-        {
-          from: "Prof. John Omondi",
-          comment: "Outstanding full-stack implementation",
-          rating: 5,
-          date: "2026-01-15",
-        },
-      ],
-      verifications: [
-        {
-          verifier: "ICT Department",
-          date: "2026-01-12",
-          status: "verified",
-        },
-      ],
-      grade: "A+",
-      points: 300,
-      badges: ["Web Developer", "Full Stack"],
-    },
-
-    // Practical Work
-    {
-      id: 3,
-      title: "Database Design for Library System",
-      type: "practical",
-      category: "practical",
-      description:
-        "Designed and normalized a database for a university library system including ER diagrams, SQL scripts, and documentation.",
-      thumbnail: "🗄️",
-      date: "2025-12-05",
-      status: "pending",
-      visibility: "private",
-      skills: ["SQL", "Database Design", "MySQL", "ER Diagrams"],
-      documents: 6,
-      feedback: [],
-      verifications: [],
-      grade: "Pending",
-      points: 0,
-    },
-    {
-      id: 4,
-      title: "Python Data Analysis Project",
-      type: "practical",
-      category: "practical",
-      description:
-        "Analyzed student performance data using Python pandas and matplotlib, creating visualizations and statistical reports.",
-      thumbnail: "🐍",
-      date: "2025-11-20",
-      status: "approved",
-      visibility: "public",
-      skills: ["Python", "Pandas", "Matplotlib", "Data Analysis"],
-      documents: 4,
-      images: 3,
-      feedback: [
-        {
-          from: "Ms. Lucy Njeri",
-          comment: "Great analytical skills demonstrated",
-          rating: 4,
-          date: "2025-11-25",
-        },
-      ],
-      verifications: [
-        {
-          verifier: "Data Science Dept",
-          date: "2025-11-23",
-          status: "verified",
-        },
-      ],
-      grade: "A",
-      points: 200,
-      badges: ["Data Analyst"],
-    },
-
-    // Internship
-    {
-      id: 5,
-      title: "ICT Internship at Safaricom",
-      type: "internship",
-      category: "internship",
-      description:
-        "3-month internship in the Network Operations Center, assisting with network monitoring, troubleshooting, and maintenance.",
-      thumbnail: "📱",
-      date: "2025-08-01",
-      endDate: "2025-10-31",
-      status: "approved",
-      visibility: "public",
-      company: "Safaricom PLC",
-      supervisor: "Eng. James Kariuki",
-      supervisorEmail: "j.kariuki@safaricom.co.ke",
-      skills: [
-        "Network Monitoring",
-        "Troubleshooting",
-        "Customer Support",
-        "Team Collaboration",
-      ],
-      documents: 5,
-      feedback: [
-        {
-          from: "Eng. James Kariuki",
-          comment: "Excellent performance during internship",
-          rating: 5,
-          date: "2025-11-05",
-        },
-      ],
-      verifications: [
-        {
-          verifier: "Safaricom HR",
-          date: "2025-11-01",
-          status: "verified",
-        },
-      ],
-      hoursCompleted: 480,
-      grade: "Outstanding",
-      points: 500,
-      badges: ["Internship Excellence", "Industry Ready"],
-    },
-
-    // Achievements
-    {
-      id: 6,
-      title: "Hackathon Winner - Innovate Kenya 2026",
-      type: "achievement",
-      category: "achievement",
-      description:
-        "First place in national TVET hackathon for developing an AI-powered agricultural advisory system.",
-      thumbnail: "🏆",
-      date: "2026-01-20",
-      status: "approved",
-      visibility: "public",
-      organization: "Ministry of Education",
-      skills: ["Innovation", "Team Leadership", "Presentation", "AI/ML"],
-      images: 4,
-      documents: 2,
-      feedback: [
-        {
-          from: "Judging Panel",
-          comment: "Innovative solution with real-world impact",
-          rating: 5,
-          date: "2026-01-21",
-        },
-      ],
-      verifications: [
-        {
-          verifier: "Ministry of Education",
-          date: "2026-01-22",
-          status: "verified",
-        },
-      ],
-      grade: "Winner",
-      points: 1000,
-      badges: ["Hackathon Champion", "Innovator"],
-    },
-    {
-      id: 7,
-      title: "Cisco Certified Network Associate (CCNA)",
-      type: "achievement",
-      category: "achievement",
-      description:
-        "Earned CCNA certification demonstrating proficiency in network fundamentals, IP connectivity, and security.",
-      thumbnail: "📜",
-      date: "2025-09-15",
-      status: "approved",
-      visibility: "public",
-      organization: "Cisco Systems",
-      skills: ["Networking", "Routing", "Switching", "Security"],
-      documents: 2,
-      certificateId: "CCNA-2025-12345",
-      expiryDate: "2028-09-15",
-      feedback: [],
-      verifications: [
-        {
-          verifier: "Cisco Academy",
-          date: "2025-09-20",
-          status: "verified",
-        },
-      ],
-      grade: "Pass",
-      points: 750,
-      badges: ["Cisco Certified", "Networking Pro"],
-    },
-
-    // Work Samples
-    {
-      id: 8,
-      title: "Mobile App UI/UX Design",
-      type: "work-sample",
-      category: "work-sample",
-      description:
-        "Designed a complete mobile app interface for a campus navigation system using Figma.",
-      thumbnail: "🎨",
-      date: "2026-02-28",
-      status: "draft",
-      visibility: "private",
-      skills: ["UI/UX", "Figma", "Prototyping", "User Research"],
-      images: 12,
-      documents: 1,
-      feedback: [],
-      verifications: [],
-      grade: "In Progress",
-      points: 0,
-    },
-    {
-      id: 9,
-      title: "Network Configuration Documentation",
-      type: "work-sample",
-      category: "work-sample",
-      description:
-        "Comprehensive documentation of network setup including diagrams, IP schemes, and configuration files.",
-      thumbnail: "📡",
-      date: "2025-10-10",
-      status: "approved",
-      visibility: "public",
-      skills: ["Documentation", "Network Design", "Technical Writing"],
-      documents: 8,
-      images: 3,
-      feedback: [
-        {
-          from: "Dr. Sarah Kimani",
-          comment: "Excellent technical documentation",
-          rating: 5,
-          date: "2025-10-15",
-        },
-      ],
-      verifications: [
-        {
-          verifier: "ICT Department",
-          date: "2025-10-12",
-          status: "verified",
-        },
-      ],
-      grade: "A",
-      points: 150,
-      badges: ["Technical Writer"],
-    },
-  ];
-
   const categories = [
     { id: "all", name: "All Items", icon: "📁", count: portfolioItems.length },
     {
@@ -430,7 +166,9 @@ export function MyPortfolio() {
         <div>
           <h1 className={styles.pageTitle}>My Portfolio</h1>
           <p className={styles.pageSubtitle}>
-            Showcase your practical work, projects, and achievements
+            {studentProfile
+              ? `${studentProfile.fullName} • ${studentProfile.programme} • Year ${studentProfile.yearOfStudy}`
+              : "Your verified portfolio records from completed simulations"}
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -445,6 +183,10 @@ export function MyPortfolio() {
           </button>
         </div>
       </div>
+
+      {errorMessage ? (
+        <div className={styles.infoBanner}>{errorMessage}</div>
+      ) : null}
 
       {/* Stats Overview */}
       <div className={styles.statsOverview}>
@@ -896,3 +638,4 @@ export function MyPortfolio() {
     </div>
   );
 }
+

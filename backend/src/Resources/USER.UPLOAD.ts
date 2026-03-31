@@ -774,6 +774,143 @@ UserUploadRouter.get(
 );
 
 UserUploadRouter.get(
+  "/student/portfolio",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || currentUser.role !== "student") {
+        res.status(403).json({ error: "Student access required" });
+        return;
+      }
+
+      const attempts = await StudentSimulationAttempts.find({
+        studentUserNumber: currentUser.UserNumber,
+      })
+        .sort({ submittedAt: -1, createdAt: -1 })
+        .lean()
+        .exec();
+
+      const latestAttemptBySimulation = new Map<
+        string,
+        (typeof attempts)[number]
+      >();
+
+      attempts.forEach((attempt) => {
+        const key = String(attempt.simulationId);
+        if (!latestAttemptBySimulation.has(key)) {
+          latestAttemptBySimulation.set(key, attempt);
+        }
+      });
+
+      const simulationIds = Array.from(latestAttemptBySimulation.keys()).map((id) =>
+        UsersUploadedPdf.db.base.Types.ObjectId.createFromHexString(id),
+      );
+
+      const simulations = simulationIds.length
+        ? await UsersUploadedPdf.find({
+            _id: { $in: simulationIds },
+            assignedProgramme: currentUser.programme,
+            yearOfStudy: currentUser.yearOfStudy ?? 1,
+          })
+            .lean()
+            .exec()
+        : [];
+
+      const portfolioItems = simulations.map((simulation) => {
+        const attempt = latestAttemptBySimulation.get(String(simulation._id));
+        const percentage = Number(attempt?.percentage ?? 0);
+        const score = Number(attempt?.score ?? 0);
+        const totalPoints = Number(simulation.totalPoints ?? attempt?.totalPoints ?? 0);
+        const isApproved = percentage >= 50;
+        const badgeCandidates = [];
+
+        if (percentage >= 90) {
+          badgeCandidates.push("Distinction");
+        }
+        if (score === totalPoints && totalPoints > 0) {
+          badgeCandidates.push("Perfect Score");
+        }
+        if (simulation.questionCount >= 10) {
+          badgeCandidates.push("Advanced Simulation");
+        }
+
+        return {
+          id: String(attempt?._id ?? simulation._id),
+          simulationId: String(simulation._id),
+          title: `${simulation.unitCode} - ${simulation.unitName}`,
+          type: "simulation",
+          category: "project",
+          description:
+            simulation.description ||
+            `Completed AI simulation for ${simulation.courseTitle}.`,
+          thumbnail: "AI",
+          date: attempt?.submittedAt ?? simulation.createdAt,
+          status: isApproved ? "approved" : "pending",
+          visibility: "private",
+          skills: [
+            simulation.courseTitle,
+            simulation.unitCode,
+            simulation.assignedProgramme,
+            `${simulation.questionCount} Questions`,
+          ].filter(Boolean),
+          images: 0,
+          documents: 1,
+          videos: 0,
+          feedback: [
+            {
+              from: "CBET Simulation Engine",
+              comment: `Scored ${score}/${totalPoints} (${percentage}%) in this simulation.`,
+              rating: Math.max(1, Math.min(5, Math.round(percentage / 20) || 1)),
+              date: attempt?.submittedAt ?? simulation.updatedAt ?? simulation.createdAt,
+            },
+          ],
+          verifications: [
+            {
+              verifier: simulation.uploadedByName || "System",
+              date: attempt?.submittedAt ?? simulation.updatedAt ?? simulation.createdAt,
+              status: "verified",
+            },
+          ],
+          grade:
+            percentage >= 80
+              ? "A"
+              : percentage >= 70
+                ? "B"
+                : percentage >= 60
+                  ? "C"
+                  : percentage >= 50
+                    ? "Pass"
+                    : "Needs Improvement",
+          points: score,
+          badges: badgeCandidates,
+          score,
+          totalPoints,
+          percentage,
+          unitCode: simulation.unitCode,
+          courseTitle: simulation.courseTitle,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        student: {
+          fullName: currentUser.fullName,
+          userNumber: currentUser.UserNumber,
+          programme: currentUser.programme,
+          department: currentUser.department ?? "",
+          yearOfStudy: currentUser.yearOfStudy ?? 1,
+        },
+        portfolioItems,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Unable to load portfolio data" });
+    }
+  },
+);
+
+UserUploadRouter.get(
   "/student/:id",
   AuthenticateToken,
   async (req: Request, res: Response): Promise<void> => {
