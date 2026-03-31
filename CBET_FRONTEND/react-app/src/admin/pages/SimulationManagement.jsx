@@ -6,6 +6,7 @@ import {
   Filter,
   Gamepad2,
   RefreshCw,
+  Power,
 } from "lucide-react";
 import styles from "../styles/simulationManagement.module.css";
 
@@ -36,6 +37,7 @@ const SimulationManagement = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState(initialForm);
+  const [statusUpdatingId, setStatusUpdatingId] = useState("");
 
   const loadSimulations = async () => {
     try {
@@ -110,6 +112,52 @@ const SimulationManagement = () => {
       setErrorMessage(error.message || "Unable to create simulation");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleToggleSimulationStatus = async (simulation) => {
+    const nextStatus =
+      simulation.status?.toLowerCase() === "active" ? "inactive" : "active";
+
+    try {
+      setStatusUpdatingId(simulation.id);
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        `http://localhost:8000/api/resources/upload/users/data/pdf/admin/${simulation.id}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status: nextStatus }),
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update simulation status");
+      }
+
+      setSimulations((current) =>
+        current.map((item) =>
+          item.id === simulation.id
+            ? {
+                ...item,
+                status: nextStatus,
+                updatedAt: data.simulation?.updatedAt || item.updatedAt,
+              }
+            : item,
+        ),
+      );
+      setSuccessMessage(
+        data.message ||
+          `Simulation ${nextStatus === "active" ? "activated" : "deactivated"} successfully`,
+      );
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to update simulation status");
+    } finally {
+      setStatusUpdatingId("");
     }
   };
 
@@ -391,6 +439,19 @@ const SimulationManagement = () => {
                   >
                     <Eye size={16} />
                   </a>
+                  <button
+                    className={styles.iconBtn}
+                    type="button"
+                    title={
+                      simulation.status?.toLowerCase() === "active"
+                        ? "Deactivate simulation"
+                        : "Activate simulation"
+                    }
+                    onClick={() => handleToggleSimulationStatus(simulation)}
+                    disabled={statusUpdatingId === simulation.id}
+                  >
+                    <Power size={16} />
+                  </button>
                 </div>
               </div>
             </div>

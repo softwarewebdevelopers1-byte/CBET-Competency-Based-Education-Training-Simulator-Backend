@@ -75,6 +75,12 @@ const getQuestionCount = (rawQuestionCount: unknown): number => {
   return Math.min(12, Math.max(3, Math.floor(parsedValue)));
 };
 
+const normalizeSimulationStatus = (rawStatus: unknown): "active" | "inactive" => {
+  return String(rawStatus ?? "").trim().toLowerCase() === "inactive"
+    ? "inactive"
+    : "active";
+};
+
 const normalizeQuestions = (rawQuestions: unknown[]): GeneratedQuestion[] => {
   return rawQuestions
     .map((question, index) => {
@@ -579,6 +585,53 @@ UserUploadRouter.get(
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Unable to fetch simulations" });
+    }
+  },
+);
+
+UserUploadRouter.patch(
+  "/admin/:id/status",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || currentUser.role !== "admin") {
+        res.status(403).json({ error: "Admin privileges required" });
+        return;
+      }
+
+      const status = normalizeSimulationStatus(req.body?.status);
+
+      const updatedSimulation = await UsersUploadedPdf.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: { status },
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      )
+        .lean()
+        .exec();
+
+      if (!updatedSimulation) {
+        res.status(404).json({ error: "Simulation not found" });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Simulation ${status === "active" ? "activated" : "deactivated"} successfully`,
+        simulation: {
+          id: updatedSimulation._id,
+          status: updatedSimulation.status,
+          updatedAt: updatedSimulation.updatedAt,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Unable to update simulation status" });
     }
   },
 );
