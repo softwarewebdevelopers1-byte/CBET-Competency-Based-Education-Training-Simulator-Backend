@@ -194,6 +194,16 @@
   color: #1e3a8a;
 }
 
+.completedQuestionNote {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
 .reviewList {
   display: grid;
   gap: 0.75rem;
@@ -453,6 +463,22 @@
   border-color: #667eea;
   transform: translateX(5px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.optionLocked {
+  cursor: default;
+}
+
+.optionLocked:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  transform: none;
+  box-shadow: none;
+}
+
+.optionCorrect {
+  background: #ecfdf5;
+  border-color: #10b981;
 }
 
 .optionLetter {

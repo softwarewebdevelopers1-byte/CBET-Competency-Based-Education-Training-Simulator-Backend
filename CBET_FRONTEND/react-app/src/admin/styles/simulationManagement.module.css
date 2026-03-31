@@ -70,6 +70,7 @@
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   border: 1px solid #cbd5e1;
@@ -474,6 +475,11 @@
   opacity: 0.55;
   cursor: wait;
   transform: none;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .iconBtn:active {

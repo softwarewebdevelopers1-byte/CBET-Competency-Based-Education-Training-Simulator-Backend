@@ -7,6 +7,7 @@ import {
   Gamepad2,
   RefreshCw,
   Power,
+  Trash2,
 } from "lucide-react";
 import styles from "../styles/simulationManagement.module.css";
 
@@ -23,6 +24,11 @@ const initialForm = {
   file: null,
 };
 
+const programmeOptions = [
+  "Bsc in Informatics",
+  "Bsc in Computer science",
+];
+
 const formatDate = (value) => {
   if (!value) return "Just now";
   return new Date(value).toLocaleString();
@@ -38,6 +44,7 @@ const SimulationManagement = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState(initialForm);
   const [statusUpdatingId, setStatusUpdatingId] = useState("");
+  const [deletingId, setDeletingId] = useState("");
 
   const loadSimulations = async () => {
     try {
@@ -161,6 +168,46 @@ const SimulationManagement = () => {
     }
   };
 
+  const handleDeleteSimulation = async (simulation) => {
+    const confirmed = window.confirm(
+      `Delete "${simulation.title}" and all related student attempts? This cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingId(simulation.id);
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        `http://localhost:8000/api/resources/upload/users/data/pdf/admin/${simulation.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to delete simulation");
+      }
+
+      setSimulations((current) =>
+        current.filter((item) => item.id !== simulation.id),
+      );
+      setSuccessMessage(
+        data.message || "Simulation and all related records deleted successfully",
+      );
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to delete simulation");
+    } finally {
+      setDeletingId("");
+    }
+  };
+
   const filteredSimulations = useMemo(() => {
     if (filterType === "all") {
       return simulations;
@@ -221,12 +268,19 @@ const SimulationManagement = () => {
           <div className={styles.formGrid}>
             <label className={styles.field}>
               <span>Programme</span>
-              <input
+              <select
                 name="assignedProgramme"
                 value={formData.assignedProgramme}
                 onChange={handleInputChange}
                 required
-              />
+              >
+                <option value="">Select programme</option>
+                {programmeOptions.map((programme) => (
+                  <option key={programme} value={programme}>
+                    {programme}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className={styles.field}>
               <span>Department</span>
@@ -451,6 +505,15 @@ const SimulationManagement = () => {
                     disabled={statusUpdatingId === simulation.id}
                   >
                     <Power size={16} />
+                  </button>
+                  <button
+                    className={`${styles.iconBtn} ${styles.deleteBtn}`}
+                    type="button"
+                    title="Delete simulation"
+                    onClick={() => handleDeleteSimulation(simulation)}
+                    disabled={deletingId === simulation.id}
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

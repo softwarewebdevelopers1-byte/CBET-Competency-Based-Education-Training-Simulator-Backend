@@ -60,7 +60,14 @@ export function InteractiveScenario() {
 
     setScenario(data.simulation);
     setResults(data.simulation?.previousResult || null);
-    setAnswers({});
+    const existingAnswers = (data.simulation?.previousResult?.feedback || []).reduce(
+      (current, item) => ({
+        ...current,
+        [item.questionIndex]: item.selectedOptionId || "",
+      }),
+      {},
+    );
+    setAnswers(existingAnswers);
   };
 
   useEffect(() => {
@@ -140,12 +147,18 @@ export function InteractiveScenario() {
       if (!response.ok) {
         if (response.status === 409 && data.result) {
           setResults(data.result);
+          setScenario((current) =>
+            current ? { ...current, isCompleted: true } : current,
+          );
           await loadSimulations();
         }
         throw new Error(data.error || "Unable to submit answers");
       }
 
       setResults(data.result);
+      setScenario((current) =>
+        current ? { ...current, isCompleted: true } : current,
+      );
       await loadSimulations();
     } catch (error) {
       setErrorMessage(error.message || "Unable to submit answers");
@@ -295,56 +308,57 @@ export function InteractiveScenario() {
                 <span className={styles.feedbackTitle}>Simulation Completed</span>
               </div>
               <p>
-                This simulation can only be done once. Your saved result is shown
-                below.
+                You can review the questions and your selected answers below, but
+                you cannot retake this simulation.
               </p>
             </div>
-          ) : (
-            <>
-              {scenario.questions.map((question, index) => (
-                <section key={question.id} className={styles.questionCard}>
-                  <div className={styles.questionHeader}>
-                    <span className={styles.questionBadge}>Question {index + 1}</span>
-                    <span className={styles.questionPoints}>{question.points} pts</span>
-                  </div>
-                  <h3 className={styles.questionPrompt}>{question.prompt}</h3>
-                  <div className={styles.options}>
-                    {question.options.map((option) => (
-                      <label
-                        key={option.id}
-                        className={`${styles.optionBtn} ${
-                          answers[index] === option.id ? styles.optionSelected : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`question-${index}`}
-                          value={option.id}
-                          checked={answers[index] === option.id}
-                          onChange={() => handleAnswerChange(index, option.id)}
-                          className={styles.optionInput}
-                        />
-                        <span className={styles.optionLetter}>
-                          {option.id.toUpperCase()}
-                        </span>
-                        <span className={styles.optionText}>{option.text}</span>
-                      </label>
-                    ))}
-                  </div>
-                </section>
-              ))}
+          ) : null}
 
-              <button
-                className={styles.submitSimulationBtn}
-                onClick={handleSubmit}
-                disabled={submitting}
-              >
-                {submitting ? "Submitting Answers..." : "Submit Answers"}
-              </button>
-            </>
-          )}
+          {scenario.questions.map((question, index) => (
+            <section key={question.id} className={styles.questionCard}>
+              <div className={styles.questionHeader}>
+                <span className={styles.questionBadge}>Question {index + 1}</span>
+                <span className={styles.questionPoints}>{question.points} pts</span>
+              </div>
+              <h3 className={styles.questionPrompt}>{question.prompt}</h3>
+              <div className={styles.options}>
+                {question.options.map((option) => (
+                  <label
+                    key={option.id}
+                    className={`${styles.optionBtn} ${
+                      answers[index] === option.id ? styles.optionSelected : ""
+                    } ${scenario.isCompleted ? styles.optionLocked : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`question-${index}`}
+                      value={option.id}
+                      checked={answers[index] === option.id}
+                      onChange={() => handleAnswerChange(index, option.id)}
+                      className={styles.optionInput}
+                      disabled={scenario.isCompleted}
+                    />
+                    <span className={styles.optionLetter}>
+                      {option.id.toUpperCase()}
+                    </span>
+                    <span className={styles.optionText}>{option.text}</span>
+                  </label>
+                ))}
+              </div>
+            </section>
+          ))}
 
-          {results ? (
+          {!scenario.isCompleted ? (
+            <button
+              className={styles.submitSimulationBtn}
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? "Submitting Answers..." : "Submit Answers"}
+            </button>
+          ) : null}
+
+          {results && !scenario?.isCompleted ? (
             <div className={styles.resultsInline}>
               <div className={styles.feedbackHeader}>
                 <FiCheckCircle className={styles.feedbackIcon} />

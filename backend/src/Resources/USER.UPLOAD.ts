@@ -81,6 +81,25 @@ const normalizeSimulationStatus = (rawStatus: unknown): "active" | "inactive" =>
     : "active";
 };
 
+const deleteSimulationStorageFile = async (storagePath: string) => {
+  const trimmedStoragePath = String(storagePath ?? "").trim();
+  if (!trimmedStoragePath) {
+    return;
+  }
+
+  const bucket = process.env.SUPABASE_BUCKET;
+  if (!bucket) {
+    throw new Error("bucket name is required");
+  }
+
+  const storageClient = getStorageClient();
+  const { error } = await storageClient.from(bucket).remove([trimmedStoragePath]);
+
+  if (error) {
+    throw new Error(error.message || "Failed to delete PDF from storage");
+  }
+};
+
 const normalizeQuestions = (rawQuestions: unknown[]): GeneratedQuestion[] => {
   return rawQuestions
     .map((question, index) => {
@@ -632,6 +651,41 @@ UserUploadRouter.patch(
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Unable to update simulation status" });
+    }
+  },
+);
+
+UserUploadRouter.delete(
+  "/admin/:id",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || currentUser.role !== "admin") {
+        res.status(403).json({ error: "Admin privileges required" });
+        return;
+      }
+
+      const simulation = await UsersUploadedPdf.findById(req.params.id).lean().exec();
+
+      if (!simulation) {
+        res.status(404).json({ error: "Simulation not found" });
+        return;
+      }
+
+      await deleteSimulationStorageFile(simulation.storagePath);
+      await StudentSimulationAttempts.deleteMany({
+        simulationId: simulation._id,
+      }).exec();
+      await UsersUploadedPdf.deleteOne({ _id: simulation._id }).exec();
+
+      res.status(200).json({
+        success: true,
+        message: "Simulation and all related records deleted successfully",
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Unable to delete simulation" });
     }
   },
 );
