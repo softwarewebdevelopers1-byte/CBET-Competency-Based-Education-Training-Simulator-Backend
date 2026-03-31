@@ -13,6 +13,7 @@ import {
   FiUsers,
   FiRefreshCw,
   FiFileText,
+  FiCheck,
 } from "react-icons/fi";
 
 export function InteractiveScenario() {
@@ -26,6 +27,15 @@ export function InteractiveScenario() {
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const getOptionLabel = (question, optionId) => {
+    const option = question.options.find((item) => item.id === optionId);
+    if (!option) {
+      return "No answer selected";
+    }
+
+    return `${option.id.toUpperCase()}. ${option.text}`;
+  };
 
   const loadSimulations = async () => {
     const response = await fetch(
@@ -314,39 +324,85 @@ export function InteractiveScenario() {
             </div>
           ) : null}
 
-          {scenario.questions.map((question, index) => (
-            <section key={question.id} className={styles.questionCard}>
-              <div className={styles.questionHeader}>
-                <span className={styles.questionBadge}>Question {index + 1}</span>
-                <span className={styles.questionPoints}>{question.points} pts</span>
-              </div>
-              <h3 className={styles.questionPrompt}>{question.prompt}</h3>
-              <div className={styles.options}>
-                {question.options.map((option) => (
-                  <label
-                    key={option.id}
-                    className={`${styles.optionBtn} ${
-                      answers[index] === option.id ? styles.optionSelected : ""
-                    } ${scenario.isCompleted ? styles.optionLocked : ""}`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${index}`}
-                      value={option.id}
-                      checked={answers[index] === option.id}
-                      onChange={() => handleAnswerChange(index, option.id)}
-                      className={styles.optionInput}
-                      disabled={scenario.isCompleted}
-                    />
-                    <span className={styles.optionLetter}>
-                      {option.id.toUpperCase()}
-                    </span>
-                    <span className={styles.optionText}>{option.text}</span>
-                  </label>
-                ))}
-              </div>
-            </section>
-          ))}
+          {scenario.questions.map((question, index) => {
+            const feedbackItem = results?.feedback?.find(
+              (item) => item.questionIndex === index,
+            );
+            const selectedAnswerLabel = feedbackItem
+              ? getOptionLabel(question, feedbackItem.selectedOptionId)
+              : "No answer selected";
+            const correctAnswerLabel = feedbackItem
+              ? getOptionLabel(question, feedbackItem.correctOptionId)
+              : "";
+
+            return (
+              <section key={question.id} className={styles.questionCard}>
+                <div className={styles.questionHeader}>
+                  <span className={styles.questionBadge}>Question {index + 1}</span>
+                  <span className={styles.questionPoints}>{question.points} pts</span>
+                </div>
+                <h3 className={styles.questionPrompt}>{question.prompt}</h3>
+                <div className={styles.options}>
+                  {question.options.map((option) => {
+                    const isSelected = answers[index] === option.id;
+                    const isCorrectOption =
+                      scenario.isCompleted &&
+                      feedbackItem?.correctOptionId === option.id;
+                    const isWrongSelectedOption =
+                      scenario.isCompleted &&
+                      isSelected &&
+                      feedbackItem?.correctOptionId !== option.id;
+
+                    return (
+                      <label
+                        key={option.id}
+                        className={`${styles.optionBtn} ${
+                          isSelected ? styles.optionSelected : ""
+                        } ${scenario.isCompleted ? styles.optionLocked : ""} ${
+                          isCorrectOption ? styles.optionCorrect : ""
+                        } ${isWrongSelectedOption ? styles.optionIncorrect : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${index}`}
+                          value={option.id}
+                          checked={isSelected}
+                          onChange={() => handleAnswerChange(index, option.id)}
+                          className={styles.optionInput}
+                          disabled={scenario.isCompleted}
+                        />
+                        <span className={styles.optionLetter}>
+                          {option.id.toUpperCase()}
+                        </span>
+                        <span className={styles.optionText}>{option.text}</span>
+                        {isSelected ? (
+                          <span className={styles.selectedIndicator}>
+                            <FiCheck /> Selected
+                          </span>
+                        ) : null}
+                      </label>
+                    );
+                  })}
+                </div>
+                {scenario.isCompleted && feedbackItem ? (
+                  <div className={styles.answerSummary}>
+                    <div className={styles.answerSummaryRow}>
+                      <span className={styles.answerSummaryLabel}>Your answer</span>
+                      <span className={styles.answerSummaryValue}>
+                        {selectedAnswerLabel}
+                      </span>
+                    </div>
+                    <div className={styles.answerSummaryRow}>
+                      <span className={styles.answerSummaryLabel}>Correct answer</span>
+                      <span className={styles.answerSummaryValue}>
+                        {correctAnswerLabel}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
 
           {!scenario.isCompleted ? (
             <button

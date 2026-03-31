@@ -481,6 +481,16 @@
   border-color: #10b981;
 }
 
+.optionIncorrect {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.optionSelected {
+  background: #fef9c3;
+  border-color: #eab308;
+}
+
 .optionLetter {
   width: 32px;
   height: 32px;
@@ -499,6 +509,51 @@
   font-size: 1rem;
   line-height: 1.5;
   flex: 1;
+}
+
+.selectedIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: #facc15;
+  color: #713f12;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.answerSummary {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.answerSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.answerSummaryLabel {
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.answerSummaryValue {
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: right;
 }
 
 /* Feedback */
