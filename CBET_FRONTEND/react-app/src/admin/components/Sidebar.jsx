@@ -4,9 +4,8 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Gamepad2,
-  BookOpen,
   FileText,
+  BookOpen,
   FolderOpen,
   Trophy,
   BarChart3,
@@ -30,7 +29,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
     { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/admin/users", icon: Users, label: "User Management" },
-    { path: "/admin/simulations", icon: Gamepad2, label: "Interactive Scenarios" },
     { path: "/admin/materials", icon: BookOpen, label: "Learning Materials" },
     { path: "/admin/assessments", icon: FileText, label: "Assessments" },
     { path: "/admin/portfolio", icon: FolderOpen, label: "Portfolio Review" },

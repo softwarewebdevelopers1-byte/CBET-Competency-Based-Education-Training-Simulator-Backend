@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardCheck, Gamepad2, FileText, ArrowRight } from "lucide-react";
+import { ClipboardCheck, FileText, ArrowRight } from "lucide-react";
 import styles from "../../admin/styles/dashboard.module.css";
 
 const TrainerDashboard = () => {
@@ -47,14 +47,10 @@ const TrainerDashboard = () => {
     const assessments = items.filter(
       (item) => (item.activityType || "assessment") === "assessment",
     );
-    const scenarios = items.filter(
-      (item) => (item.activityType || "assessment") === "scenario",
-    );
 
     return {
       total: items.length,
       assessments: assessments.length,
-      scenarios: scenarios.length,
       active: items.filter((item) => item.status?.toLowerCase() === "active").length,
     };
   }, [items]);
@@ -75,13 +71,6 @@ const TrainerDashboard = () => {
       color: "green",
     },
     {
-      icon: Gamepad2,
-      label: "Scenarios",
-      value: metrics.scenarios,
-      helper: "Interactive learning scenarios",
-      color: "purple",
-    },
-    {
       icon: ClipboardCheck,
       label: "Active",
       value: metrics.active,
@@ -96,7 +85,7 @@ const TrainerDashboard = () => {
         <div>
           <h1 className={styles.pageTitle}>Trainer Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            Create and manage the assessments and interactive scenarios assigned to your learners.
+            Create and manage the assessments assigned to your learners.
           </p>
         </div>
       </div>
@@ -126,13 +115,6 @@ const TrainerDashboard = () => {
             onClick={() => navigate("/trainer/assessments")}
           >
             Create Assessment
-            <ArrowRight size={18} />
-          </button>
-          <button
-            className={styles.actionBtn}
-            onClick={() => navigate("/trainer/scenarios")}
-          >
-            Create Interactive Scenario
             <ArrowRight size={18} />
           </button>
         </div>

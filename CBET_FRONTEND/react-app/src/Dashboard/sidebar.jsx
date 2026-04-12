@@ -12,7 +12,6 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiFolder,
-  FiCpu,
   FiUser,
   FiBell,
   FiSettings,
@@ -95,7 +94,6 @@ export function Sidebar({
     { path: "/dashboard", icon: <FiHome />, label: "Dashboard" },
     { path: "/courses", icon: <FiBookOpen />, label: "My Courses" },
     { path: "/assessments", icon: <FiFileText />, label: "Assessments" },
-    { path: "/scenarios", icon: <FiCpu />, label: "Interactive Scenarios" },
     { path: "/portfolio", icon: <FiFolder />, label: "My Portfolio" },
     { path: "/achievements", icon: <FiAward />, label: "Achievements" },
   ];

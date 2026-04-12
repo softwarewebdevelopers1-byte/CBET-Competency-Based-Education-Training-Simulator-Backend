@@ -14,12 +14,10 @@ import { InteractiveScenario } from "./Dashboard/interactivepage.jsx";
 import { AuthRoutes } from "./AuthRoutes/combine.auth.jsx";
 import AdminDashboard from "./admin/pages/Dashboard.jsx";
 import UserManagement from "./admin/pages/UserManagement.jsx";
-import SimulationManagement from "./admin/pages/SimulationManagement.jsx";
 import AssessmentManagement from "./admin/pages/AssessmentManagement.jsx";
 import TrainerLayout from "./trainer/components/TrainerLayout.jsx";
 import TrainerDashboard from "./trainer/pages/Dashboard.jsx";
 import AssessmentBuilder from "./trainer/pages/AssessmentBuilder.jsx";
-import ScenarioBuilder from "./trainer/pages/ScenarioBuilder.jsx";
 
 function App() {
   return (
@@ -76,10 +74,10 @@ function App() {
           element={
             <Dashboard>
               <InteractiveScenario
-                activityType="scenario"
-                heading="Interactive Scenarios"
-                emptyHeading="No scenarios assigned yet"
-                emptyCopy="Your trainer has not uploaded an interactive scenario PDF for your course yet."
+                activityType="assessment"
+                heading="AI Assessments"
+                emptyHeading="No assessments assigned yet"
+                emptyCopy="Your trainer has not uploaded an assessment PDF for your course yet."
               />
             </Dashboard>
           }
@@ -105,12 +103,7 @@ function App() {
           path="/admin/simulations"
           element={
             <AdminLayout>
-              <SimulationManagement
-                activityType="scenario"
-                ownership="all"
-                pageTitle="Interactive Scenario Management"
-                pageDescription="Create, review, activate, and archive interactive scenarios across all programmes."
-              />
+              <AssessmentManagement />
             </AdminLayout>
           }
         />
@@ -142,7 +135,7 @@ function App() {
           path="/trainer/scenarios"
           element={
             <TrainerLayout>
-              <ScenarioBuilder />
+              <AssessmentBuilder />
             </TrainerLayout>
           }
         />

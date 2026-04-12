@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, FileText, Gamepad2, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, FileText, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import styles from "../../admin/styles/Sidebar.module.css";
 
 const clearStoredAuthData = () => {
@@ -16,7 +16,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
     { path: "/trainer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/trainer/assessments", icon: FileText, label: "Assessments" },
-    { path: "/trainer/scenarios", icon: Gamepad2, label: "Interactive Scenarios" },
   ];
 
   const handleLogout = async () => {

@@ -92,6 +92,28 @@ const canManageUploads = (role: unknown) => {
   return normalizedRole === "admin" || normalizedRole === "trainer";
 };
 
+const buildActivityTypeQuery = (rawType: unknown) => {
+  const trimmedType = String(rawType ?? "").trim();
+  if (!trimmedType) {
+    return null;
+  }
+
+  const activityType = normalizeActivityType(trimmedType);
+
+  if (activityType === "assessment") {
+    return {
+      $or: [
+        { activityType: "assessment" },
+        { activityType: { $exists: false } },
+        { activityType: null },
+        { activityType: "" },
+      ],
+    };
+  }
+
+  return { activityType: "scenario" };
+};
+
 const deleteSimulationStorageFile = async (storagePath: string) => {
   const trimmedStoragePath = String(storagePath ?? "").trim();
   if (!trimmedStoragePath) {
@@ -546,8 +568,9 @@ UserUploadRouter.get(
       const ownership = String(req.query?.ownership ?? "").trim().toLowerCase();
       const managementQuery: Record<string, unknown> = {};
 
-      if (activityType) {
-        managementQuery.activityType = normalizeActivityType(activityType);
+      const activityTypeQuery = buildActivityTypeQuery(activityType);
+      if (activityTypeQuery) {
+        Object.assign(managementQuery, activityTypeQuery);
       }
 
       if (
@@ -772,8 +795,9 @@ UserUploadRouter.get(
         status: "active",
       };
 
-      if (activityType) {
-        studentQuery.activityType = normalizeActivityType(activityType);
+      const activityTypeQuery = buildActivityTypeQuery(activityType);
+      if (activityTypeQuery) {
+        Object.assign(studentQuery, activityTypeQuery);
       }
 
       const simulations = await UsersUploadedPdf.find(studentQuery)
