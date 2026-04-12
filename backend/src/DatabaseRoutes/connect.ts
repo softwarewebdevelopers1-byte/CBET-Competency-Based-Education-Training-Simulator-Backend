@@ -10,8 +10,8 @@ export function DataBaseConnection() {
       .then(() => {
         console.log("Database connected successfully");
       })
-      .catch(() => {
-        console.log("Database connection failed");
+      .catch((err) => {
+        console.error("Database connection failed:", err);
         process.exit(1);
       });
   } else console.log("Unable to connect to the Database");
