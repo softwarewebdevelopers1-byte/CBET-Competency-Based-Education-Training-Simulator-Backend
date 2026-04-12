@@ -75,8 +75,9 @@ App.use("/api/public/notifications", NotificationRouter);
 App.use("/api/admin/delete/notification", AdminDeleteNotificationRouter);
 App.use("/api/admin/get/notifications", AdminGetNotificationRouter);
 App.use("/api/admin/send/notifications", AdminNotificationRouter);
-// uploading pdf
+// uploading pdf / assessment resources
 App.use("/api/resources/upload/users/data/pdf", UserUploadRouter);
+App.use("/api/resources/assessments", UserUploadRouter);
 // getting pdf
 App.use("/api/resources/get/pdf/users", deepSearchRouter);
 App.use("/api/resources/pdf/users/simple/search", simpleSearchRoute);

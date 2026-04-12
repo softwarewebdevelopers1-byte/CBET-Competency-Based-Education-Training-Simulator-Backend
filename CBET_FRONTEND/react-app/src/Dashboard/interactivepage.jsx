@@ -27,6 +27,8 @@ export function InteractiveScenario() {
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const collectionLabel = "assessments";
+  const itemLabel = "assessment";
 
   const getOptionLabel = (question, optionId) => {
     const option = question.options.find((item) => item.id === optionId);
@@ -48,10 +50,10 @@ export function InteractiveScenario() {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Unable to load simulations");
+      throw new Error(data.error || `Unable to load ${collectionLabel}`);
     }
 
-    setSimulations(data.simulations || []);
+    setSimulations(data.assessments || data.simulations || []);
   };
 
   const loadScenario = async (simulationId) => {
@@ -65,12 +67,14 @@ export function InteractiveScenario() {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Unable to load selected simulation");
+      throw new Error(data.error || `Unable to load selected ${itemLabel}`);
     }
 
-    setScenario(data.simulation);
-    setResults(data.simulation?.previousResult || null);
-    const existingAnswers = (data.simulation?.previousResult?.feedback || []).reduce(
+    const selectedAssessment = data.assessment || data.simulation;
+
+    setScenario(selectedAssessment);
+    setResults(selectedAssessment?.previousResult || null);
+    const existingAnswers = (selectedAssessment?.previousResult?.feedback || []).reduce(
       (current, item) => ({
         ...current,
         [item.questionIndex]: item.selectedOptionId || "",
@@ -96,7 +100,7 @@ export function InteractiveScenario() {
         }
       } catch (error) {
         if (active) {
-          setErrorMessage(error.message || "Unable to load simulations");
+          setErrorMessage(error.message || `Unable to load ${collectionLabel}`);
         }
       } finally {
         if (active) {
@@ -162,7 +166,7 @@ export function InteractiveScenario() {
           );
           await loadSimulations();
         }
-        throw new Error(data.error || "Unable to submit answers");
+        throw new Error(data.error || `Unable to submit ${itemLabel} answers`);
       }
 
       setResults(data.result);
@@ -171,7 +175,7 @@ export function InteractiveScenario() {
       );
       await loadSimulations();
     } catch (error) {
-      setErrorMessage(error.message || "Unable to submit answers");
+      setErrorMessage(error.message || `Unable to submit ${itemLabel} answers`);
     } finally {
       setSubmitting(false);
     }
@@ -181,7 +185,7 @@ export function InteractiveScenario() {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingSpinner}></div>
-        <p>Loading simulations...</p>
+        <p>Loading assessments...</p>
       </div>
     );
   }
@@ -192,7 +196,7 @@ export function InteractiveScenario() {
         <div className={styles.catalogSection}>
           <div className={styles.catalogHeader}>
             <div>
-              <h1>AI Simulations</h1>
+              <h1>AI Assessments</h1>
               <p>Answer the questions generated from your trainer's uploaded PDF.</p>
             </div>
           </div>
@@ -202,8 +206,8 @@ export function InteractiveScenario() {
           {simulations.length === 0 ? (
             <div className={styles.emptyPanel}>
               <FiFileText />
-              <h3>No simulations assigned yet</h3>
-              <p>Your admin has not uploaded a PDF for your course yet.</p>
+              <h3>No assessments assigned yet</h3>
+              <p>Your admin has not uploaded an assessment PDF for your course yet.</p>
             </div>
           ) : (
             <div className={styles.catalogGrid}>
@@ -242,7 +246,7 @@ export function InteractiveScenario() {
                   ) : null}
                   {simulation.score !== null ? (
                     <div className={styles.completedNote}>
-                      You have already completed this simulation. Open it to view
+                      You have already completed this assessment. Open it to view
                       your result.
                     </div>
                   ) : null}
@@ -315,11 +319,11 @@ export function InteractiveScenario() {
             <div className={styles.completedPanel}>
               <div className={styles.feedbackHeader}>
                 <FiCheckCircle className={styles.feedbackIcon} />
-                <span className={styles.feedbackTitle}>Simulation Completed</span>
+                <span className={styles.feedbackTitle}>Assessment Completed</span>
               </div>
               <p>
                 You can review the questions and your selected answers below, but
-                you cannot retake this simulation.
+                you cannot retake this assessment.
               </p>
             </div>
           ) : null}

@@ -94,8 +94,8 @@ export function Sidebar({
   const navItems = [
     { path: "/dashboard", icon: <FiHome />, label: "Dashboard" },
     { path: "/courses", icon: <FiBookOpen />, label: "My Courses" },
-    { path: "/scenarios", icon: <FiCpu />, label: "Interactive Scenarios" },
     { path: "/assessments", icon: <FiFileText />, label: "Assessments" },
+    { path: "/scenarios", icon: <FiCpu />, label: "Interactive Scenarios" },
     { path: "/portfolio", icon: <FiFolder />, label: "My Portfolio" },
     { path: "/achievements", icon: <FiAward />, label: "Achievements" },
   ];

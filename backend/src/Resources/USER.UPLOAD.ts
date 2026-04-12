@@ -479,8 +479,18 @@ UserUploadRouter.post(
 
       res.status(201).json({
         success: true,
-        message: "PDF uploaded and simulation generated successfully",
+        message: "PDF uploaded and assessment generated successfully",
         simulation: {
+          id: createdSimulation._id,
+          courseTitle: createdSimulation.courseTitle,
+          unitName: createdSimulation.unitName,
+          unitCode: createdSimulation.unitCode,
+          assignedProgramme: createdSimulation.assignedProgramme,
+          pdfUrl: createdSimulation.pdfUrl,
+          questionCount: createdSimulation.questionCount,
+          totalPoints: createdSimulation.totalPoints,
+        },
+        assessment: {
           id: createdSimulation._id,
           courseTitle: createdSimulation.courseTitle,
           unitName: createdSimulation.unitName,
@@ -600,10 +610,14 @@ UserUploadRouter.get(
         }),
       );
 
-      res.status(200).json({ success: true, simulations: response });
+      res.status(200).json({
+        success: true,
+        simulations: response,
+        assessments: response,
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Unable to fetch simulations" });
+      res.status(500).json({ error: "Unable to fetch assessments" });
     }
   },
 );
@@ -635,7 +649,7 @@ UserUploadRouter.patch(
         .exec();
 
       if (!updatedSimulation) {
-        res.status(404).json({ error: "Simulation not found" });
+        res.status(404).json({ error: "Assessment not found" });
         return;
       }
 
@@ -647,10 +661,15 @@ UserUploadRouter.patch(
           status: updatedSimulation.status,
           updatedAt: updatedSimulation.updatedAt,
         },
+        assessment: {
+          id: updatedSimulation._id,
+          status: updatedSimulation.status,
+          updatedAt: updatedSimulation.updatedAt,
+        },
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Unable to update simulation status" });
+      res.status(500).json({ error: "Unable to update assessment status" });
     }
   },
 );
@@ -669,7 +688,7 @@ UserUploadRouter.delete(
       const simulation = await UsersUploadedPdf.findById(req.params.id).lean().exec();
 
       if (!simulation) {
-        res.status(404).json({ error: "Simulation not found" });
+        res.status(404).json({ error: "Assessment not found" });
         return;
       }
 
@@ -681,11 +700,11 @@ UserUploadRouter.delete(
 
       res.status(200).json({
         success: true,
-        message: "Simulation and all related records deleted successfully",
+        message: "Assessment and all related records deleted successfully",
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Unable to delete simulation" });
+      res.status(500).json({ error: "Unable to delete assessment" });
     }
   },
 );
@@ -765,10 +784,14 @@ UserUploadRouter.get(
         }),
       );
 
-      res.status(200).json({ success: true, simulations: response });
+      res.status(200).json({
+        success: true,
+        simulations: response,
+        assessments: response,
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Unable to fetch student simulations" });
+      res.status(500).json({ error: "Unable to fetch student assessments" });
     }
   },
 );
@@ -931,7 +954,7 @@ UserUploadRouter.get(
         .exec();
 
       if (!simulation) {
-        res.status(404).json({ error: "Simulation not found" });
+        res.status(404).json({ error: "Assessment not found" });
         return;
       }
 
@@ -945,9 +968,7 @@ UserUploadRouter.get(
 
       const previousResult = buildAttemptResult(simulation, previousAttempt);
 
-      res.status(200).json({
-        success: true,
-        simulation: {
+      const assessmentPayload = {
           id: simulation._id,
           title: `${simulation.unitCode} - ${simulation.unitName}`,
           courseTitle: simulation.courseTitle,
@@ -983,11 +1004,16 @@ UserUploadRouter.get(
               }
             : null,
           previousResult,
-        },
+        };
+
+      res.status(200).json({
+        success: true,
+        simulation: assessmentPayload,
+        assessment: assessmentPayload,
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Unable to load simulation" });
+      res.status(500).json({ error: "Unable to load assessment" });
     }
   },
 );
@@ -1013,7 +1039,7 @@ UserUploadRouter.post(
         .exec();
 
       if (!simulation) {
-        res.status(404).json({ error: "Simulation not found" });
+        res.status(404).json({ error: "Assessment not found" });
         return;
       }
 
@@ -1027,7 +1053,7 @@ UserUploadRouter.post(
 
       if (existingAttempt) {
         res.status(409).json({
-          error: "You have already completed this simulation.",
+          error: "You have already completed this assessment.",
           result: buildAttemptResult(simulation, existingAttempt),
         });
         return;
@@ -1105,7 +1131,7 @@ UserUploadRouter.post(
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Unable to submit simulation answers" });
+      res.status(500).json({ error: "Unable to submit assessment answers" });
     }
   },
 );

@@ -58,7 +58,7 @@ function App() {
           path="/assessments"
           element={
             <Dashboard>
-              <AssessmentsPage />
+              <InteractiveScenario />
             </Dashboard>
           }
         />
@@ -66,7 +66,7 @@ function App() {
           path="/scenarios"
           element={
             <Dashboard>
-              <InteractiveScenario />
+              <AssessmentsPage />
             </Dashboard>
           }
         />
