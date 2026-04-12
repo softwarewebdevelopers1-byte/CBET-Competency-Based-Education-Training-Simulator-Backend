@@ -301,7 +301,7 @@ export function InteractiveScenario() {
         <div className={styles.scenarioContent}>
           <div className={styles.stageIndicator}>
             <span className={styles.stageNumber}>
-              {scenario.unitCode} • {scenario.questionCount} Questions
+              {scenario.unitCode} â€¢ {scenario.questionCount} Questions
             </span>
             <h2 className={styles.stageTitle}>{scenario.description}</h2>
             <p className={styles.scenarioBodyCopy}>
@@ -428,7 +428,7 @@ export function InteractiveScenario() {
                 {results.feedback.map((item) => (
                   <div key={item.questionIndex} className={styles.reviewItem}>
                     <strong>Question {item.questionIndex + 1}:</strong>{" "}
-                    {item.isCorrect ? "Correct" : "Incorrect"} • +
+                    {item.isCorrect ? "Correct" : "Incorrect"} â€¢ +
                     {item.pointsAwarded} pts
                     <div>{item.explanation}</div>
                   </div>
