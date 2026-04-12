@@ -16,7 +16,12 @@ import {
   FiCheck,
 } from "react-icons/fi";
 
-export function InteractiveScenario() {
+export function InteractiveScenario({
+  activityType = "assessment",
+  heading = "AI Assessments",
+  emptyHeading = "No assessments assigned yet",
+  emptyCopy = "Your admin has not uploaded an assessment PDF for your course yet.",
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSimulationId = searchParams.get("simulationId");
 
@@ -40,8 +45,9 @@ export function InteractiveScenario() {
   };
 
   const loadSimulations = async () => {
+    const query = new URLSearchParams({ activityType });
     const response = await fetch(
-      "http://localhost:8000/api/resources/upload/users/data/pdf/student",
+      `http://localhost:8000/api/resources/upload/users/data/pdf/student?${query.toString()}`,
       {
         method: "GET",
         credentials: "include",
@@ -196,7 +202,7 @@ export function InteractiveScenario() {
         <div className={styles.catalogSection}>
           <div className={styles.catalogHeader}>
             <div>
-              <h1>AI Assessments</h1>
+              <h1>{heading}</h1>
               <p>Answer the questions generated from your trainer's uploaded PDF.</p>
             </div>
           </div>
@@ -206,8 +212,8 @@ export function InteractiveScenario() {
           {simulations.length === 0 ? (
             <div className={styles.emptyPanel}>
               <FiFileText />
-              <h3>No assessments assigned yet</h3>
-              <p>Your admin has not uploaded an assessment PDF for your course yet.</p>
+              <h3>{emptyHeading}</h3>
+              <p>{emptyCopy}</p>
             </div>
           ) : (
             <div className={styles.catalogGrid}>

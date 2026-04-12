@@ -42,7 +42,11 @@ export function LoginRoute() {
         setError("Login successful! Redirecting...");
         localStorage.setItem("cbet_user", JSON.stringify(data));
         navigate("/dashboard");
+      } else if (data.role === "trainer") {
+        localStorage.setItem("cbet_user", JSON.stringify(data));
+        navigate("/trainer/dashboard");
       } else if (data.role === "admin") {
+        localStorage.setItem("cbet_user", JSON.stringify(data));
         navigate("/admin/dashboard");
       } else {
         setError(data.message || "Invalid credentials");

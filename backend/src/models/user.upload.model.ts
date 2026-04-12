@@ -39,6 +39,7 @@ const UserUploadSchema = new mongoose.Schema(
     courseTitle: { type: String, required: true, trim: true },
     unitName: { type: String, required: true, trim: true },
     unitCode: { type: String, required: true, trim: true },
+    activityType: { type: String, default: "assessment", trim: true },
     description: { type: String, default: "", trim: true },
     instructions: { type: String, default: "", trim: true },
     originalFileName: { type: String, required: true, trim: true },

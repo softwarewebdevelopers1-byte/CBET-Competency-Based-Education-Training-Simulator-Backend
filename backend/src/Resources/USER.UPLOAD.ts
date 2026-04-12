@@ -81,6 +81,17 @@ const normalizeSimulationStatus = (rawStatus: unknown): "active" | "inactive" =>
     : "active";
 };
 
+const normalizeActivityType = (rawType: unknown): "assessment" | "scenario" => {
+  return String(rawType ?? "").trim().toLowerCase() === "scenario"
+    ? "scenario"
+    : "assessment";
+};
+
+const canManageUploads = (role: unknown) => {
+  const normalizedRole = String(role ?? "").trim().toLowerCase();
+  return normalizedRole === "admin" || normalizedRole === "trainer";
+};
+
 const deleteSimulationStorageFile = async (storagePath: string) => {
   const trimmedStoragePath = String(storagePath ?? "").trim();
   if (!trimmedStoragePath) {
@@ -379,8 +390,8 @@ UserUploadRouter.post(
 
     try {
       const currentUser = await getCurrentUser(req);
-      if (!currentUser || currentUser.role !== "admin") {
-        res.status(403).json({ error: "Admin privileges required" });
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -392,6 +403,7 @@ UserUploadRouter.post(
       const courseTitle = String(req.body.courseTitle ?? "").trim();
       const unitName = String(req.body.unitName ?? "").trim();
       const unitCode = String(req.body.unitCode ?? "").trim();
+      const activityType = normalizeActivityType(req.body.activityType);
       const assignedProgramme = String(req.body.assignedProgramme ?? "").trim();
       const assignedDepartment = String(
         req.body.assignedDepartment ?? "",
@@ -464,6 +476,7 @@ UserUploadRouter.post(
         courseTitle,
         unitName,
         unitCode,
+        activityType,
         description,
         instructions,
         originalFileName: req.file.originalname,
@@ -485,6 +498,7 @@ UserUploadRouter.post(
           courseTitle: createdSimulation.courseTitle,
           unitName: createdSimulation.unitName,
           unitCode: createdSimulation.unitCode,
+          activityType: createdSimulation.activityType,
           assignedProgramme: createdSimulation.assignedProgramme,
           pdfUrl: createdSimulation.pdfUrl,
           questionCount: createdSimulation.questionCount,
@@ -495,6 +509,7 @@ UserUploadRouter.post(
           courseTitle: createdSimulation.courseTitle,
           unitName: createdSimulation.unitName,
           unitCode: createdSimulation.unitCode,
+          activityType: createdSimulation.activityType,
           assignedProgramme: createdSimulation.assignedProgramme,
           pdfUrl: createdSimulation.pdfUrl,
           questionCount: createdSimulation.questionCount,
@@ -522,12 +537,27 @@ UserUploadRouter.get(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const currentUser = await getCurrentUser(req);
-      if (!currentUser || currentUser.role !== "admin") {
-        res.status(403).json({ error: "Admin privileges required" });
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
-      const simulations = await UsersUploadedPdf.find({})
+      const activityType = String(req.query?.activityType ?? "").trim();
+      const ownership = String(req.query?.ownership ?? "").trim().toLowerCase();
+      const managementQuery: Record<string, unknown> = {};
+
+      if (activityType) {
+        managementQuery.activityType = normalizeActivityType(activityType);
+      }
+
+      if (
+        String(currentUser.role).trim().toLowerCase() === "trainer" ||
+        ownership === "self"
+      ) {
+        managementQuery.from = currentUser.UserNumber;
+      }
+
+      const simulations = await UsersUploadedPdf.find(managementQuery)
         .sort({ createdAt: -1 })
         .lean()
         .exec();
@@ -588,6 +618,7 @@ UserUploadRouter.get(
             title: simulation.unitName,
             type: simulation.courseTitle,
             status: simulation.status,
+            activityType: simulation.activityType || "assessment",
             unitCode: simulation.unitCode,
             courseTitle: simulation.courseTitle,
             assignedProgramme: simulation.assignedProgramme,
@@ -628,15 +659,19 @@ UserUploadRouter.patch(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const currentUser = await getCurrentUser(req);
-      if (!currentUser || currentUser.role !== "admin") {
-        res.status(403).json({ error: "Admin privileges required" });
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
       const status = normalizeSimulationStatus(req.body?.status);
+      const ownershipQuery =
+        String(currentUser.role).trim().toLowerCase() === "trainer"
+          ? { from: currentUser.UserNumber }
+          : {};
 
-      const updatedSimulation = await UsersUploadedPdf.findByIdAndUpdate(
-        req.params.id,
+      const updatedSimulation = await UsersUploadedPdf.findOneAndUpdate(
+        { _id: req.params.id, ...ownershipQuery },
         {
           $set: { status },
         },
@@ -680,12 +715,22 @@ UserUploadRouter.delete(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const currentUser = await getCurrentUser(req);
-      if (!currentUser || currentUser.role !== "admin") {
-        res.status(403).json({ error: "Admin privileges required" });
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
-      const simulation = await UsersUploadedPdf.findById(req.params.id).lean().exec();
+      const ownershipQuery =
+        String(currentUser.role).trim().toLowerCase() === "trainer"
+          ? { from: currentUser.UserNumber }
+          : {};
+
+      const simulation = await UsersUploadedPdf.findOne({
+        _id: req.params.id,
+        ...ownershipQuery,
+      })
+        .lean()
+        .exec();
 
       if (!simulation) {
         res.status(404).json({ error: "Assessment not found" });
@@ -720,11 +765,18 @@ UserUploadRouter.get(
         return;
       }
 
-      const simulations = await UsersUploadedPdf.find({
+      const activityType = String(req.query?.activityType ?? "").trim();
+      const studentQuery: Record<string, unknown> = {
         assignedProgramme: currentUser.programme,
         yearOfStudy: currentUser.yearOfStudy ?? 1,
         status: "active",
-      })
+      };
+
+      if (activityType) {
+        studentQuery.activityType = normalizeActivityType(activityType);
+      }
+
+      const simulations = await UsersUploadedPdf.find(studentQuery)
         .sort({ createdAt: -1 })
         .lean()
         .exec();
@@ -767,6 +819,7 @@ UserUploadRouter.get(
             course: `${simulation.courseTitle} - ${simulation.unitCode}`,
             unitName: simulation.unitName,
             unitCode: simulation.unitCode,
+            activityType: simulation.activityType || "assessment",
             questionCount: simulation.questionCount,
             totalPoints: simulation.totalPoints,
             estimatedTimeMinutes: simulation.estimatedTimeMinutes,
@@ -974,6 +1027,7 @@ UserUploadRouter.get(
           courseTitle: simulation.courseTitle,
           unitName: simulation.unitName,
           unitCode: simulation.unitCode,
+          activityType: simulation.activityType || "assessment",
           description:
             simulation.description ||
             "Answer the AI-generated questions based on the uploaded PDF.",

@@ -5,6 +5,7 @@ import {
   Eye,
   Filter,
   Gamepad2,
+  FileText,
   RefreshCw,
   Power,
   Trash2,
@@ -34,8 +35,40 @@ const formatDate = (value) => {
   return new Date(value).toLocaleString();
 };
 
-const SimulationManagement = () => {
-  const [simulations, setSimulations] = useState([]);
+const buildLabels = (activityType) => {
+  if (activityType === "scenario") {
+    return {
+      title: "Interactive Scenario Management",
+      singular: "scenario",
+      plural: "scenarios",
+      create: "Create Scenario",
+      empty: "Upload a PDF to generate the first interactive scenario for students.",
+      description:
+        "Upload unit PDFs, generate AI questions, and assign interactive scenarios to students.",
+      icon: Gamepad2,
+    };
+  }
+
+  return {
+    title: "Assessment Management",
+    singular: "assessment",
+    plural: "assessments",
+    create: "Create Assessment",
+    empty: "Upload a PDF to generate the first AI assessment for students.",
+    description:
+      "Upload unit PDFs, generate AI questions, and assign assessments to students.",
+    icon: FileText,
+  };
+};
+
+const SimulationManagement = ({
+  activityType = "scenario",
+  ownership = "all",
+  pageTitle,
+  pageDescription,
+}) => {
+  const labels = buildLabels(activityType);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -46,12 +79,16 @@ const SimulationManagement = () => {
   const [statusUpdatingId, setStatusUpdatingId] = useState("");
   const [deletingId, setDeletingId] = useState("");
 
-  const loadSimulations = async () => {
+  const loadItems = async () => {
     try {
       setLoading(true);
       setErrorMessage("");
+      const query = new URLSearchParams({
+        activityType,
+        ownership,
+      });
       const response = await fetch(
-        "http://localhost:8000/api/resources/upload/users/data/pdf/admin",
+        `http://localhost:8000/api/resources/assessments/admin?${query.toString()}`,
         {
           method: "GET",
           credentials: "include",
@@ -60,20 +97,22 @@ const SimulationManagement = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to load simulations");
+        throw new Error(
+          data.error || `Unable to load ${labels.plural}`,
+        );
       }
 
-      setSimulations(data.simulations || []);
+      setItems(data.assessments || data.simulations || []);
     } catch (error) {
-      setErrorMessage(error.message || "Unable to load simulations");
+      setErrorMessage(error.message || `Unable to load ${labels.plural}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadSimulations();
-  }, []);
+    loadItems();
+  }, [activityType, ownership]);
 
   const handleInputChange = (event) => {
     const { name, value, files } = event.target;
@@ -83,7 +122,7 @@ const SimulationManagement = () => {
     }));
   };
 
-  const handleCreateSimulation = async (event) => {
+  const handleCreateItem = async (event) => {
     event.preventDefault();
     setUploading(true);
     setErrorMessage("");
@@ -91,48 +130,48 @@ const SimulationManagement = () => {
 
     try {
       const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
+      Object.entries({
+        ...formData,
+        activityType,
+      }).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== "") {
           payload.append(key, value);
         }
       });
 
-      const response = await fetch(
-        "http://localhost:8000/api/resources/upload/users/data/pdf",
-        {
-          method: "POST",
-          credentials: "include",
-          body: payload,
-        },
-      );
+      const response = await fetch("http://localhost:8000/api/resources/assessments", {
+        method: "POST",
+        credentials: "include",
+        body: payload,
+      });
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to create simulation");
+        throw new Error(data.error || `Unable to create ${labels.singular}`);
       }
 
-      setSuccessMessage(data.message || "Simulation generated successfully");
+      setSuccessMessage(data.message || `${labels.create} generated successfully`);
       setFormData(initialForm);
       setShowCreateForm(false);
-      await loadSimulations();
+      await loadItems();
     } catch (error) {
-      setErrorMessage(error.message || "Unable to create simulation");
+      setErrorMessage(error.message || `Unable to create ${labels.singular}`);
     } finally {
       setUploading(false);
     }
   };
 
-  const handleToggleSimulationStatus = async (simulation) => {
+  const handleToggleStatus = async (item) => {
     const nextStatus =
-      simulation.status?.toLowerCase() === "active" ? "inactive" : "active";
+      item.status?.toLowerCase() === "active" ? "inactive" : "active";
 
     try {
-      setStatusUpdatingId(simulation.id);
+      setStatusUpdatingId(item.id);
       setErrorMessage("");
       setSuccessMessage("");
 
       const response = await fetch(
-        `http://localhost:8000/api/resources/upload/users/data/pdf/admin/${simulation.id}/status`,
+        `http://localhost:8000/api/resources/assessments/admin/${item.id}/status`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -143,34 +182,41 @@ const SimulationManagement = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to update simulation status");
+        throw new Error(data.error || `Unable to update ${labels.singular} status`);
       }
 
-      setSimulations((current) =>
-        current.map((item) =>
-          item.id === simulation.id
+      setItems((current) =>
+        current.map((entry) =>
+          entry.id === item.id
             ? {
-                ...item,
+                ...entry,
                 status: nextStatus,
-                updatedAt: data.simulation?.updatedAt || item.updatedAt,
+                updatedAt:
+                  data.assessment?.updatedAt ||
+                  data.simulation?.updatedAt ||
+                  entry.updatedAt,
               }
-            : item,
+            : entry,
         ),
       );
       setSuccessMessage(
         data.message ||
-          `Simulation ${nextStatus === "active" ? "activated" : "deactivated"} successfully`,
+          `${labels.singular} ${
+            nextStatus === "active" ? "activated" : "deactivated"
+          } successfully`,
       );
     } catch (error) {
-      setErrorMessage(error.message || "Unable to update simulation status");
+      setErrorMessage(
+        error.message || `Unable to update ${labels.singular} status`,
+      );
     } finally {
       setStatusUpdatingId("");
     }
   };
 
-  const handleDeleteSimulation = async (simulation) => {
+  const handleDeleteItem = async (item) => {
     const confirmed = window.confirm(
-      `Delete "${simulation.title}" and all related student attempts? This cannot be undone.`,
+      `Delete "${item.title}" and all related student attempts? This cannot be undone.`,
     );
 
     if (!confirmed) {
@@ -178,12 +224,12 @@ const SimulationManagement = () => {
     }
 
     try {
-      setDeletingId(simulation.id);
+      setDeletingId(item.id);
       setErrorMessage("");
       setSuccessMessage("");
 
       const response = await fetch(
-        `http://localhost:8000/api/resources/upload/users/data/pdf/admin/${simulation.id}`,
+        `http://localhost:8000/api/resources/assessments/admin/${item.id}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -192,41 +238,41 @@ const SimulationManagement = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to delete simulation");
+        throw new Error(data.error || `Unable to delete ${labels.singular}`);
       }
 
-      setSimulations((current) =>
-        current.filter((item) => item.id !== simulation.id),
-      );
+      setItems((current) => current.filter((entry) => entry.id !== item.id));
       setSuccessMessage(
-        data.message || "Simulation and all related records deleted successfully",
+        data.message || `${labels.singular} and related records deleted successfully`,
       );
     } catch (error) {
-      setErrorMessage(error.message || "Unable to delete simulation");
+      setErrorMessage(error.message || `Unable to delete ${labels.singular}`);
     } finally {
       setDeletingId("");
     }
   };
 
-  const filteredSimulations = useMemo(() => {
+  const filteredItems = useMemo(() => {
     if (filterType === "all") {
-      return simulations;
+      return items;
     }
 
-    return simulations.filter(
-      (simulation) =>
-        simulation.status?.toLowerCase() === filterType ||
-        simulation.courseTitle?.toLowerCase().includes(filterType),
+    return items.filter(
+      (entry) =>
+        entry.status?.toLowerCase() === filterType ||
+        entry.courseTitle?.toLowerCase().includes(filterType),
     );
-  }, [filterType, simulations]);
+  }, [filterType, items]);
+
+  const PageIcon = labels.icon;
 
   return (
     <div className={styles.simulationManagement}>
       <div className={styles.pageHeader}>
         <div className={styles.titleBlock}>
-          <h1 className={styles.pageTitle}>Simulation Management</h1>
+          <h1 className={styles.pageTitle}>{pageTitle || labels.title}</h1>
           <p className={styles.pageDescription}>
-            Upload unit PDFs, generate AI questions, and assign them to students.
+            {pageDescription || labels.description}
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -235,15 +281,12 @@ const SimulationManagement = () => {
             onClick={() =>
               setFilterType((current) => (current === "all" ? "active" : "all"))
             }
+            type="button"
           >
             <Filter size={20} />
             {filterType === "all" ? "Show Active" : "Show All"}
           </button>
-          <button
-            className={styles.secondaryBtn}
-            onClick={loadSimulations}
-            type="button"
-          >
+          <button className={styles.secondaryBtn} onClick={loadItems} type="button">
             <RefreshCw size={20} />
             Refresh
           </button>
@@ -253,7 +296,7 @@ const SimulationManagement = () => {
             type="button"
           >
             <Plus size={20} />
-            {showCreateForm ? "Close Form" : "Create Simulation"}
+            {showCreateForm ? "Close Form" : labels.create}
           </button>
         </div>
       </div>
@@ -264,7 +307,7 @@ const SimulationManagement = () => {
       ) : null}
 
       {showCreateForm ? (
-        <form className={styles.uploadPanel} onSubmit={handleCreateSimulation}>
+        <form className={styles.uploadPanel} onSubmit={handleCreateItem}>
           <div className={styles.formGrid}>
             <label className={styles.field}>
               <span>Programme</span>
@@ -379,84 +422,79 @@ const SimulationManagement = () => {
       {loading ? (
         <div className={styles.loadingState}>
           <div className={styles.spinner}></div>
-          <p>Loading simulations...</p>
+          <p>Loading {labels.plural}...</p>
         </div>
-      ) : filteredSimulations.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className={styles.emptyState}>
-          <Gamepad2 size={80} />
-          <h3>No simulations found</h3>
-          <p>Upload a PDF to generate the first AI simulation for students.</p>
+          <PageIcon size={80} />
+          <h3>No {labels.plural} found</h3>
+          <p>{labels.empty}</p>
           <button
             className={styles.primaryBtn}
             onClick={() => setShowCreateForm(true)}
             type="button"
           >
             <Plus size={20} />
-            Create Simulation
+            {labels.create}
           </button>
         </div>
       ) : (
         <div className={styles.simulationsGrid}>
-          {filteredSimulations.map((simulation) => (
-            <div key={simulation.id} className={styles.simulationCard}>
+          {filteredItems.map((item) => (
+            <div key={item.id} className={styles.simulationCard}>
               <div className={styles.cardHeader}>
                 <span className={`${styles.simType} ${styles.technical}`}>
-                  {simulation.courseTitle}
+                  {item.courseTitle}
                 </span>
                 <span
-                  className={`${styles.simStatus} ${styles[(simulation.status || "active").toLowerCase()]}`}
+                  className={`${styles.simStatus} ${styles[(item.status || "active").toLowerCase()]}`}
                 >
-                  {simulation.status}
+                  {item.status}
                 </span>
               </div>
 
-              <h3>{simulation.title}</h3>
+              <h3>{item.title}</h3>
               <p className={styles.cardMeta}>
-                {simulation.unitCode} • {simulation.assignedProgramme} • Year{" "}
-                {simulation.yearOfStudy}
+                {item.unitCode} • {item.assignedProgramme} • Year {item.yearOfStudy}
               </p>
 
               <div className={styles.simStats}>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Participants</span>
-                  <span className={styles.statValue}>{simulation.participants}</span>
+                  <span className={styles.statValue}>{item.participants}</span>
                 </div>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Avg. Score</span>
-                  <span className={styles.statValue}>
-                    {simulation.averageScore || 0}%
-                  </span>
+                  <span className={styles.statValue}>{item.averageScore || 0}%</span>
                 </div>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Questions</span>
-                  <span className={styles.statValue}>
-                    {simulation.questionCount}
-                  </span>
+                  <span className={styles.statValue}>{item.questionCount}</span>
                 </div>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Points</span>
-                  <span className={styles.statValue}>{simulation.totalPoints}</span>
+                  <span className={styles.statValue}>{item.totalPoints}</span>
                 </div>
               </div>
 
               <div className={styles.progressBar}>
                 <div
                   className={styles.progressFill}
-                  style={{ width: simulation.completion || "0%" }}
+                  style={{ width: item.completion || "0%" }}
                 ></div>
               </div>
 
               <div className={styles.participantsSection}>
                 <div className={styles.participantsHeader}>
                   <span>Completed Students</span>
-                  <span>{simulation.completedStudents?.length || 0}</span>
+                  <span>{item.completedStudents?.length || 0}</span>
                 </div>
 
-                {simulation.completedStudents?.length ? (
+                {item.completedStudents?.length ? (
                   <div className={styles.participantsList}>
-                    {simulation.completedStudents.map((student) => (
+                    {item.completedStudents.map((student) => (
                       <div
-                        key={`${simulation.id}-${student.studentUserNumber}`}
+                        key={`${item.id}-${student.studentUserNumber}`}
                         className={styles.participantItem}
                       >
                         <div>
@@ -474,20 +512,20 @@ const SimulationManagement = () => {
                   </div>
                 ) : (
                   <p className={styles.noParticipants}>
-                    No student has completed this simulation yet.
+                    No student has completed this {labels.singular} yet.
                   </p>
                 )}
               </div>
 
               <div className={styles.cardFooter}>
                 <span className={styles.lastUpdated}>
-                  Updated {formatDate(simulation.updatedAt)}
+                  Updated {formatDate(item.updatedAt)}
                 </span>
                 <div className={styles.cardActions}>
                   <a
                     className={styles.iconBtn}
                     title="Preview PDF"
-                    href={simulation.pdfUrl}
+                    href={item.pdfUrl}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -497,21 +535,21 @@ const SimulationManagement = () => {
                     className={styles.iconBtn}
                     type="button"
                     title={
-                      simulation.status?.toLowerCase() === "active"
-                        ? "Deactivate simulation"
-                        : "Activate simulation"
+                      item.status?.toLowerCase() === "active"
+                        ? `Deactivate ${labels.singular}`
+                        : `Activate ${labels.singular}`
                     }
-                    onClick={() => handleToggleSimulationStatus(simulation)}
-                    disabled={statusUpdatingId === simulation.id}
+                    onClick={() => handleToggleStatus(item)}
+                    disabled={statusUpdatingId === item.id}
                   >
                     <Power size={16} />
                   </button>
                   <button
                     className={`${styles.iconBtn} ${styles.deleteBtn}`}
                     type="button"
-                    title="Delete simulation"
-                    onClick={() => handleDeleteSimulation(simulation)}
-                    disabled={deletingId === simulation.id}
+                    title={`Delete ${labels.singular}`}
+                    onClick={() => handleDeleteItem(item)}
+                    disabled={deletingId === item.id}
                   >
                     <Trash2 size={16} />
                   </button>

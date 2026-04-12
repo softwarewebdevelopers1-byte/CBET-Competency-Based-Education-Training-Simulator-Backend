@@ -11,11 +11,15 @@ import { MyCourses } from "./Dashboard/courses.jsx";
 import { AchievementsPage } from "./Dashboard/archievement.jsx";
 import { MyPortfolio } from "./Dashboard/myPortifolio.jsx";
 import { InteractiveScenario } from "./Dashboard/interactivepage.jsx";
-import { AssessmentsPage } from "./Dashboard/assesment.jsx";
 import { AuthRoutes } from "./AuthRoutes/combine.auth.jsx";
 import AdminDashboard from "./admin/pages/Dashboard.jsx";
 import UserManagement from "./admin/pages/UserManagement.jsx";
 import SimulationManagement from "./admin/pages/SimulationManagement.jsx";
+import AssessmentManagement from "./admin/pages/AssessmentManagement.jsx";
+import TrainerLayout from "./trainer/components/TrainerLayout.jsx";
+import TrainerDashboard from "./trainer/pages/Dashboard.jsx";
+import AssessmentBuilder from "./trainer/pages/AssessmentBuilder.jsx";
+import ScenarioBuilder from "./trainer/pages/ScenarioBuilder.jsx";
 
 function App() {
   return (
@@ -58,7 +62,12 @@ function App() {
           path="/assessments"
           element={
             <Dashboard>
-              <InteractiveScenario />
+              <InteractiveScenario
+                activityType="assessment"
+                heading="AI Assessments"
+                emptyHeading="No assessments assigned yet"
+                emptyCopy="Your trainer has not uploaded an assessment PDF for your course yet."
+              />
             </Dashboard>
           }
         />
@@ -66,7 +75,12 @@ function App() {
           path="/scenarios"
           element={
             <Dashboard>
-              <AssessmentsPage />
+              <InteractiveScenario
+                activityType="scenario"
+                heading="Interactive Scenarios"
+                emptyHeading="No scenarios assigned yet"
+                emptyCopy="Your trainer has not uploaded an interactive scenario PDF for your course yet."
+              />
             </Dashboard>
           }
         />
@@ -87,12 +101,49 @@ function App() {
             </AdminLayout>
           }
         />
-         <Route
+        <Route
           path="/admin/simulations"
           element={
             <AdminLayout>
-              <SimulationManagement />
+              <SimulationManagement
+                activityType="scenario"
+                ownership="all"
+                pageTitle="Interactive Scenario Management"
+                pageDescription="Create, review, activate, and archive interactive scenarios across all programmes."
+              />
             </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/assessments"
+          element={
+            <AdminLayout>
+              <AssessmentManagement />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/trainer/dashboard"
+          element={
+            <TrainerLayout>
+              <TrainerDashboard />
+            </TrainerLayout>
+          }
+        />
+        <Route
+          path="/trainer/assessments"
+          element={
+            <TrainerLayout>
+              <AssessmentBuilder />
+            </TrainerLayout>
+          }
+        />
+        <Route
+          path="/trainer/scenarios"
+          element={
+            <TrainerLayout>
+              <ScenarioBuilder />
+            </TrainerLayout>
           }
         />
         <Route

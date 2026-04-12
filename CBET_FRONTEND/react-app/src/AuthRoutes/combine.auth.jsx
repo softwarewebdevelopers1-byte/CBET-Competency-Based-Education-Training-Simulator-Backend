@@ -40,7 +40,13 @@ export function AuthRoutes({ children }) {
         return;
       }
       if (res.ok) {
-        navigate(localUser?.role === "admin" ? "/admin/dashboard" : "/dashboard");
+        navigate(
+          localUser?.role === "admin"
+            ? "/admin/dashboard"
+            : localUser?.role === "trainer"
+              ? "/trainer/dashboard"
+              : "/dashboard",
+        );
       }
     }
     if (CbetUser) {

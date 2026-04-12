@@ -27,6 +27,8 @@ const Header = ({
   isMobile,
   themeMode,
   onToggleTheme,
+  roleLabel = "Administrator",
+  searchPlaceholder = "Search courses, users, assessments...",
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [adminName, setAdminName] = useState("Admin User");
@@ -94,7 +96,7 @@ const Header = ({
         <Search className={styles.searchIcon} size={20} />
         <input
           type="text"
-          placeholder="Search courses, users, assessments..."
+          placeholder={searchPlaceholder}
         />
       </div>
 
@@ -127,7 +129,7 @@ const Header = ({
           </div>
           <div className={styles.userInfo}>
             <span className={styles.userName}>{adminName}</span>
-            <span className={styles.userRole}>Administrator</span>
+            <span className={styles.userRole}>{roleLabel}</span>
           </div>
           <ChevronDown size={16} className={styles.dropdownIcon} />
         </div>

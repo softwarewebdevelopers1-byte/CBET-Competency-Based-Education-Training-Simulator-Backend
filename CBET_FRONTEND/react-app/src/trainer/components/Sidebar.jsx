@@ -1,21 +1,7 @@
-// components/Sidebar.jsx
 import React, { useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  Gamepad2,
-  BookOpen,
-  FileText,
-  FolderOpen,
-  Trophy,
-  BarChart3,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
-import styles from "../styles/Sidebar.module.css";
+import { LayoutDashboard, FileText, Gamepad2, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import styles from "../../admin/styles/Sidebar.module.css";
 
 const clearStoredAuthData = () => {
   localStorage.removeItem("token");
@@ -28,15 +14,9 @@ const clearStoredAuthData = () => {
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
-    { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/admin/users", icon: Users, label: "User Management" },
-    { path: "/admin/simulations", icon: Gamepad2, label: "Interactive Scenarios" },
-    { path: "/admin/materials", icon: BookOpen, label: "Learning Materials" },
-    { path: "/admin/assessments", icon: FileText, label: "Assessments" },
-    { path: "/admin/portfolio", icon: FolderOpen, label: "Portfolio Review" },
-    { path: "/admin/gamification", icon: Trophy, label: "Gamification" },
-    { path: "/admin/reports", icon: BarChart3, label: "Reports & Analytics" },
-    { path: "/admin/settings", icon: Settings, label: "Settings" },
+    { path: "/trainer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/trainer/assessments", icon: FileText, label: "Assessments" },
+    { path: "/trainer/scenarios", icon: Gamepad2, label: "Interactive Scenarios" },
   ];
 
   const handleLogout = async () => {
@@ -53,14 +33,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
     }
   };
 
-  // Close sidebar when clicking a link on mobile
-  const handleNavClick = () => {
-    if (window.innerWidth <= 768) {
-      setCollapsed(true);
-    }
-  };
-
-  // Prevent body scroll when sidebar is open on mobile
   useEffect(() => {
     if (!collapsed && window.innerWidth <= 768) {
       document.body.style.overflow = "hidden";
@@ -75,21 +47,15 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
   return (
     <>
-      {/* Mobile overlay */}
       {!collapsed && window.innerWidth <= 768 && (
-        <div
-          className={styles.mobileOverlay}
-          onClick={() => setCollapsed(true)}
-        />
+        <div className={styles.mobileOverlay} onClick={() => setCollapsed(true)} />
       )}
 
-      <aside
-        className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}
-      >
+      <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
         <div className={styles.sidebarHeader}>
           <div className={styles.logo}>
-            <span className={styles.logoText}>CBET Simulator</span>
-            <span className={styles.logoIcon}>C</span>
+            <span className={styles.logoText}>Trainer Hub</span>
+            <span className={styles.logoIcon}>T</span>
           </div>
           <button
             className={styles.collapseBtn}
@@ -108,8 +74,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               className={({ isActive }) =>
                 `${styles.navItem} ${isActive ? styles.active : ""}`
               }
-              data-tooltip={item.label}
-              onClick={handleNavClick}
             >
               <item.icon size={20} />
               <span className={styles.navLabel}>{item.label}</span>
@@ -121,7 +85,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
           <button
             className={`${styles.navItem} ${styles.logoutBtn}`}
             onClick={handleLogout}
-            data-tooltip="Logout"
           >
             <LogOut size={20} />
             <span className={styles.navLabel}>Logout</span>
