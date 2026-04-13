@@ -42,7 +42,7 @@ App.use(cookieParser());
 App.use(express.json());
 App.use(
   cors({
-    origin: ["https://cbet-competency-based-education-tra.vercel.app", "http://localhost:5500"],
+    origin: ["https://cbet-competency-based-education-tra.vercel.app", "http://localhost:5173"],
 
     allowedHeaders: ["authorization", "Content-Type"],
     credentials: true,
