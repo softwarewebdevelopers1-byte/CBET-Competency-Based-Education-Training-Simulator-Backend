@@ -1,4 +1,5 @@
 import { Courses } from "#models/courses.model";
+import { UnitAssignment } from "#models/unit.assignment.model";
 import jwt from "jsonwebtoken";
 import { Router, type Request, type Response } from "express";
 import { User } from "#models/user.model";
@@ -68,8 +69,13 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
             },
           },
           {
+            $sort: {
+              unitCode: 1,
+            },
+          },
+          {
             $facet: {
-              data: [{ $limit: 5 }],
+              data: [],
               totalCount: [{ $count: "count" }],
             },
           },
@@ -88,11 +94,46 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
             },
           },
         ]);
-        // courseTitle: existingUser.programme,
+        const activeCourses = Array.isArray(userCourses?.data)
+          ? userCourses.data
+          : [];
+        const unitIds = activeCourses.map((course: any) => course._id).filter(Boolean);
+        const unitAssignments = unitIds.length
+          ? await UnitAssignment.find({
+              unitId: { $in: unitIds },
+            })
+              .lean()
+              .exec()
+          : [];
+
+        const coursesWithAssignments = activeCourses.map((course: any) => {
+          const relatedAssignments = unitAssignments.filter(
+            (assignment) => String(assignment.unitId) === String(course._id),
+          );
+          const lecturerAssignments = relatedAssignments.filter(
+            (assignment) => assignment.assignmentType === "lecturer",
+          );
+          const traineeAssignments = relatedAssignments.filter(
+            (assignment) => assignment.assignmentType === "trainee",
+          );
+
+          return {
+            ...course,
+            instructor: course.lecturerName || course.lecturerUserNumber || "Not assigned",
+            lecturerName: course.lecturerName || lecturerAssignments[0]?.assigneeName || "",
+            lecturerUserNumber:
+              course.lecturerUserNumber || lecturerAssignments[0]?.assigneeUserNumber || "",
+            assignedTrainees: traineeAssignments.map((assignment) => ({
+              userNumber: assignment.assigneeUserNumber,
+              fullName: assignment.assigneeName,
+            })),
+            traineeCount: traineeAssignments.length,
+          };
+        });
 
         return res.status(200).json({
           success: true,
-          courses: userCourses.data,
+          courses: coursesWithAssignments,
           count: userCourses.totalCount,
           completedCourses: completedCourses.totalCount,
         });

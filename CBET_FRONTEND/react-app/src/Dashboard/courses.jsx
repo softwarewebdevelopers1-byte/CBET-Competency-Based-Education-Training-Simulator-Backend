@@ -62,7 +62,11 @@ export function MyCourses() {
           id: course._id || index,
           code: course.unitCode || "N/A",
           title: course.unitName || course.courseTitle || "Untitled Course",
-          instructor: course.instructor || "Staff",
+          instructor:
+            course.lecturerName ||
+            course.instructor ||
+            course.lecturerUserNumber ||
+            "Not assigned",
           description:
             course.description || course.unitName || "No description available",
           progress: course.progress || Math.floor(Math.random() * 100), // You'll need to implement actual progress tracking
@@ -81,6 +85,10 @@ export function MyCourses() {
           students: course.students || 0,
           rating: course.rating || 4.0,
           tags: course.tags || extractTags(course),
+          lecturerName: course.lecturerName || "",
+          lecturerUserNumber: course.lecturerUserNumber || "",
+          traineeCount: course.traineeCount || 0,
+          assignedTrainees: course.assignedTrainees || [],
           department: course.department,
           courseTitle: course.courseTitle,
           unitCode: course.unitCode,
@@ -305,6 +313,13 @@ export function MyCourses() {
                 <span className={styles.courseCode}>{course.code}</span>
                 <h3 className={styles.courseTitle}>{course.title}</h3>
                 <p className={styles.courseInstructor}>{course.instructor}</p>
+                {course.traineeCount > 0 && (
+                  <p className={styles.courseInstructor}>
+                    Assigned trainees: {course.assignedTrainees
+                      .map((trainee) => trainee.fullName)
+                      .join(", ")}
+                  </p>
+                )}
               </div>
               <button className={styles.moreBtn}>
                 <FiMoreVertical />
@@ -339,7 +354,11 @@ export function MyCourses() {
               </div>
               <div className={styles.statItem}>
                 <FiUsers />
-                <span>{course.students} students</span>
+                <span>
+                  {course.traineeCount > 0
+                    ? `${course.traineeCount} assigned trainees`
+                    : `${course.students} students`}
+                </span>
               </div>
               <div className={styles.statItem}>
                 <FiStar />
