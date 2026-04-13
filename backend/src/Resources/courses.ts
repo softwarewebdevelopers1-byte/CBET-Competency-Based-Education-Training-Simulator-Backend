@@ -156,3 +156,107 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
+CoursesRouter.get(
+  "/trainer/assigned-units",
+  async (req: Request, res: Response) => {
+    const accessToken = req.cookies?.CBET7U4D_Host_AccessToken;
+
+    if (!ACCESS_TOKEN_SECRET) {
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
+    if (!accessToken) {
+      return res
+        .status(401)
+        .json({ message: "No token provided", isLoggedIn: false });
+    }
+
+    try {
+      jwt.verify(
+        accessToken,
+        ACCESS_TOKEN_SECRET,
+        async (err: any, load: any) => {
+          if (err) {
+            res.status(401).json({ message: "Token verification failed" });
+            return;
+          }
+
+          const existingUser = await User.findOne({ UserNumber: load.userNumber })
+            .lean()
+            .exec();
+
+          if (!existingUser) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+          }
+
+          if (String(existingUser.role).trim().toLowerCase() !== "trainer") {
+            res.status(403).json({ message: "Trainer privileges required" });
+            return;
+          }
+
+          const lecturerAssignments = await UnitAssignment.find({
+            assignmentType: "lecturer",
+            assigneeUserNumber: existingUser.UserNumber,
+          })
+            .lean()
+            .exec();
+
+          const assignedUnitIds = lecturerAssignments.map((item) => item.unitId);
+          const trainerUnits = assignedUnitIds.length
+            ? await Courses.find({ _id: { $in: assignedUnitIds } })
+                .sort({ courseTitle: 1, yearOfStudy: 1, unitCode: 1 })
+                .lean()
+                .exec()
+            : [];
+
+          const traineeAssignments = assignedUnitIds.length
+            ? await UnitAssignment.find({
+                unitId: { $in: assignedUnitIds },
+                assignmentType: "trainee",
+              })
+                .lean()
+                .exec()
+            : [];
+
+          const units = trainerUnits.map((unit) => {
+            const unitTrainees = traineeAssignments
+              .filter((assignment) => String(assignment.unitId) === String(unit._id))
+              .map((assignment) => ({
+                userNumber: assignment.assigneeUserNumber,
+                fullName: assignment.assigneeName,
+              }));
+
+            return {
+              ...unit,
+              traineeCount: unitTrainees.length,
+              trainees: unitTrainees,
+            };
+          });
+
+          return res.status(200).json({
+            success: true,
+            units,
+            count: units.length,
+          });
+        },
+      );
+    } catch (error: any) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          message: "Token expired",
+          isLoggedIn: false,
+          needsRefresh: true,
+        });
+      }
+      if (error.name === "JsonWebTokenError") {
+        return res
+          .status(401)
+          .json({ message: "Invalid token", isLoggedIn: false });
+      }
+      console.error("Error in /trainer/assigned-units:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+);
