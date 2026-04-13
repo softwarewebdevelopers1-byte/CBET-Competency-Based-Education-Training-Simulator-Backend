@@ -15,6 +15,7 @@ import { AuthRoutes } from "./AuthRoutes/combine.auth.jsx";
 import AdminDashboard from "./admin/pages/Dashboard.jsx";
 import UserManagement from "./admin/pages/UserManagement.jsx";
 import AssessmentManagement from "./admin/pages/AssessmentManagement.jsx";
+import UnitManagement from "./admin/pages/UnitManagement.jsx";
 import TrainerLayout from "./trainer/components/TrainerLayout.jsx";
 import TrainerDashboard from "./trainer/pages/Dashboard.jsx";
 import AssessmentBuilder from "./trainer/pages/AssessmentBuilder.jsx";
@@ -112,6 +113,30 @@ function App() {
           element={
             <AdminLayout>
               <AssessmentManagement />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/unit-assignments"
+          element={
+            <AdminLayout>
+              <UnitManagement defaultTab="assignments" />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/program-units"
+          element={
+            <AdminLayout>
+              <UnitManagement defaultTab="bulk-add" />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/program-unit"
+          element={
+            <AdminLayout>
+              <UnitManagement defaultTab="single-add" />
             </AdminLayout>
           }
         />

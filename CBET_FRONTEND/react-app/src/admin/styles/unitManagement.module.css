@@ -1,0 +1,234 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 2rem;
+  color: #0f172a;
+}
+
+.pageSubtitle {
+  margin: 8px 0 0;
+  color: #475569;
+  max-width: 700px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.metricCard,
+.panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+}
+
+.metricCard {
+  padding: 16px;
+}
+
+.metricValue {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.metricLabel {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.tabBar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.activeTab {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.errorBanner,
+.successBanner,
+.loadingState {
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 500;
+}
+
+.errorBanner {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.successBanner {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.loadingState {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 20px;
+}
+
+.gridSingle {
+  display: grid;
+  grid-template-columns: minmax(320px, 720px);
+}
+
+.panel {
+  padding: 24px;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.panelHeader p {
+  margin: 8px 0 0;
+  color: #64748b;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.field span {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.field input,
+.field select,
+.field textarea,
+.previewBox {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  background: #fff;
+  color: #0f172a;
+}
+
+.field textarea,
+.previewBox {
+  min-height: 220px;
+  resize: vertical;
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.primaryButton {
+  margin-top: 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  color: #fff;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.assignmentSection {
+  margin-top: 20px;
+}
+
+.assignmentSection h3 {
+  margin: 0 0 12px;
+  color: #0f172a;
+}
+
+.assignmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assignmentItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.emptyCopy {
+  margin: 0;
+  color: #64748b;
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .metrics,
+  .inlineFields {
+    grid-template-columns: 1fr;
+  }
+}
