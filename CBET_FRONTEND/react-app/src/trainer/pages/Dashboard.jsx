@@ -15,7 +15,7 @@ const TrainerDashboard = () => {
         setLoading(true);
         setError("");
         const response = await fetch(
-          "http://localhost:8000/api/resources/assessments/admin?ownership=self",
+          "https://cbet-competency-based-education-training.onrender.com/api/resources/assessments/admin?ownership=self",
           {
             method: "GET",
             credentials: "include",
