@@ -36,7 +36,7 @@ const readStoredUser = () => {
 };
 
 const getCourseStats = (coursesInfo) => {
-  const totalCourses = Array.isArray(coursesInfo?.count) && coursesInfo.count.length > 0
+  const coursesInProgress = Array.isArray(coursesInfo?.count) && coursesInfo.count.length > 0
     ? coursesInfo.count[0]?.count || 0
     : Array.isArray(coursesInfo?.courses)
       ? coursesInfo.courses.length
@@ -48,9 +48,7 @@ const getCourseStats = (coursesInfo) => {
       ? coursesInfo.completedCourses[0]?.count || 0
       : 0;
 
-  const activeCourses = Math.max(totalCourses - completedCourses, 0);
-
-  return { totalCourses, completedCourses, activeCourses };
+  return { coursesInProgress, completedCourses };
 };
 
 export function Sidebar({
@@ -65,7 +63,7 @@ export function Sidebar({
     typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
   const navigate = useNavigate();
   const userInfo = readStoredUser();
-  const { totalCourses, completedCourses, activeCourses } = useMemo(
+  const { coursesInProgress, completedCourses } = useMemo(
     () => getCourseStats(coursesInfo),
     [coursesInfo],
   );
@@ -119,18 +117,13 @@ export function Sidebar({
 
   const sidebarHighlights = [
     {
-      label: "Active Courses",
-      value: activeCourses,
-      icon: <FiBookOpen />,
-    },
-    {
       label: "Completed",
       value: completedCourses,
       icon: <FiAward />,
     },
     {
-      label: "Total Courses",
-      value: totalCourses,
+      label: "Courses in Progress",
+      value: coursesInProgress,
       icon: <FiTarget />,
     },
   ];
@@ -184,14 +177,12 @@ export function Sidebar({
           <div className={styles.notificationHeader}>
             <FiBookOpen />
             <span>Course Summary</span>
-            <span className={styles.notificationBadge}>{totalCourses}</span>
+            <span className={styles.notificationBadge}>{coursesInProgress}</span>
           </div>
           <div className={styles.notificationList}>
             <div className={styles.notificationItem}>
               <span className={styles.notificationDot}></span>
-              <span className={styles.notificationText}>
-                {activeCourses} course{activeCourses === 1 ? "" : "s"} currently in progress
-              </span>
+
             </div>
             <div className={styles.notificationItem}>
               <span className={styles.notificationDot}></span>
@@ -202,7 +193,7 @@ export function Sidebar({
             <div className={styles.notificationItem}>
               <span className={styles.notificationDot}></span>
               <span className={styles.notificationText}>
-                {totalCourses} total enrolled course{totalCourses === 1 ? "" : "s"}
+                {coursesInProgress} total enrolled course{coursesInProgress === 1 ? "" : "s"}
               </span>
             </div>
           </div>
@@ -267,9 +258,9 @@ export function Sidebar({
           </div>
           <div
             className={styles.collapsedStat}
-            title={`${totalCourses} Total Courses`}
+            title={`${coursesInProgress} courses in Progress`}
           >
-            {totalCourses}
+            {coursesInProgress}
           </div>
         </div>
       )}
