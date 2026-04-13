@@ -35,7 +35,7 @@ export function Dashboard({ children }) {
   useEffect(() => {
     async function checkAuth() {
       let localData = readStoredUser();
-      let res = await fetch("http://localhost:8000/auth/user/check/logged", {
+      let res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/user/check/logged", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -51,7 +51,7 @@ export function Dashboard({ children }) {
         resetRole(studentInfo.role);
         location("/dashboard");
         const res = await fetch(
-          "http://localhost:8000/auth/admin/upload/courses/my/courses",
+          "https://cbet-competency-based-education-training.onrender.com/auth/admin/upload/courses/my/courses",
           {
             method: "POST",
             credentials: "include",

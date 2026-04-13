@@ -105,7 +105,7 @@ export function Homepage() {
         const counts = getCourseCount();
         const completedCourses = getCompletedCourses();
         const response = await fetch(
-          "http://localhost:8000/api/resources/upload/users/data/pdf/student",
+          "https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student",
           {
             method: "GET",
             credentials: "include",

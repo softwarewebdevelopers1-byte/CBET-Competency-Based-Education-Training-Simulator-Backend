@@ -72,7 +72,7 @@ export function Sidebar({
   };
 
   const handleLogout = async () => {
-    let res = await fetch("http://localhost:8000/auth/CBET/user/logout", {
+    let res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/CBET/user/logout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

@@ -26,7 +26,7 @@ export function LoginRoute() {
       setError("");
 
       const response = await fetch(
-        "http://localhost:8000/user/auth/now/login",
+        "https://cbet-competency-based-education-training.onrender.com/user/auth/now/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

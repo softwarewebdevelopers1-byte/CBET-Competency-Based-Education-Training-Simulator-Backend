@@ -35,7 +35,7 @@ const TrainerLayout = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const res = await fetch("http://localhost:8000/auth/user/check/logged", {
+      const res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/user/check/logged", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

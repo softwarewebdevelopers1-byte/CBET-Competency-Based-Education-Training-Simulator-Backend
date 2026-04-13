@@ -44,7 +44,7 @@ const Header = ({
     const loadAdminProfile = async () => {
       try {
         const response = await fetch(
-          "http://localhost:8000/auth/user/check/logged",
+          "https://cbet-competency-based-education-training.onrender.com/auth/user/check/logged",
           {
             method: "POST",
             credentials: "include",
@@ -66,7 +66,7 @@ const Header = ({
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8000/auth/CBET/user/logout", {
+      await fetch("https://cbet-competency-based-education-training.onrender.com/auth/CBET/user/logout", {
         method: "POST",
         credentials: "include",
       });

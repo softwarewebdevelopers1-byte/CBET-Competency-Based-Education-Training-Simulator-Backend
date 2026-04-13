@@ -47,7 +47,7 @@ export function InteractiveScenario({
   const loadSimulations = async () => {
     const query = new URLSearchParams({ activityType });
     const response = await fetch(
-      `http://localhost:8000/api/resources/upload/users/data/pdf/student?${query.toString()}`,
+      `https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student?${query.toString()}`,
       {
         method: "GET",
         credentials: "include",
@@ -64,7 +64,7 @@ export function InteractiveScenario({
 
   const loadScenario = async (simulationId) => {
     const response = await fetch(
-      `http://localhost:8000/api/resources/upload/users/data/pdf/student/${simulationId}`,
+      `https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student/${simulationId}`,
       {
         method: "GET",
         credentials: "include",
@@ -154,7 +154,7 @@ export function InteractiveScenario({
       };
 
       const response = await fetch(
-        `http://localhost:8000/api/resources/upload/users/data/pdf/student/${scenario.id}/submit`,
+        `https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student/${scenario.id}/submit`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

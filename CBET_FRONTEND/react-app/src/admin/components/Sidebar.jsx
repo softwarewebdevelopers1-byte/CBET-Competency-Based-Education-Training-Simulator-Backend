@@ -39,7 +39,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8000/auth/CBET/user/logout", {
+      await fetch("https://cbet-competency-based-education-training.onrender.com/auth/CBET/user/logout", {
         method: "POST",
         credentials: "include",
       });

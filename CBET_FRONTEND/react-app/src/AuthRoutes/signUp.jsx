@@ -53,7 +53,7 @@ export function SignUpRoute() {
       console.log(UserNumber, password);
 
       try {
-        let res = await fetch("http://localhost:8000/auth/signUp", {
+        let res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/signUp", {
           method: "POST",
           body: JSON.stringify({ UserNumber, password }),
           credentials: "include",

@@ -24,7 +24,7 @@ const AdminDashboard = () => {
         setLoading(true);
         setError("");
 
-        const response = await fetch("http://localhost:8000/auth/admin/users", {
+        const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
           method: "GET",
           credentials: "include",
         });

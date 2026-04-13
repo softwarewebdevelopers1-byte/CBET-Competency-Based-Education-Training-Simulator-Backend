@@ -52,7 +52,7 @@ export function MyPortfolio() {
         setLoading(true);
         setErrorMessage("");
         const response = await fetch(
-          "http://localhost:8000/api/resources/upload/users/data/pdf/student/portfolio",
+          "https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student/portfolio",
           {
             method: "GET",
             credentials: "include",

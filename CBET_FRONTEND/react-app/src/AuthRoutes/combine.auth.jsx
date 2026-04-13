@@ -26,7 +26,7 @@ export function AuthRoutes({ children }) {
     let localUser = readStoredUser();
     let CbetUser = localUser?.user;
     async function checkAuth() {
-      let res = await fetch("http://localhost:8000/auth/user/check/logged", {
+      let res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/user/check/logged", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -88,7 +88,7 @@ const SimulationManagement = ({
         ownership,
       });
       const response = await fetch(
-        `http://localhost:8000/api/resources/assessments/admin?${query.toString()}`,
+        `https://cbet-competency-based-education-training.onrender.com/api/resources/assessments/admin?${query.toString()}`,
         {
           method: "GET",
           credentials: "include",
@@ -139,7 +139,7 @@ const SimulationManagement = ({
         }
       });
 
-      const response = await fetch("http://localhost:8000/api/resources/assessments", {
+      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/api/resources/assessments", {
         method: "POST",
         credentials: "include",
         body: payload,
@@ -171,7 +171,7 @@ const SimulationManagement = ({
       setSuccessMessage("");
 
       const response = await fetch(
-        `http://localhost:8000/api/resources/assessments/admin/${item.id}/status`,
+        `https://cbet-competency-based-education-training.onrender.com/api/resources/assessments/admin/${item.id}/status`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -229,7 +229,7 @@ const SimulationManagement = ({
       setSuccessMessage("");
 
       const response = await fetch(
-        `http://localhost:8000/api/resources/assessments/admin/${item.id}`,
+        `https://cbet-competency-based-education-training.onrender.com/api/resources/assessments/admin/${item.id}`,
         {
           method: "DELETE",
           credentials: "include",

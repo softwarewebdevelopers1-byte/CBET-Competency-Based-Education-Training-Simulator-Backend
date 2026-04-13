@@ -51,7 +51,7 @@ const UserManagement = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:8000/auth/admin/users", {
+      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
         method: "GET",
         credentials: "include",
       });
@@ -123,7 +123,7 @@ const UserManagement = () => {
       setSuccessMessage("");
 
       const response = await fetch(
-        "http://localhost:8000/auth/admin/delete/user",
+        "https://cbet-competency-based-education-training.onrender.com/auth/admin/delete/user",
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -169,7 +169,7 @@ const UserManagement = () => {
       setSuccessMessage("");
 
       const response = await fetch(
-        "http://localhost:8000/auth/recover/account",
+        "https://cbet-competency-based-education-training.onrender.com/auth/recover/account",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -233,7 +233,7 @@ const UserManagement = () => {
       setError("");
       setSuccessMessage("");
 
-      const response = await fetch("http://localhost:8000/auth/admin/users", {
+      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -273,7 +273,7 @@ const UserManagement = () => {
       const encodedUserNumber = encodeURIComponent(selectedUserNumber);
 
       const response = await fetch(
-        `http://localhost:8000/auth/admin/users/${encodedUserNumber}`,
+        `https://cbet-competency-based-education-training.onrender.com/auth/admin/users/${encodedUserNumber}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
