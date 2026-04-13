@@ -1,28 +1,112 @@
-// src/components/achievements/AchievementsPage.jsx
-
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import styles from "../css/achievements.module.css";
 import {
   FiAward,
-  FiStar,
-  FiTrendingUp,
-  FiClock,
   FiCalendar,
-  FiChevronRight,
+  FiCheckCircle,
+  FiDownload,
   FiFilter,
+  FiGift,
+  FiLock,
   FiSearch,
   FiShare2,
-  FiDownload,
-  FiLock,
-  FiUnlock,
-  FiGift,
-  FiZap,
+  FiStar,
   FiTarget,
-  FiBookOpen,
-  FiCheckCircle,
-  FiBarChart2,
+  FiTrendingUp,
+  FiUnlock,
+  FiZap,
 } from "react-icons/fi";
+
+const buildAchievements = ({
+  totalCourses,
+  completedCourses,
+  assessments,
+  portfolioItems,
+}) => {
+  const completedAssessments = assessments.filter((item) => item.score !== null);
+  const verifiedItems = portfolioItems.filter(
+    (item) => item.verifications?.length > 0,
+  ).length;
+  const earnedBadges = portfolioItems.flatMap((item) => item.badges || []);
+  const totalPortfolioPoints = portfolioItems.reduce(
+    (sum, item) => sum + (item.points || 0),
+    0,
+  );
+  const latestAssessmentDate =
+    completedAssessments[0]?.completedDate || completedAssessments[0]?.date || null;
+  const latestPortfolioDate = portfolioItems[0]?.date || null;
+
+  return [
+    {
+      id: "active-course-progress",
+      name: "Course Progress",
+      description: "Track the courses you are currently taking and the ones you have completed.",
+      category: "course",
+      icon: "CR",
+      rarity: completedCourses >= 3 ? "rare" : "common",
+      points: completedCourses * 100,
+      progress: totalCourses
+        ? Math.round((completedCourses / totalCourses) * 100)
+        : 0,
+      totalRequired: Math.max(totalCourses, 1),
+      currentProgress: completedCourses,
+      isEarned: completedCourses > 0,
+      requirements: ["Complete enrolled courses"],
+      rewards: ["Course completion recognition"],
+      earnedDate: latestPortfolioDate || latestAssessmentDate,
+    },
+    {
+      id: "assessment-momentum",
+      name: "Assessment Momentum",
+      description: "Build momentum by completing assigned assessments.",
+      category: "assessment",
+      icon: "AS",
+      rarity: completedAssessments.length >= 5 ? "epic" : "common",
+      points: completedAssessments.reduce((sum, item) => sum + (item.score || 0), 0),
+      progress: assessments.length
+        ? Math.round((completedAssessments.length / assessments.length) * 100)
+        : 0,
+      totalRequired: Math.max(assessments.length, 1),
+      currentProgress: completedAssessments.length,
+      isEarned: completedAssessments.length > 0,
+      requirements: ["Submit assigned assessments"],
+      rewards: ["Consistency badge"],
+      earnedDate: latestAssessmentDate,
+    },
+    {
+      id: "portfolio-builder",
+      name: "Portfolio Builder",
+      description: "Add verified evidence from completed work into your portfolio.",
+      category: "skill",
+      icon: "PF",
+      rarity: verifiedItems >= 3 ? "rare" : "common",
+      points: totalPortfolioPoints,
+      progress: Math.min(100, verifiedItems * 25),
+      totalRequired: 4,
+      currentProgress: verifiedItems,
+      isEarned: verifiedItems > 0,
+      requirements: ["Earn verified portfolio items"],
+      rewards: ["Evidence-ready learner badge"],
+      earnedDate: latestPortfolioDate,
+    },
+    {
+      id: "badge-collector",
+      name: "Badge Collector",
+      description: "Collect badges from approved and verified portfolio work.",
+      category: "special",
+      icon: "BG",
+      rarity: earnedBadges.length >= 5 ? "legendary" : "common",
+      points: earnedBadges.length * 50,
+      progress: Math.min(100, earnedBadges.length * 20),
+      totalRequired: 5,
+      currentProgress: earnedBadges.length,
+      isEarned: earnedBadges.length > 0,
+      requirements: ["Earn portfolio badges"],
+      rewards: ["Profile recognition"],
+      earnedDate: latestPortfolioDate,
+    },
+  ];
+};
 
 export function AchievementsPage() {
   const [loading, setLoading] = useState(true);
@@ -30,338 +114,133 @@ export function AchievementsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [courseStats, setCourseStats] = useState({
+    totalCourses: 0,
+    completedCourses: 0,
+    activeCourses: 0,
+  });
 
   useEffect(() => {
-    // Simulate loading achievements
-    setTimeout(() => {
-      setAchievements(mockAchievements);
-      setLoading(false);
-    }, 1000);
+    const loadAchievements = async () => {
+      try {
+        setLoading(true);
+
+        const [coursesResponse, assessmentsResponse, portfolioResponse] =
+          await Promise.all([
+            fetch(
+              "https://cbet-competency-based-education-training.onrender.com/auth/admin/upload/courses/my/courses",
+              {
+                method: "POST",
+                credentials: "include",
+              },
+            ),
+            fetch(
+              "https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student?activityType=assessment",
+              {
+                method: "GET",
+                credentials: "include",
+              },
+            ),
+            fetch(
+              "https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student/portfolio",
+              {
+                method: "GET",
+                credentials: "include",
+              },
+            ),
+          ]);
+
+        const coursesData = coursesResponse.ok ? await coursesResponse.json() : {};
+        const assessmentsData = assessmentsResponse.ok
+          ? await assessmentsResponse.json()
+          : {};
+        const portfolioData = portfolioResponse.ok ? await portfolioResponse.json() : {};
+
+        const totalCourses =
+          Array.isArray(coursesData.count) && coursesData.count.length > 0
+            ? coursesData.count[0]?.count || 0
+            : Array.isArray(coursesData.courses)
+              ? coursesData.courses.length
+              : 0;
+        const completedCourses =
+          Array.isArray(coursesData.completedCourses) &&
+          coursesData.completedCourses.length > 0
+            ? coursesData.completedCourses[0]?.count || 0
+            : 0;
+        const assessments =
+          assessmentsData.assessments || assessmentsData.simulations || [];
+        const portfolioItems = portfolioData.portfolioItems || [];
+
+        setCourseStats({
+          totalCourses,
+          completedCourses,
+          activeCourses: Math.max(totalCourses - completedCourses, 0),
+        });
+        setAchievements(
+          buildAchievements({
+            totalCourses,
+            completedCourses,
+            assessments,
+            portfolioItems,
+          }),
+        );
+      } catch (error) {
+        setAchievements([]);
+        setCourseStats({
+          totalCourses: 0,
+          completedCourses: 0,
+          activeCourses: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAchievements();
   }, []);
 
-  const mockAchievements = [
-    // Course Completion Badges
-    {
-      id: 1,
-      name: "Network Security Master",
-      description: "Completed Network Security Fundamentals with distinction",
-      category: "course",
-      icon: "🔒",
-      rarity: "epic",
-      points: 500,
-      earnedDate: "2026-02-15",
-      progress: 100,
-      totalRequired: 1,
-      isEarned: true,
-      requirements: ["Complete all modules", "Score 90%+ on final exam"],
-      rewards: ["500 points", "Security Expert title"],
-    },
-    {
-      id: 2,
-      name: "Web Development Pro",
-      description: "Mastered React and modern web development",
-      category: "course",
-      icon: "⚛️",
-      rarity: "rare",
-      points: 350,
-      earnedDate: "2026-01-20",
-      progress: 100,
-      totalRequired: 1,
-      isEarned: true,
-      requirements: ["Complete React course", "Build 3 projects"],
-      rewards: ["350 points", "React Developer badge"],
-    },
-    {
-      id: 3,
-      name: "Database Expert",
-      description: "Excel in Database Management Systems",
-      category: "course",
-      icon: "🗄️",
-      rarity: "rare",
-      points: 300,
-      earnedDate: "2025-12-10",
-      progress: 100,
-      totalRequired: 1,
-      isEarned: true,
-      requirements: ["Complete all SQL challenges", "Design a database"],
-      rewards: ["300 points", "Database Guru status"],
-    },
-
-    // Streak Badges
-    {
-      id: 4,
-      name: "Weekly Warrior",
-      description: "Maintained a 7-day learning streak",
-      category: "streak",
-      icon: "🔥",
-      rarity: "common",
-      points: 50,
-      earnedDate: "2026-03-01",
-      progress: 100,
-      totalRequired: 7,
-      isEarned: true,
-      requirements: ["Learn for 7 consecutive days"],
-      rewards: ["50 points", "Streak starter badge"],
-    },
-    {
-      id: 5,
-      name: "Monthly Master",
-      description: "Achieved a 30-day learning streak",
-      category: "streak",
-      icon: "⚡",
-      rarity: "rare",
-      points: 200,
-      earnedDate: "2026-02-28",
-      progress: 100,
-      totalRequired: 30,
-      isEarned: true,
-      requirements: ["Learn for 30 consecutive days"],
-      rewards: ["200 points", "30-day streak badge"],
-    },
-    {
-      id: 6,
-      name: "Semester Champion",
-      description: "Maintained a 100-day learning streak",
-      category: "streak",
-      icon: "🏆",
-      rarity: "legendary",
-      points: 1000,
-      progress: 67,
-      totalRequired: 100,
-      isEarned: false,
-      currentProgress: 67,
-      requirements: ["Learn for 100 consecutive days"],
-      rewards: [
-        "1000 points",
-        "Legendary streak badge",
-        "Exclusive profile frame",
-      ],
-    },
-
-    // Assessment Badges
-    {
-      id: 7,
-      name: "Quiz Master",
-      description: "Score 100% on 10 different assessments",
-      category: "assessment",
-      icon: "📝",
-      rarity: "rare",
-      points: 250,
-      earnedDate: "2026-02-10",
-      progress: 100,
-      totalRequired: 10,
-      isEarned: true,
-      requirements: ["Perfect scores on 10 assessments"],
-      rewards: ["250 points", "Quiz Master title"],
-    },
-    {
-      id: 8,
-      name: "Fast Learner",
-      description: "Complete 5 assessments ahead of deadline",
-      category: "assessment",
-      icon: "🚀",
-      rarity: "common",
-      points: 100,
-      earnedDate: "2026-01-15",
-      progress: 100,
-      totalRequired: 5,
-      isEarned: true,
-      requirements: ["Submit 5 assessments early"],
-      rewards: ["100 points", "Early bird badge"],
-    },
-    {
-      id: 9,
-      name: "Perfect Score",
-      description: "Achieve perfect score on a final exam",
-      category: "assessment",
-      icon: "💯",
-      rarity: "epic",
-      points: 400,
-      earnedDate: "2025-12-20",
-      progress: 100,
-      totalRequired: 1,
-      isEarned: true,
-      requirements: ["Score 100% on any final exam"],
-      rewards: ["400 points", "Perfect score badge"],
-    },
-
-    // Skill Badges
-    {
-      id: 10,
-      name: "JavaScript Ninja",
-      description: "Master JavaScript programming",
-      category: "skill",
-      icon: "🟨",
-      rarity: "rare",
-      points: 300,
-      progress: 80,
-      totalRequired: 100,
-      isEarned: false,
-      currentProgress: 80,
-      requirements: ["Complete JavaScript track", "Pass advanced assessment"],
-      rewards: ["300 points", "JavaScript expert badge"],
-    },
-    {
-      id: 11,
-      name: "Python Guru",
-      description: "Become a Python programming expert",
-      category: "skill",
-      icon: "🐍",
-      rarity: "epic",
-      points: 450,
-      progress: 45,
-      totalRequired: 100,
-      isEarned: false,
-      currentProgress: 45,
-      requirements: [
-        "Complete Python track",
-        "Build 5 projects",
-        "Pass certification",
-      ],
-      rewards: ["450 points", "Python Guru title"],
-    },
-    {
-      id: 12,
-      name: "Security Specialist",
-      description: "Master network security concepts",
-      category: "skill",
-      icon: "🔐",
-      rarity: "legendary",
-      points: 600,
-      progress: 30,
-      totalRequired: 100,
-      isEarned: false,
-      currentProgress: 30,
-      requirements: [
-        "Complete security track",
-        "Pass certification",
-        "Complete 10 scenarios",
-      ],
-      rewards: ["600 points", "Security Specialist badge", "Priority support"],
-    },
-
-    // Participation Badges
-    {
-      id: 13,
-      name: "Discussion Leader",
-      description: "Participate in 50 forum discussions",
-      category: "participation",
-      icon: "💬",
-      rarity: "common",
-      points: 75,
-      progress: 42,
-      totalRequired: 50,
-      isEarned: false,
-      currentProgress: 42,
-      requirements: ["50 forum posts"],
-      rewards: ["75 points", "Active contributor badge"],
-    },
-    {
-      id: 14,
-      name: "Peer Mentor",
-      description: "Help 20 fellow students",
-      category: "participation",
-      icon: "🤝",
-      rarity: "rare",
-      points: 200,
-      earnedDate: "2026-02-05",
-      progress: 100,
-      totalRequired: 20,
-      isEarned: true,
-      requirements: ["Answer 20 student questions"],
-      rewards: ["200 points", "Mentor badge"],
-    },
-
-    // Special Badges
-    {
-      id: 15,
-      name: "Early Adopter",
-      description: "Join CBET Simulator in the first month",
-      category: "special",
-      icon: "🌟",
-      rarity: "legendary",
-      points: 1000,
-      earnedDate: "2025-09-01",
-      progress: 100,
-      totalRequired: 1,
-      isEarned: true,
-      requirements: ["Sign up in September 2025"],
-      rewards: ["1000 points", "Founder badge", "Lifetime discount"],
-    },
-    {
-      id: 16,
-      name: "Holiday Champion",
-      description: "Complete challenges during holiday season",
-      category: "special",
-      icon: "🎄",
-      rarity: "rare",
-      points: 150,
-      earnedDate: "2025-12-25",
-      progress: 100,
-      totalRequired: 1,
-      isEarned: true,
-      requirements: ["Complete holiday special challenge"],
-      rewards: ["150 points", "Holiday badge"],
-    },
-  ];
-
-  const categories = [
-    { id: "all", name: "All Badges", icon: "🏆", count: achievements.length },
-    {
-      id: "earned",
-      name: "Earned",
-      icon: "✅",
-      count: achievements.filter((a) => a.isEarned).length,
-    },
-    {
-      id: "in-progress",
-      name: "In Progress",
-      icon: "⏳",
-      count: achievements.filter((a) => !a.isEarned && a.progress > 0).length,
-    },
-    {
-      id: "locked",
-      name: "Locked",
-      icon: "🔒",
-      count: achievements.filter((a) => !a.isEarned && a.progress === 0).length,
-    },
-    {
-      id: "course",
-      name: "Course",
-      icon: "📚",
-      count: achievements.filter((a) => a.category === "course").length,
-    },
-    {
-      id: "streak",
-      name: "Streak",
-      icon: "🔥",
-      count: achievements.filter((a) => a.category === "streak").length,
-    },
-    {
-      id: "assessment",
-      name: "Assessment",
-      icon: "📝",
-      count: achievements.filter((a) => a.category === "assessment").length,
-    },
-    {
-      id: "skill",
-      name: "Skill",
-      icon: "⚡",
-      count: achievements.filter((a) => a.category === "skill").length,
-    },
-    {
-      id: "participation",
-      name: "Participation",
-      icon: "💬",
-      count: achievements.filter((a) => a.category === "participation").length,
-    },
-    {
-      id: "special",
-      name: "Special",
-      icon: "🌟",
-      count: achievements.filter((a) => a.category === "special").length,
-    },
-  ];
+  const categories = useMemo(
+    () => [
+      { id: "all", name: "All Badges", icon: "ALL", count: achievements.length },
+      {
+        id: "earned",
+        name: "Earned",
+        icon: "OK",
+        count: achievements.filter((item) => item.isEarned).length,
+      },
+      {
+        id: "in-progress",
+        name: "In Progress",
+        icon: "IP",
+        count: achievements.filter((item) => !item.isEarned && item.progress > 0).length,
+      },
+      {
+        id: "course",
+        name: "Course",
+        icon: "CR",
+        count: achievements.filter((item) => item.category === "course").length,
+      },
+      {
+        id: "assessment",
+        name: "Assessment",
+        icon: "AS",
+        count: achievements.filter((item) => item.category === "assessment").length,
+      },
+      {
+        id: "skill",
+        name: "Skill",
+        icon: "SK",
+        count: achievements.filter((item) => item.category === "skill").length,
+      },
+      {
+        id: "special",
+        name: "Special",
+        icon: "SP",
+        count: achievements.filter((item) => item.category === "special").length,
+      },
+    ],
+    [achievements],
+  );
 
   const getRarityColor = (rarity) => {
     switch (rarity) {
@@ -382,29 +261,26 @@ export function AchievementsPage() {
     .filter((achievement) => {
       if (selectedCategory === "all") return true;
       if (selectedCategory === "earned") return achievement.isEarned;
-      if (selectedCategory === "in-progress")
+      if (selectedCategory === "in-progress") {
         return !achievement.isEarned && achievement.progress > 0;
-      if (selectedCategory === "locked")
-        return !achievement.isEarned && achievement.progress === 0;
+      }
       return achievement.category === selectedCategory;
     })
-    .filter(
-      (achievement) =>
-        achievement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        achievement.description
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()),
-    );
+    .filter((achievement) => {
+      const text = `${achievement.name} ${achievement.description}`.toLowerCase();
+      return text.includes(searchTerm.toLowerCase());
+    });
 
-  const earnedCount = achievements.filter((a) => a.isEarned).length;
+  const earnedCount = achievements.filter((item) => item.isEarned).length;
   const totalPoints = achievements
-    .filter((a) => a.isEarned)
-    .reduce((sum, a) => sum + a.points, 0);
+    .filter((item) => item.isEarned)
+    .reduce((sum, item) => sum + item.points, 0);
   const nextMilestone = achievements
-    .filter((a) => !a.isEarned && a.progress > 0)
-    .sort(
-      (a, b) => b.progress / b.totalRequired - a.progress / a.totalRequired,
-    )[0];
+    .filter((item) => !item.isEarned && item.progress > 0)
+    .sort((a, b) => b.progress - a.progress)[0];
+  const completionPercent = achievements.length
+    ? Math.round((earnedCount / achievements.length) * 100)
+    : 0;
 
   if (loading) {
     return (
@@ -417,30 +293,54 @@ export function AchievementsPage() {
 
   return (
     <div className={styles.achievementsPage}>
-      {/* Header */}
       <div className={styles.header}>
         <div>
           <h1 className={styles.pageTitle}>Achievements</h1>
           <p className={styles.pageSubtitle}>
-            Track your progress and earn badges as you learn
+            Real progress from your active courses, completed courses, assessments, and portfolio
           </p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.shareBtn}>
+          <button className={styles.shareBtn} type="button">
             <FiShare2 /> Share Profile
           </button>
-          <button className={styles.downloadBtn}>
+          <button className={styles.downloadBtn} type="button">
             <FiDownload /> Download
           </button>
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className={styles.statsOverview}>
         <div className={styles.statCard}>
           <div
             className={styles.statIcon}
             style={{ background: "#e8f0fe", color: "#4f46e5" }}
+          >
+            <FiTarget />
+          </div>
+          <div className={styles.statInfo}>
+            <span className={styles.statValue}>{courseStats.activeCourses}</span>
+            <span className={styles.statLabel}>Active Courses</span>
+          </div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div
+            className={styles.statIcon}
+            style={{ background: "#d1fae5", color: "#10b981" }}
+          >
+            <FiCheckCircle />
+          </div>
+          <div className={styles.statInfo}>
+            <span className={styles.statValue}>{courseStats.completedCourses}</span>
+            <span className={styles.statLabel}>Completed Courses</span>
+          </div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div
+            className={styles.statIcon}
+            style={{ background: "#fef3c7", color: "#f59e0b" }}
           >
             <FiAward />
           </div>
@@ -453,48 +353,17 @@ export function AchievementsPage() {
         <div className={styles.statCard}>
           <div
             className={styles.statIcon}
-            style={{ background: "#d1fae5", color: "#10b981" }}
-          >
-            <FiStar />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statValue}>{totalPoints}</span>
-            <span className={styles.statLabel}>Total Points</span>
-          </div>
-        </div>
-
-        <div className={styles.statCard}>
-          <div
-            className={styles.statIcon}
-            style={{ background: "#fef3c7", color: "#f59e0b" }}
+            style={{ background: "#fae8ff", color: "#8b5cf6" }}
           >
             <FiTrendingUp />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>
-              {achievements.length - earnedCount}
-            </span>
-            <span className={styles.statLabel}>Available</span>
-          </div>
-        </div>
-
-        <div className={styles.statCard}>
-          <div
-            className={styles.statIcon}
-            style={{ background: "#fae8ff", color: "#8b5cf6" }}
-          >
-            <FiTarget />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statValue}>
-              {Math.round((earnedCount / achievements.length) * 100)}%
-            </span>
-            <span className={styles.statLabel}>Completion</span>
+            <span className={styles.statValue}>{completionPercent}%</span>
+            <span className={styles.statLabel}>Achievement Completion</span>
           </div>
         </div>
       </div>
 
-      {/* Next Milestone */}
       {nextMilestone && (
         <div className={styles.nextMilestone}>
           <div className={styles.milestoneHeader}>
@@ -518,7 +387,6 @@ export function AchievementsPage() {
         </div>
       )}
 
-      {/* Search and Filter */}
       <div className={styles.searchSection}>
         <div className={styles.searchBar}>
           <FiSearch className={styles.searchIcon} />
@@ -526,25 +394,26 @@ export function AchievementsPage() {
             type="text"
             placeholder="Search achievements..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
             className={styles.searchInput}
           />
         </div>
         <button
           className={`${styles.filterBtn} ${showFilters ? styles.active : ""}`}
           onClick={() => setShowFilters(!showFilters)}
+          type="button"
         >
           <FiFilter /> Filter
         </button>
       </div>
 
-      {/* Categories */}
       <div className={styles.categories}>
         {categories.map((category) => (
           <button
             key={category.id}
             className={`${styles.categoryBtn} ${selectedCategory === category.id ? styles.activeCategory : ""}`}
             onClick={() => setSelectedCategory(category.id)}
+            type="button"
           >
             <span>{category.icon}</span>
             <span>{category.name}</span>
@@ -553,7 +422,6 @@ export function AchievementsPage() {
         ))}
       </div>
 
-      {/* Achievements Grid */}
       <div className={styles.achievementsGrid}>
         {filteredAchievements.map((achievement) => {
           const rarity = getRarityColor(achievement.rarity);
@@ -562,7 +430,6 @@ export function AchievementsPage() {
               key={achievement.id}
               className={`${styles.achievementCard} ${!achievement.isEarned ? styles.locked : ""}`}
             >
-              {/* Card Header */}
               <div className={styles.cardHeader}>
                 <div
                   className={styles.badgeIcon}
@@ -592,12 +459,8 @@ export function AchievementsPage() {
                 )}
               </div>
 
-              {/* Description */}
-              <p className={styles.badgeDescription}>
-                {achievement.description}
-              </p>
+              <p className={styles.badgeDescription}>{achievement.description}</p>
 
-              {/* Progress Bar (if in progress) */}
               {!achievement.isEarned && achievement.progress > 0 && (
                 <div className={styles.progressSection}>
                   <div className={styles.progressHeader}>
@@ -615,37 +478,34 @@ export function AchievementsPage() {
                 </div>
               )}
 
-              {/* Requirements */}
               <div className={styles.requirements}>
                 <p className={styles.requirementsTitle}>Requirements:</p>
                 <ul className={styles.requirementsList}>
-                  {achievement.requirements.map((req, index) => (
-                    <li key={index}>
+                  {achievement.requirements.map((requirement) => (
+                    <li key={requirement}>
                       <FiCheckCircle className={styles.reqIcon} />
-                      {req}
+                      {requirement}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Rewards */}
               <div className={styles.rewards}>
                 <p className={styles.rewardsTitle}>Rewards:</p>
                 <div className={styles.rewardsList}>
-                  {achievement.rewards.map((reward, index) => (
-                    <span key={index} className={styles.reward}>
+                  {achievement.rewards.map((reward) => (
+                    <span key={reward} className={styles.reward}>
                       <FiGift /> {reward}
                     </span>
                   ))}
                 </div>
               </div>
 
-              {/* Card Footer */}
               <div className={styles.cardFooter}>
                 <div className={styles.points}>
                   <FiStar /> {achievement.points} pts
                 </div>
-                {achievement.isEarned && (
+                {achievement.isEarned && achievement.earnedDate && (
                   <div className={styles.earnedDate}>
                     <FiCalendar /> Earned:{" "}
                     {new Date(achievement.earnedDate).toLocaleDateString()}
@@ -657,7 +517,6 @@ export function AchievementsPage() {
         })}
       </div>
 
-      {/* Empty State */}
       {filteredAchievements.length === 0 && (
         <div className={styles.emptyState}>
           <FiAward className={styles.emptyIcon} />
@@ -669,11 +528,27 @@ export function AchievementsPage() {
               setSearchTerm("");
               setSelectedCategory("all");
             }}
+            type="button"
           >
             Clear Filters
           </button>
         </div>
       )}
+
+      <div className={styles.statsOverview}>
+        <div className={styles.statCard}>
+          <div
+            className={styles.statIcon}
+            style={{ background: "#eef2ff", color: "#4338ca" }}
+          >
+            <FiStar />
+          </div>
+          <div className={styles.statInfo}>
+            <span className={styles.statValue}>{totalPoints}</span>
+            <span className={styles.statLabel}>Reward Points</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

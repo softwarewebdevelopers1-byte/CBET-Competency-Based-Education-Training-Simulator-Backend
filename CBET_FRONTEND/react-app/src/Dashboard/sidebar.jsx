@@ -1,22 +1,20 @@
-// src/components/common/Sidebar.jsx
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "../css/sidebar.module.css";
 import {
-  FiHome,
-  FiBookOpen,
-  FiFileText,
   FiAward,
-  FiLogOut,
+  FiBookOpen,
   FiChevronLeft,
   FiChevronRight,
+  FiFileText,
   FiFolder,
-  FiUser,
-  FiBell,
+  FiHome,
+  FiLogOut,
+  FiMoon,
   FiSettings,
   FiSun,
-  FiMoon,
+  FiTarget,
+  FiUser,
 } from "react-icons/fi";
 
 const clearStoredAuthData = () => {
@@ -37,6 +35,24 @@ const readStoredUser = () => {
   }
 };
 
+const getCourseStats = (coursesInfo) => {
+  const totalCourses = Array.isArray(coursesInfo?.count) && coursesInfo.count.length > 0
+    ? coursesInfo.count[0]?.count || 0
+    : Array.isArray(coursesInfo?.courses)
+      ? coursesInfo.courses.length
+      : 0;
+
+  const completedCourses =
+    Array.isArray(coursesInfo?.completedCourses) &&
+    coursesInfo.completedCourses.length > 0
+      ? coursesInfo.completedCourses[0]?.count || 0
+      : 0;
+
+  const activeCourses = Math.max(totalCourses - completedCourses, 0);
+
+  return { totalCourses, completedCourses, activeCourses };
+};
+
 export function Sidebar({
   collapsed: collapsedProp,
   onToggle,
@@ -44,13 +60,15 @@ export function Sidebar({
   themeMode,
   onToggleTheme,
 }) {
-  console.log("course info", coursesInfo);
-
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed =
     typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
   const navigate = useNavigate();
-  let userInfo = readStoredUser();
+  const userInfo = readStoredUser();
+  const { totalCourses, completedCourses, activeCourses } = useMemo(
+    () => getCourseStats(coursesInfo),
+    [coursesInfo],
+  );
 
   useEffect(() => {
     if (!userInfo) {
@@ -63,20 +81,22 @@ export function Sidebar({
     return null;
   }
 
-  // Mock student data - replace with actual user data from props or store
   const student = {
     name: userInfo.user || "User",
-    program: userInfo.programme,
-    year: "Year 2",
-    studentId: userInfo.code,
+    program: userInfo.programme || "Student Programme",
+    year: userInfo.year || "Active learner",
+    studentId: userInfo.code || "N/A",
   };
 
   const handleLogout = async () => {
-    let res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/CBET/user/logout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    });
+    await fetch(
+      "https://cbet-competency-based-education-training.onrender.com/auth/CBET/user/logout",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      },
+    ).catch(() => null);
     clearStoredAuthData();
     navigate("/login");
   };
@@ -84,12 +104,11 @@ export function Sidebar({
   const toggleSidebar = () => {
     if (typeof onToggle === "function") {
       onToggle();
-    } else {
-      setInternalCollapsed((c) => !c);
+      return;
     }
+    setInternalCollapsed((current) => !current);
   };
 
-  // Student-only navigation items
   const navItems = [
     { path: "/dashboard", icon: <FiHome />, label: "Dashboard" },
     { path: "/courses", icon: <FiBookOpen />, label: "My Courses" },
@@ -98,28 +117,44 @@ export function Sidebar({
     { path: "/achievements", icon: <FiAward />, label: "Achievements" },
   ];
 
+  const sidebarHighlights = [
+    {
+      label: "Active Courses",
+      value: activeCourses,
+      icon: <FiBookOpen />,
+    },
+    {
+      label: "Completed",
+      value: completedCourses,
+      icon: <FiAward />,
+    },
+    {
+      label: "Total Courses",
+      value: totalCourses,
+      icon: <FiTarget />,
+    },
+  ];
+
   return (
     <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
-      {/* Sidebar Header */}
       <div className={styles.sidebarHeader}>
         {!collapsed ? (
           <div className={styles.logo}>
-            <span className={styles.logoIcon}>🎓</span>
+            <span className={styles.logoIcon}>CB</span>
             <span className={styles.logoText}>CBET Student</span>
           </div>
         ) : (
-          <span className={styles.logoIconSmall}>🎓</span>
+          <span className={styles.logoIconSmall}>CB</span>
         )}
 
-        <button onClick={toggleSidebar} className={styles.toggleBtn}>
+        <button onClick={toggleSidebar} className={styles.toggleBtn} type="button">
           {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
         </button>
       </div>
 
-      {/* Student Info */}
       <div className={styles.studentInfo}>
         <div className={styles.studentAvatar}>
-          {student.firstName?.charAt(0) || <FiUser />}
+          {student.name.charAt(0).toUpperCase() || <FiUser />}
         </div>
         {!collapsed && (
           <div className={styles.studentDetails}>
@@ -130,76 +165,65 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Quick Stats */}
       {!collapsed && (
         <div className={styles.quickStats}>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>85%</span>
-            <span className={styles.statLabel}>Avg. Score</span>
+          {sidebarHighlights.map((item, index) => (
+            <React.Fragment key={item.label}>
+              {index > 0 && <div className={styles.statDivider}></div>}
+              <div className={styles.statItem}>
+                <span className={styles.statValue}>{item.value}</span>
+                <span className={styles.statLabel}>{item.label}</span>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
+      {!collapsed && (
+        <div className={styles.notifications}>
+          <div className={styles.notificationHeader}>
+            <FiBookOpen />
+            <span>Course Summary</span>
+            <span className={styles.notificationBadge}>{totalCourses}</span>
           </div>
-          <div className={styles.statDivider}></div>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>12</span>
-            <span className={styles.statLabel}>Badges</span>
-          </div>
-          <div className={styles.statDivider}></div>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>7</span>
-            <span className={styles.statLabel}>Streak</span>
+          <div className={styles.notificationList}>
+            <div className={styles.notificationItem}>
+              <span className={styles.notificationDot}></span>
+              <span className={styles.notificationText}>
+                {activeCourses} course{activeCourses === 1 ? "" : "s"} currently in progress
+              </span>
+            </div>
+            <div className={styles.notificationItem}>
+              <span className={styles.notificationDot}></span>
+              <span className={styles.notificationText}>
+                {completedCourses} course{completedCourses === 1 ? "" : "s"} completed
+              </span>
+            </div>
+            <div className={styles.notificationItem}>
+              <span className={styles.notificationDot}></span>
+              <span className={styles.notificationText}>
+                {totalCourses} total enrolled course{totalCourses === 1 ? "" : "s"}
+              </span>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Navigation */}
       <nav className={styles.nav}>
-        {navItems.map((item, index) => (
+        {navItems.map((item) => (
           <NavLink
-            key={index}
+            key={item.path}
             to={item.path}
             className={({ isActive }) =>
               `${styles.navItem} ${isActive ? styles.active : ""}`
             }
           >
             <span className={styles.navIcon}>{item.icon}</span>
-            {!collapsed && (
-              <span className={styles.navLabel}>{item.label}</span>
-            )}
+            {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
           </NavLink>
         ))}
       </nav>
 
-      {/* Notifications */}
-      {!collapsed && (
-        <div className={styles.notifications}>
-          <div className={styles.notificationHeader}>
-            <FiBell />
-            <span>Updates</span>
-            <span className={styles.notificationBadge}>3</span>
-          </div>
-          <div className={styles.notificationList}>
-            <div className={styles.notificationItem}>
-              <span className={styles.notificationDot}></span>
-              <span className={styles.notificationText}>
-                Network Security Quiz due tomorrow
-              </span>
-            </div>
-            <div className={styles.notificationItem}>
-              <span className={styles.notificationDot}></span>
-              <span className={styles.notificationText}>
-                New scenario: Ethical Hacking Basics
-              </span>
-            </div>
-            <div className={styles.notificationItem}>
-              <span className={styles.notificationDot}></span>
-              <span className={styles.notificationText}>
-                Your portfolio was reviewed
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
       <div className={styles.sidebarFooter}>
         {!collapsed && (
           <>
@@ -221,23 +245,31 @@ export function Sidebar({
             </NavLink>
           </>
         )}
-        <button onClick={handleLogout} className={styles.logoutBtn}>
+        <button onClick={handleLogout} className={styles.logoutBtn} type="button">
           <FiLogOut />
           {!collapsed && <span>Logout</span>}
         </button>
       </div>
 
-      {/* Collapsed Stats */}
       {collapsed && (
         <div className={styles.collapsedStats}>
-          <div className={styles.collapsedStat} title="85% Average Score">
-            📊
+          <div
+            className={styles.collapsedStat}
+            title={`${activeCourses} Active Courses`}
+          >
+            {activeCourses}
           </div>
-          <div className={styles.collapsedStat} title="12 Badges">
-            🏆
+          <div
+            className={styles.collapsedStat}
+            title={`${completedCourses} Completed Courses`}
+          >
+            {completedCourses}
           </div>
-          <div className={styles.collapsedStat} title="7 Day Streak">
-            🔥
+          <div
+            className={styles.collapsedStat}
+            title={`${totalCourses} Total Courses`}
+          >
+            {totalCourses}
           </div>
         </div>
       )}
