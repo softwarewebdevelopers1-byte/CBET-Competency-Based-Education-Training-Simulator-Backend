@@ -6,6 +6,8 @@ interface CoursesInterface {
   unitName: string;
   department: string;
   status: string;
+  lecturerUserNumber?: string;
+  lecturerName?: string;
 }
 // interface CompletedCourses {
 //   owner: string;
@@ -39,6 +41,16 @@ let CourseSchema = new mongoose.Schema<CoursesInterface>({
   status: {
     type: String,
     required: true,
+  },
+  lecturerUserNumber: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+  lecturerName: {
+    type: String,
+    default: "",
+    trim: true,
   },
 });
 export let Courses =

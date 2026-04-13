@@ -24,6 +24,7 @@ import {
   AdminNotificationRouter,
   NotificationRouter,
 } from "#adminResources/public_notifications";
+import { AdminUnitManagementRouter } from "#adminResources/unit.management";
 // users uploads
 import { UserUploadRouter } from "#PdfResources/USER.UPLOAD";
 import { deepSearchRouter } from "#PdfResources/deepSearch.user";
@@ -75,6 +76,7 @@ App.use("/api/public/notifications", NotificationRouter);
 App.use("/api/admin/delete/notification", AdminDeleteNotificationRouter);
 App.use("/api/admin/get/notifications", AdminGetNotificationRouter);
 App.use("/api/admin/send/notifications", AdminNotificationRouter);
+App.use("/auth/admin/unit-management", AdminUnitManagementRouter);
 // uploading pdf / assessment resources
 App.use("/api/resources/upload/users/data/pdf", UserUploadRouter);
 App.use("/api/resources/assessments", UserUploadRouter);
