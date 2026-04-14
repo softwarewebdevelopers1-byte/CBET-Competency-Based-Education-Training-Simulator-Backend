@@ -42,14 +42,33 @@ export function MyCourses() {
   const navigate = useNavigate();
   let data = useContext(CourseContext);
   console.log(data);
-  function getCompletedCourses() {
+  function getTotalCourses() {
     try {
-      if (data && data.count && Array.isArray(data.count)) {
-        return data.count.length > 0 ? data.completedCourses[0].count : 0;
+      if (data && Array.isArray(data.count) && data.count.length > 0) {
+        return Number(data.count[0]?.count || 0);
+      }
+      if (data && Array.isArray(data.courses)) {
+        return data.courses.length;
       }
       return 0;
     } catch (error) {
-      console.error("CBET error happenned", error);
+      console.error("CBET error happened", error);
+      return 0;
+    }
+  }
+
+  function getCompletedCourses() {
+    try {
+      if (
+        data &&
+        Array.isArray(data.completedCourses) &&
+        data.completedCourses.length > 0
+      ) {
+        return Number(data.completedCourses[0]?.count || 0);
+      }
+      return 0;
+    } catch (error) {
+      console.error("CBET error happened", error);
       return 0;
     }
   }
@@ -261,7 +280,7 @@ export function MyCourses() {
         <div>
           <h1 className={styles.pageTitle}>My Courses</h1>
           <p className={styles.pageSubtitle}>
-            You are enrolled in {courses.length} courses •{" "}
+            You are enrolled in {getTotalCourses()} courses •{" "}
             {getCompletedCourses()} completed
           </p>
         </div>
