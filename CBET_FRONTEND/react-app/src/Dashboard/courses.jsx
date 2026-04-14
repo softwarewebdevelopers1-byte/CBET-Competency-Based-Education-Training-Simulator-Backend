@@ -25,6 +25,9 @@ import {
 } from "react-icons/fi";
 import { CourseContext } from "./dashboard.jsx";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000";
+
 export function MyCourses() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
@@ -33,6 +36,7 @@ export function MyCourses() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
+  const [registeringCourseId, setRegisteringCourseId] = useState("");
 
   const navigate = useNavigate();
   let data = useContext(CourseContext);
@@ -88,7 +92,8 @@ export function MyCourses() {
           lecturerName: course.lecturerName || "",
           lecturerUserNumber: course.lecturerUserNumber || "",
           traineeCount: course.traineeCount || 0,
-          assignedTrainees: course.assignedTrainees || [],
+          isRegistered: Boolean(course.isRegistered),
+          registeredAt: course.registeredAt || null,
           department: course.department,
           courseTitle: course.courseTitle,
           unitCode: course.unitCode,
@@ -105,6 +110,43 @@ export function MyCourses() {
 
     GetData();
   }, []);
+
+  const handleRegisterUnit = async (courseId) => {
+    try {
+      setRegisteringCourseId(courseId);
+
+      const response = await fetch(
+        `${API_BASE_URL}/auth/admin/upload/courses/units/${courseId}/register`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to register unit");
+      }
+
+      setCourses((currentCourses) =>
+        currentCourses.map((course) =>
+          course.id === courseId
+            ? {
+                ...course,
+                isRegistered: true,
+                registeredAt: data.assignment?.assignedAt || new Date().toISOString(),
+                traineeCount: data.traineeCount ?? course.traineeCount,
+              }
+            : course,
+        ),
+      );
+    } catch (error) {
+      console.error("Registration error:", error);
+      window.alert(error instanceof Error ? error.message : "Unable to register unit");
+    } finally {
+      setRegisteringCourseId("");
+    }
+  };
 
   // Helper function to get thumbnail icon based on course name
   const getThumbnailIcon = (courseName) => {
@@ -313,11 +355,9 @@ export function MyCourses() {
                 <span className={styles.courseCode}>{course.code}</span>
                 <h3 className={styles.courseTitle}>{course.title}</h3>
                 <p className={styles.courseInstructor}>{course.instructor}</p>
-                {course.traineeCount > 0 && (
+                {course.isRegistered && (
                   <p className={styles.courseInstructor}>
-                    Assigned trainees: {course.assignedTrainees
-                      .map((trainee) => trainee.fullName)
-                      .join(", ")}
+                    Registered for this unit
                   </p>
                 )}
               </div>
@@ -410,6 +450,19 @@ export function MyCourses() {
                   ? "Review Course"
                   : "Continue Learning"}
                 <FiChevronRight />
+              </button>
+              <button
+                className={styles.secondaryAction}
+                onClick={() => handleRegisterUnit(course.id)}
+                disabled={course.isRegistered || registeringCourseId === course.id}
+                type="button"
+                title={course.isRegistered ? "Already registered" : "Register for this unit"}
+              >
+                {course.isRegistered
+                  ? <FiCheckCircle />
+                  : registeringCourseId === course.id
+                    ? "..."
+                    : "Reg"}
               </button>
               <button className={styles.secondaryAction}>
                 <FiEye />

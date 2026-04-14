@@ -116,6 +116,10 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
           const traineeAssignments = relatedAssignments.filter(
             (assignment) => assignment.assignmentType === "trainee",
           );
+          const currentStudentAssignment = traineeAssignments.find(
+            (assignment) =>
+              assignment.assigneeUserNumber === existingUser.UserNumber,
+          );
 
           return {
             ...course,
@@ -128,6 +132,8 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
               fullName: assignment.assigneeName,
             })),
             traineeCount: traineeAssignments.length,
+            isRegistered: Boolean(currentStudentAssignment),
+            registeredAt: currentStudentAssignment?.assignedAt || null,
           };
         });
 
@@ -256,6 +262,120 @@ CoursesRouter.get(
           .json({ message: "Invalid token", isLoggedIn: false });
       }
       console.error("Error in /trainer/assigned-units:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+);
+
+CoursesRouter.post(
+  "/units/:unitId/register",
+  async (req: Request, res: Response) => {
+    const accessToken = req.cookies?.CBET7U4D_Host_AccessToken;
+
+    if (!ACCESS_TOKEN_SECRET) {
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
+    if (!accessToken) {
+      return res
+        .status(401)
+        .json({ message: "No token provided", isLoggedIn: false });
+    }
+
+    try {
+      jwt.verify(
+        accessToken,
+        ACCESS_TOKEN_SECRET,
+        async (err: any, load: any) => {
+          if (err) {
+            res.status(401).json({ message: "Token verification failed" });
+            return;
+          }
+
+          const existingUser = await User.findOne({ UserNumber: load.userNumber })
+            .lean()
+            .exec();
+
+          if (!existingUser) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+          }
+
+          if (String(existingUser.role).trim().toLowerCase() !== "student") {
+            res.status(403).json({ message: "Student privileges required" });
+            return;
+          }
+
+          const unit = await Courses.findById(req.params.unitId).exec();
+
+          if (!unit) {
+            res.status(404).json({ message: "Unit not found for this student" });
+            return;
+          }
+
+          if (
+            unit.courseTitle !== existingUser.programme ||
+            unit.yearOfStudy !== existingUser.yearOfStudy ||
+            unit.status !== "active"
+          ) {
+            res.status(403).json({
+              message: "This unit is not available for the current student",
+            });
+            return;
+          }
+
+          const assignment = await UnitAssignment.findOneAndUpdate(
+            {
+              unitId: (unit as any)._id,
+              assignmentType: "trainee",
+              assigneeUserNumber: existingUser.UserNumber,
+            },
+            {
+              $set: {
+                courseTitle: unit.courseTitle,
+                unitCode: unit.unitCode,
+                unitName: unit.unitName,
+                assigneeName: existingUser.fullName,
+                assigneeRole: "student",
+                assignedByUserNumber: existingUser.UserNumber,
+                assignedAt: new Date(),
+              },
+            },
+            {
+              new: true,
+              upsert: true,
+              setDefaultsOnInsert: true,
+            },
+          ).lean();
+
+          const traineeCount = await UnitAssignment.countDocuments({
+            unitId: (unit as any)._id,
+            assignmentType: "trainee",
+          });
+
+          res.status(200).json({
+            success: true,
+            message: "Unit registered successfully",
+            assignment,
+            unitId: String((unit as any)._id),
+            traineeCount,
+          });
+        },
+      );
+    } catch (error: any) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          message: "Token expired",
+          isLoggedIn: false,
+          needsRefresh: true,
+        });
+      }
+      if (error.name === "JsonWebTokenError") {
+        return res
+          .status(401)
+          .json({ message: "Invalid token", isLoggedIn: false });
+      }
+      console.error("Error in /units/:unitId/register:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },
