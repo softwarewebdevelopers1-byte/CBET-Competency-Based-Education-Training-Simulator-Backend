@@ -111,7 +111,9 @@ export function Homepage() {
             credentials: "include",
           },
         );
+        
         const data = await response.json();
+        
         const simulations = response.ok ? data.simulations || [] : [];
         const completedSimulations = simulations.filter(
           (simulation) => simulation.score !== null,
@@ -268,7 +270,7 @@ export function Homepage() {
           </div>
         </div>
 
-        <div className={styles.statCard}>
+        {/* <div className={styles.statCard}>
           <div
             className={styles.statIcon}
             style={{ background: "#d1fae5", color: "#10b981" }}
@@ -279,7 +281,7 @@ export function Homepage() {
             <span className={styles.statValue}>{stats.completedCourses || 0}</span>
             <span className={styles.statLabel}>Completed Courses</span>
           </div>
-        </div>
+        </div> */}
 
         <div className={styles.statCard}>
           <div
