@@ -19,6 +19,7 @@ import UnitManagement from "./admin/pages/UnitManagement.jsx";
 import TrainerLayout from "./trainer/components/TrainerLayout.jsx";
 import TrainerDashboard from "./trainer/pages/Dashboard.jsx";
 import AssessmentBuilder from "./trainer/pages/AssessmentBuilder.jsx";
+import AssignedUnits from "./trainer/pages/AssignedUnits.jsx";
 
 function App() {
   return (
@@ -145,6 +146,14 @@ function App() {
           element={
             <TrainerLayout>
               <TrainerDashboard />
+            </TrainerLayout>
+          }
+        />
+        <Route
+          path="/trainer/units"
+          element={
+            <TrainerLayout>
+              <AssignedUnits />
             </TrainerLayout>
           }
         />

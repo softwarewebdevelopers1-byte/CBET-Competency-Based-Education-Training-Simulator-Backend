@@ -1,20 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowRight,
-  BookOpen,
-  ClipboardCheck,
-  FileText,
-  Users,
-} from "lucide-react";
+import { ArrowRight, ClipboardCheck, FileText } from "lucide-react";
 import styles from "../../admin/styles/dashboard.module.css";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.trim() || "https://cbet-competency-based-education-training.onrender.com";
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  "https://cbet-competency-based-education-training.onrender.com";
 
 const TrainerDashboard = () => {
   const [items, setItems] = useState([]);
-  const [assignedUnits, setAssignedUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -24,35 +18,20 @@ const TrainerDashboard = () => {
       try {
         setLoading(true);
         setError("");
-
-        const [assessmentResponse, unitsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/resources/assessments/admin?ownership=self`, {
+        const response = await fetch(
+          `${API_BASE_URL}/api/resources/assessments/admin?ownership=self`,
+          {
             method: "GET",
             credentials: "include",
-          }),
-          fetch(`${API_BASE_URL}/auth/admin/upload/courses/trainer/assigned-units`, {
-            method: "GET",
-            credentials: "include",
-          }),
-        ]);
+          },
+        );
+        const data = await response.json();
 
-        const assessmentData = await assessmentResponse.json();
-        const unitsData = await unitsResponse.json();
-
-        if (!assessmentResponse.ok) {
-          throw new Error(
-            assessmentData.error || "Unable to fetch trainer content",
-          );
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to fetch trainer content");
         }
 
-        if (!unitsResponse.ok) {
-          throw new Error(
-            unitsData.message || unitsData.error || "Unable to fetch assigned units",
-          );
-        }
-
-        setItems(assessmentData.assessments || assessmentData.simulations || []);
-        setAssignedUnits(unitsData.units || []);
+        setItems(data.assessments || data.simulations || []);
       } catch (fetchError) {
         setError(
           fetchError instanceof Error
@@ -60,7 +39,6 @@ const TrainerDashboard = () => {
             : "Unable to fetch trainer content",
         );
         setItems([]);
-        setAssignedUnits([]);
       } finally {
         setLoading(false);
       }
@@ -73,19 +51,13 @@ const TrainerDashboard = () => {
     const assessments = items.filter(
       (item) => (item.activityType || "assessment") === "assessment",
     );
-    const traineeTotal = assignedUnits.reduce(
-      (sum, unit) => sum + (unit.traineeCount || 0),
-      0,
-    );
 
     return {
       total: items.length,
       assessments: assessments.length,
       active: items.filter((item) => item.status?.toLowerCase() === "active").length,
-      assignedUnits: assignedUnits.length,
-      trainees: traineeTotal,
     };
-  }, [items, assignedUnits]);
+  }, [items]);
 
   const stats = [
     {
@@ -103,18 +75,11 @@ const TrainerDashboard = () => {
       color: "green",
     },
     {
-      icon: BookOpen,
-      label: "Assigned Units",
-      value: metrics.assignedUnits,
-      helper: "Units linked to you by admin",
+      icon: ClipboardCheck,
+      label: "Active",
+      value: metrics.active,
+      helper: "Currently visible to students",
       color: "red",
-    },
-    {
-      icon: Users,
-      label: "Assigned Trainees",
-      value: metrics.trainees,
-      helper: "Learners attached to your units",
-      color: "blue",
     },
   ];
 
@@ -124,7 +89,7 @@ const TrainerDashboard = () => {
         <div>
           <h1 className={styles.pageTitle}>Trainer Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            See your assigned units and the trainees linked to each one.
+            Create and manage the assessments assigned to your learners.
           </p>
         </div>
       </div>
@@ -156,59 +121,14 @@ const TrainerDashboard = () => {
             Create Assessment
             <ArrowRight size={18} />
           </button>
+          <button
+            className={styles.actionBtn}
+            onClick={() => navigate("/trainer/units")}
+          >
+            View Assigned Units
+            <ArrowRight size={18} />
+          </button>
         </div>
-      </div>
-
-      <div className={styles.contentGrid}>
-        <section className={styles.panelCard}>
-          <div className={styles.sectionHeader}>
-            <h3>Assigned Units</h3>
-            <p>Units where you are the assigned lecturer.</p>
-          </div>
-
-          {assignedUnits.length > 0 ? (
-            <div className={styles.listStack}>
-              {assignedUnits.map((unit) => (
-                <article key={unit._id} className={styles.activityCard}>
-                  <div className={styles.activityCardHeader}>
-                    <div>
-                      <h4 className={styles.activityTitle}>
-                        {unit.unitCode} - {unit.unitName}
-                      </h4>
-                      <p className={styles.activityMeta}>
-                        {unit.courseTitle} • {unit.department} • Year {unit.yearOfStudy}
-                      </p>
-                    </div>
-                    <span className={styles.statusBadge}>
-                      {unit.traineeCount || 0} trainee{unit.traineeCount === 1 ? "" : "s"}
-                    </span>
-                  </div>
-
-                  <div className={styles.activityContent}>
-                    <strong>Students in this unit</strong>
-                    {unit.trainees?.length > 0 ? (
-                      <ul className={styles.compactList}>
-                        {unit.trainees.map((trainee) => (
-                          <li key={trainee.userNumber}>
-                            {trainee.fullName} ({trainee.userNumber})
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className={styles.emptyStateText}>
-                        No trainees have been assigned to this unit yet.
-                      </p>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.emptyStateText}>
-              No units have been assigned to you yet.
-            </p>
-          )}
-        </section>
       </div>
     </div>
   );

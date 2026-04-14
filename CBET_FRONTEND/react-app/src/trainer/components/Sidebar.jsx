@@ -1,6 +1,13 @@
 import React, { useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, FileText, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  BookOpen,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import styles from "../../admin/styles/Sidebar.module.css";
 
 const clearStoredAuthData = () => {
@@ -15,6 +22,7 @@ const clearStoredAuthData = () => {
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
     { path: "/trainer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/trainer/units", icon: BookOpen, label: "Assigned Units" },
     { path: "/trainer/assessments", icon: FileText, label: "Assessments" },
   ];
 
