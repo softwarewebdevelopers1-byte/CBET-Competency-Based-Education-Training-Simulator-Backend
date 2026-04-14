@@ -17,38 +17,82 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [promotingYears, setPromotingYears] = useState(false);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to fetch dashboard data");
+      }
+
+      setUsers(Array.isArray(data.users) ? data.users : []);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to fetch dashboard data",
+      );
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
-          method: "GET",
-          credentials: "include",
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Unable to fetch dashboard data");
-        }
-
-        setUsers(Array.isArray(data.users) ? data.users : []);
-      } catch (fetchError) {
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Unable to fetch dashboard data",
-        );
-        setUsers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
+
+  const handlePromoteAcademicYear = async () => {
+    const confirmed = window.confirm(
+      "Advance all student academic years now? Fourth-year students will be marked as graduated.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setPromotingYears(true);
+      setError("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        "https://cbet-competency-based-education-training.onrender.com/auth/admin/users/promote-academic-year",
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update academic years");
+      }
+
+      setSuccessMessage(
+        `Academic year updated. Promoted ${data.promotedCount || 0} students and graduated ${data.graduatedCount || 0}.`,
+      );
+      await fetchUsers();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to update academic years",
+      );
+    } finally {
+      setPromotingYears(false);
+    }
+  };
 
   const analytics = useMemo(() => {
     const totalUsers = users.length;
@@ -145,6 +189,22 @@ const AdminDashboard = () => {
       </div>
 
       {error && <div className={styles.errorBanner}>{error}</div>}
+      {successMessage && (
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "1rem 1.1rem",
+            borderRadius: "0.9rem",
+            background: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)",
+            border: "1px solid rgba(34, 197, 94, 0.65)",
+            color: "#166534",
+            fontSize: "0.92rem",
+            fontWeight: 700,
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
 
       <div className={styles.statsGrid}>
         {stats.map((stat) => (
@@ -239,6 +299,13 @@ const AdminDashboard = () => {
             onClick={() => navigate("/admin/users")}
           >
             Add or Manage Users
+          </button>
+          <button
+            className={styles.actionBtn}
+            onClick={handlePromoteAcademicYear}
+            disabled={promotingYears}
+          >
+            {promotingYears ? "Updating Years..." : "Advance Academic Year"}
           </button>
           <button
             className={styles.actionBtn}

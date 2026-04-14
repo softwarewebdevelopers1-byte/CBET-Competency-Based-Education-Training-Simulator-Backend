@@ -272,3 +272,54 @@ UserNumber.get("/", async (_req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: "Counting users error" });
   }
 });
+
+AdminUsersRouter.post(
+  "/promote-academic-year",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const hasAdminAccess = await requireAdminUser(req, res);
+
+      if (!hasAdminAccess) {
+        return;
+      }
+
+      const students = await User.find({ role: "student" }).exec();
+
+      let promotedCount = 0;
+      let graduatedCount = 0;
+
+      for (const student of students) {
+        if (
+          String(student.status).toLowerCase() === "graduated" ||
+          String(student.account_state).toLowerCase() === "graduated"
+        ) {
+          continue;
+        }
+
+        const currentYear = Number(student.yearOfStudy || 1);
+
+        if (currentYear >= 4) {
+          student.status = "graduated";
+          student.account_state = "graduated";
+          graduatedCount += 1;
+        } else {
+          student.yearOfStudy = currentYear + 1;
+          student.status = "active";
+          student.account_state = "approved";
+          promotedCount += 1;
+        }
+
+        await student.save();
+      }
+
+      res.status(200).json({
+        message: "Academic year update completed successfully",
+        promotedCount,
+        graduatedCount,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Unable to update academic years" });
+    }
+  },
+);

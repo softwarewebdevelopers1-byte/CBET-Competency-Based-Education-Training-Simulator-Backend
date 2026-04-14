@@ -63,7 +63,7 @@ const AssignedUnits = () => {
         <div>
           <h1 className={styles.pageTitle}>Assigned Units</h1>
           <p className={styles.pageSubtitle}>
-            View the units assigned to you and the students involved in each course.
+            View your assigned units and the students who registered for each one.
           </p>
         </div>
       </div>
@@ -117,13 +117,20 @@ const AssignedUnits = () => {
                   <span className={styles.userListMeta}>
                     {unit.traineeCount || 0} student{unit.traineeCount === 1 ? "" : "s"} assigned
                   </span>
-                  <span className={styles.userListMeta}>
-                    {unit.trainees?.length > 0
-                      ? unit.trainees
-                          .map((trainee) => `${trainee.fullName} (${trainee.userNumber})`)
-                          .join(", ")
-                      : "No students assigned yet"}
-                  </span>
+                  {unit.trainees?.length > 0 ? (
+                    unit.trainees.map((trainee) => (
+                      <span key={trainee.userNumber} className={styles.userListMeta}>
+                        {trainee.fullName} ({trainee.userNumber})
+                        {trainee.registeredAt
+                          ? ` • Registered ${new Date(trainee.registeredAt).toLocaleDateString()}`
+                          : ""}
+                      </span>
+                    ))
+                  ) : (
+                    <span className={styles.userListMeta}>
+                      No students registered yet
+                    </span>
+                  )}
                 </div>
               </div>
             ))}

@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import styles from "../css/courses.module.css";
 import {
   FiBookOpen,
+  FiCheck,
   FiSearch,
   FiFilter,
   FiGrid,
@@ -26,7 +27,7 @@ import {
 import { CourseContext } from "./dashboard.jsx";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL?.trim() || "https://cbet-competency-based-education-training.onrender.com";
 
 export function MyCourses() {
   const [loading, setLoading] = useState(true);
@@ -134,7 +135,8 @@ export function MyCourses() {
             ? {
                 ...course,
                 isRegistered: true,
-                registeredAt: data.assignment?.assignedAt || new Date().toISOString(),
+                registeredAt:
+                  data.registration?.registeredAt || new Date().toISOString(),
                 traineeCount: data.traineeCount ?? course.traineeCount,
               }
             : course,
@@ -394,11 +396,7 @@ export function MyCourses() {
               </div>
               <div className={styles.statItem}>
                 <FiUsers />
-                <span>
-                  {course.traineeCount > 0
-                    ? `${course.traineeCount} assigned trainees`
-                    : `${course.students} students`}
-                </span>
+                <span>{`${course.traineeCount} registered students`}</span>
               </div>
               <div className={styles.statItem}>
                 <FiStar />
@@ -458,11 +456,13 @@ export function MyCourses() {
                 type="button"
                 title={course.isRegistered ? "Already registered" : "Register for this unit"}
               >
-                {course.isRegistered
-                  ? <FiCheckCircle />
-                  : registeringCourseId === course.id
-                    ? "..."
-                    : "Reg"}
+                {course.isRegistered ? (
+                  <FiCheck />
+                ) : registeringCourseId === course.id ? (
+                  "..."
+                ) : (
+                  "Join"
+                )}
               </button>
               <button className={styles.secondaryAction}>
                 <FiEye />

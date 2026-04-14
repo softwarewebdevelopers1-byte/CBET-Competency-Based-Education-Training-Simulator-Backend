@@ -1,4 +1,5 @@
 import { Courses } from "#models/courses.model";
+import { RegisteredCourse } from "#models/registered.course.model";
 import { UnitAssignment } from "#models/unit.assignment.model";
 import jwt from "jsonwebtoken";
 import { Router, type Request, type Response } from "express";
@@ -105,6 +106,13 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
               .lean()
               .exec()
           : [];
+        const registeredCourses = unitIds.length
+          ? await RegisteredCourse.find({
+              unitId: { $in: unitIds },
+            })
+              .lean()
+              .exec()
+          : [];
 
         const coursesWithAssignments = activeCourses.map((course: any) => {
           const relatedAssignments = unitAssignments.filter(
@@ -113,12 +121,13 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
           const lecturerAssignments = relatedAssignments.filter(
             (assignment) => assignment.assignmentType === "lecturer",
           );
-          const traineeAssignments = relatedAssignments.filter(
-            (assignment) => assignment.assignmentType === "trainee",
+          const relatedRegistrations = registeredCourses.filter(
+            (registeredCourse) =>
+              String(registeredCourse.unitId) === String(course._id),
           );
-          const currentStudentAssignment = traineeAssignments.find(
-            (assignment) =>
-              assignment.assigneeUserNumber === existingUser.UserNumber,
+          const currentStudentRegistration = relatedRegistrations.find(
+            (registeredCourse) =>
+              registeredCourse.studentUserNumber === existingUser.UserNumber,
           );
 
           return {
@@ -127,13 +136,9 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
             lecturerName: course.lecturerName || lecturerAssignments[0]?.assigneeName || "",
             lecturerUserNumber:
               course.lecturerUserNumber || lecturerAssignments[0]?.assigneeUserNumber || "",
-            assignedTrainees: traineeAssignments.map((assignment) => ({
-              userNumber: assignment.assigneeUserNumber,
-              fullName: assignment.assigneeName,
-            })),
-            traineeCount: traineeAssignments.length,
-            isRegistered: Boolean(currentStudentAssignment),
-            registeredAt: currentStudentAssignment?.assignedAt || null,
+            traineeCount: relatedRegistrations.length,
+            isRegistered: Boolean(currentStudentRegistration),
+            registeredAt: currentStudentRegistration?.registeredAt || null,
           };
         });
 
@@ -217,21 +222,24 @@ CoursesRouter.get(
                 .exec()
             : [];
 
-          const traineeAssignments = assignedUnitIds.length
-            ? await UnitAssignment.find({
+          const registeredCourses = assignedUnitIds.length
+            ? await RegisteredCourse.find({
                 unitId: { $in: assignedUnitIds },
-                assignmentType: "trainee",
               })
                 .lean()
                 .exec()
             : [];
 
           const units = trainerUnits.map((unit) => {
-            const unitTrainees = traineeAssignments
-              .filter((assignment) => String(assignment.unitId) === String(unit._id))
-              .map((assignment) => ({
-                userNumber: assignment.assigneeUserNumber,
-                fullName: assignment.assigneeName,
+            const unitTrainees = registeredCourses
+              .filter(
+                (registeredCourse) =>
+                  String(registeredCourse.unitId) === String(unit._id),
+              )
+              .map((registeredCourse) => ({
+                userNumber: registeredCourse.studentUserNumber,
+                fullName: registeredCourse.studentName,
+                registeredAt: registeredCourse.registeredAt,
               }));
 
             return {
@@ -324,21 +332,22 @@ CoursesRouter.post(
             return;
           }
 
-          const assignment = await UnitAssignment.findOneAndUpdate(
+          const registration = await RegisteredCourse.findOneAndUpdate(
             {
               unitId: (unit as any)._id,
-              assignmentType: "trainee",
-              assigneeUserNumber: existingUser.UserNumber,
+              studentUserNumber: existingUser.UserNumber,
             },
             {
               $set: {
                 courseTitle: unit.courseTitle,
                 unitCode: unit.unitCode,
                 unitName: unit.unitName,
-                assigneeName: existingUser.fullName,
-                assigneeRole: "student",
-                assignedByUserNumber: existingUser.UserNumber,
-                assignedAt: new Date(),
+                studentName: existingUser.fullName,
+                programme: existingUser.programme,
+                department: existingUser.department || "",
+                yearOfStudy: existingUser.yearOfStudy || 1,
+                status: "registered",
+                registeredAt: new Date(),
               },
             },
             {
@@ -348,15 +357,14 @@ CoursesRouter.post(
             },
           ).lean();
 
-          const traineeCount = await UnitAssignment.countDocuments({
+          const traineeCount = await RegisteredCourse.countDocuments({
             unitId: (unit as any)._id,
-            assignmentType: "trainee",
           });
 
           res.status(200).json({
             success: true,
             message: "Unit registered successfully",
-            assignment,
+            registration,
             unitId: String((unit as any)._id),
             traineeCount,
           });
