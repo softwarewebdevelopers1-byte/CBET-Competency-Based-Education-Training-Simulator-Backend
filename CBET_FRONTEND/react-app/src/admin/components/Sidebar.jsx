@@ -16,7 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import styles from "../styles/Sidebar.module.css";
-import { useTheme } from "../../../contexts/ThemeContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const clearStoredAuthData = () => {
   localStorage.removeItem("token");
