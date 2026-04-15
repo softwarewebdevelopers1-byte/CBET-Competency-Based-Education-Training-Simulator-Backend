@@ -1279,4 +1279,89 @@ UserUploadRouter.post(
   },
 );
 
+UserUploadRouter.delete(
+  "/:id",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userNumber =
+        String(
+          (req.user as { userNumber?: string } | undefined)?.userNumber ?? "",
+        ).trim() || String(req.cookies?.user_1UA_XG ?? "").trim();
+
+      const currentUser = await User.findOne({ UserNumber: userNumber }).lean().exec();
+      if (!currentUser) {
+        res.status(403).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const isAdmin = String(currentUser.role).trim().toLowerCase() === "admin";
+      const isTrainer = String(currentUser.role).trim().toLowerCase() === "trainer";
+
+      if (!isAdmin && !isTrainer) {
+        res.status(403).json({ error: "Admin or lecturer privileges required" });
+        return;
+      }
+
+      const documentId = req.params.id;
+      const document = await UsersUploadedPdf.findById(documentId).lean().exec();
+
+      if (!document) {
+        res.status(404).json({ error: "Assessment not found" });
+        return;
+      }
+
+      let canDelete = isAdmin;
+      if (!canDelete && isTrainer) {
+        if (document.from === currentUser.UserNumber) {
+          canDelete = true;
+        } else {
+           const assignment = await UnitAssignment.findOne({
+               unitCode: document.unitCode,
+               assigneeUserNumber: currentUser.UserNumber,
+               assignmentType: "lecturer"
+           }).lean().exec();
+           if (assignment) canDelete = true;
+        }
+      }
+
+      if (!canDelete) {
+        res.status(403).json({ error: "You don't have permission to delete this assessment" });
+        return;
+      }
+
+      if (document.storagePath) {
+        try {
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const supabaseUrl = process.env.SUPABASE_URL;
+          if (serviceKey && supabaseUrl) {
+            const storageUrl = `https://${supabaseUrl}.supabase.co/storage/v1`;
+            const storageClient = new StorageClient(storageUrl, {
+               apikey: serviceKey,
+               Authorization: `Bearer ${serviceKey}`,
+            });
+            const bucket = process.env.SUPABASE_BUCKET;
+            if (bucket) {
+               await storageClient.from(bucket).remove([document.storagePath]);
+            }
+          }
+        } catch (storageError) {
+          console.error("Failed to delete assessment from storage:", storageError);
+        }
+      }
+
+      try {
+         await StudentSimulationAttempts.deleteMany({ simulationId: documentId }).exec();
+      } catch(e) {}
+
+      await UsersUploadedPdf.findByIdAndDelete(documentId).exec();
+
+      res.status(200).json({ success: true, message: "Assessment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting assessment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export { UserUploadRouter };

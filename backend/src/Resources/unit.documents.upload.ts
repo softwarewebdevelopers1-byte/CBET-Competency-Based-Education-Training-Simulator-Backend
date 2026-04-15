@@ -243,4 +243,89 @@ UnitDocumentUploadRouter.post(
   },
 );
 
+UnitDocumentUploadRouter.get(
+  "/admin",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || !isAdminUser(currentUser.role)) {
+        res.status(403).json({ error: "Admin privileges required" });
+        return;
+      }
+      
+      const materials = await UnitDocumentModel.find({}).sort({ createdAt: -1 }).lean().exec();
+      res.status(200).json({ materials });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+UnitDocumentUploadRouter.delete(
+  "/:id",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || !(isAdminUser(currentUser.role) || isTrainerUser(currentUser.role))) {
+        res.status(403).json({ error: "Admin or lecturer privileges required" });
+        return;
+      }
+
+      const documentId = req.params.id;
+      const document = await UnitDocumentModel.findById(documentId).lean().exec();
+
+      if (!document) {
+        res.status(404).json({ error: "Document not found" });
+        return;
+      }
+
+      // Check permissions: Either admin OR the trainer who uploaded it OR trainer assigned to the unit
+      let canDelete = isAdminUser(currentUser.role);
+      
+      if (!canDelete && isTrainerUser(currentUser.role)) {
+        if (document.from === currentUser.UserNumber) {
+          canDelete = true;
+        } else {
+           const assignment = await UnitAssignment.findOne({
+               unitCode: document.unitCode,
+               assigneeUserNumber: currentUser.UserNumber,
+               assignmentType: "lecturer"
+           }).lean().exec();
+           if (assignment) canDelete = true;
+        }
+      }
+
+      if (!canDelete) {
+        res.status(403).json({ error: "You don't have permission to delete this document" });
+        return;
+      }
+
+      // Delete from Supabase
+      if (document.storagePath) {
+        try {
+          const storageClient = getStorageClient();
+          const bucket = process.env.SUPABASE_BUCKET;
+          if (bucket) {
+            await storageClient.from(bucket).remove([document.storagePath]);
+          }
+        } catch (storageError) {
+          console.error("Failed to delete file from storage:", storageError);
+          // We continue deleting the DB record even if storage deletion fails
+        }
+      }
+
+      // Delete from database
+      await UnitDocumentModel.findByIdAndDelete(documentId).exec();
+
+      res.status(200).json({ success: true, message: "Document deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export { UnitDocumentUploadRouter };

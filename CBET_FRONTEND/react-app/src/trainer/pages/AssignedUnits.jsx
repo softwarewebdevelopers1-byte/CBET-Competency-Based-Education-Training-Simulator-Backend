@@ -9,7 +9,6 @@ const API_BASE_URL =
 const INITIAL_UPLOAD_FORM = {
   description: "",
   instructions: "",
-  yearOfStudy: 1,
   file: null,
 };
 
@@ -23,6 +22,10 @@ const AssignedUnits = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
+
+  const [viewingDocsUnitId, setViewingDocsUnitId] = useState("");
+  const [unitDocuments, setUnitDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   useEffect(() => {
     const loadAssignedUnits = async () => {
@@ -73,12 +76,71 @@ const AssignedUnits = () => {
   const handleToggleExpand = (unitId) => {
     setExpandedUnitId((current) => (current === unitId ? "" : unitId));
   };
-
   const handleOpenUpload = (unitId) => {
     setUploadingUnitId((current) => (current === unitId ? "" : unitId));
+    if (uploadingUnitId !== unitId) {
+      setViewingDocsUnitId("");
+      setExpandedUnitId("");
+    }
     setUploadForm(INITIAL_UPLOAD_FORM);
     setUploadError("");
     setUploadSuccess("");
+  };
+
+  const handleToggleViewDocs = (unitId) => {
+    if (viewingDocsUnitId === unitId) {
+      setViewingDocsUnitId("");
+      setUnitDocuments([]);
+    } else {
+      setViewingDocsUnitId(unitId);
+      setUploadingUnitId(""); 
+      setExpandedUnitId(""); 
+      fetchUnitDocuments(unitId);
+    }
+  };
+
+  const fetchUnitDocuments = async (unitId) => {
+    try {
+      setLoadingDocs(true);
+      const response = await fetch(`${API_BASE_URL}/auth/admin/upload/courses/units/${unitId}/documents`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch documents");
+      const data = await response.json();
+      
+      const allDocs = [...(data.documents || []), ...(data.assessments || []), ...(data.materials || [])];
+      const uniqueIds = new Set();
+      const uniqueDocs = allDocs.filter(d => {
+         const id = d._id || d.id;
+         if (uniqueIds.has(id)) return false;
+         uniqueIds.add(id);
+         return true;
+      });
+      
+      setUnitDocuments(uniqueDocs);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load documents");
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+  
+  const handleDeleteDocument = async (doc) => {
+    if (!window.confirm(`Are you sure you want to delete "${doc.originalFileName || doc.title || 'this document'}"?`)) return;
+    try {
+      let endpoint = `${API_BASE_URL}/api/resources/materials/${doc._id || doc.id}`;
+      let res = await fetch(endpoint, { method: "DELETE", credentials: "include" });
+      
+      if (res.status === 404 || !res.ok) {
+         endpoint = `${API_BASE_URL}/api/resources/assessments/${doc._id || doc.id}`;
+         res = await fetch(endpoint, { method: "DELETE", credentials: "include" });
+      }
+      
+      if (!res.ok) throw new Error("Failed to delete document");
+      
+      setUnitDocuments(prev => prev.filter(d => (d._id || d.id) !== (doc._id || doc.id)));
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const handleUploadChange = (event) => {
@@ -258,6 +320,26 @@ const AssignedUnits = () => {
                         <><ChevronDown size={14} /> View Students</>
                       )}
                     </button>
+                    <button
+                      onClick={() => handleToggleViewDocs(unit._id)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        padding: "0.45rem 0.85rem",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        borderRadius: "8px",
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        background: viewingDocsUnitId === unit._id ? "rgba(16, 185, 129, 0.1)" : "transparent",
+                        color: "#10b981",
+                        transition: "all 0.2s ease",
+                      }}
+                      type="button"
+                    >
+                      <FileText size={14} /> {viewingDocsUnitId === unit._id ? "Hide Docs" : "Manage Docs"}
+                    </button>
                   </div>
                 </div>
 
@@ -324,25 +406,6 @@ const AssignedUnits = () => {
                             }}
                           />
                         </div>
-                        <div>
-                          <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: "0.3rem" }}>
-                            Year of Study
-                          </label>
-                          <input
-                            type="number"
-                            name="yearOfStudy"
-                            min="1"
-                            value={uploadForm.yearOfStudy}
-                            onChange={handleUploadChange}
-                            style={{
-                              width: "100%",
-                              padding: "0.5rem",
-                              borderRadius: "8px",
-                              border: "1px solid rgba(99,102,241,0.2)",
-                              fontSize: "0.8rem",
-                            }}
-                          />
-                        </div>
                         <div style={{ gridColumn: "1 / -1" }}>
                           <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: "0.3rem" }}>
                             Description (optional)
@@ -391,6 +454,54 @@ const AssignedUnits = () => {
                         </span>
                       </div>
                     </form>
+                  </div>
+                )}
+
+                {/* Manage Documents */}
+                {viewingDocsUnitId === unit._id && (
+                  <div style={{
+                    width: "100%",
+                    marginTop: "1rem",
+                    padding: "1.25rem",
+                    borderRadius: "12px",
+                    background: "rgba(16, 185, 129, 0.04)",
+                    border: "1px solid rgba(16, 185, 129, 0.12)",
+                  }}>
+                    <h4 style={{ margin: "0 0 1rem", fontSize: "0.9rem", color: "#065f46" }}>Uploaded Documents for {unit.unitCode}</h4>
+                    {loadingDocs ? (
+                       <p style={{ color: "#047857", fontSize: "0.85rem" }}>Loading documents...</p>
+                    ) : unitDocuments.length > 0 ? (
+                       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                          {unitDocuments.map(doc => (
+                             <div key={doc._id || doc.id} style={{
+                                 display: "flex",
+                                 alignItems: "center",
+                                 justifyContent: "space-between",
+                                 padding: "0.75rem 1rem",
+                                 background: "white",
+                                 border: "1px solid rgba(16, 185, 129, 0.2)",
+                                 borderRadius: "8px"
+                             }}>
+                                 <div style={{flex: 1}}>
+                                     <strong style={{ display: "block", fontSize: "0.85rem", color: "#334155" }}>{doc.originalFileName || doc.title || "Document"}</strong>
+                                     <span style={{ fontSize: "0.75rem", color: "#64748b" }}>{doc.description || "No description"}</span>
+                                 </div>
+                                 <div style={{ display: "flex", gap: "0.5rem" }}>
+                                     {doc.pdfUrl && (
+                                         <a href={doc.pdfUrl} target="_blank" rel="noreferrer" style={{
+                                             fontSize: "0.75rem", padding: "0.4rem 0.75rem", background: "#f1f5f9", color: "#475569", borderRadius: "6px", textDecoration: "none", fontWeight: 600
+                                         }}>View</a>
+                                     )}
+                                     <button onClick={() => handleDeleteDocument(doc)} style={{
+                                         fontSize: "0.75rem", padding: "0.4rem 0.75rem", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: 600
+                                     }}>Delete</button>
+                                 </div>
+                             </div>
+                          ))}
+                       </div>
+                    ) : (
+                       <p style={{ color: "#64748b", fontSize: "0.85rem" }}>No documents uploaded for this unit yet.</p>
+                    )}
                   </div>
                 )}
 

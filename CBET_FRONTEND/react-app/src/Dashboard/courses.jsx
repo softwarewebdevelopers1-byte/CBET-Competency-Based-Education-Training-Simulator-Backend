@@ -200,6 +200,7 @@ export function MyCourses() {
   // Get unique categories from actual courses
   const categories = [
     "All",
+    "Enrolled",
     ...new Set(courses.map((course) => course.category).filter(Boolean)),
   ];
 
@@ -239,6 +240,9 @@ export function MyCourses() {
 
   const filteredCourses = courses
     .filter((course) => {
+      if (selectedCategory === "enrolled" || selectedCategory === "Enrolled") {
+        return course.isRegistered;
+      }
       if (selectedCategory === "all" || selectedCategory === "All") return true;
       return course.category === selectedCategory;
     })

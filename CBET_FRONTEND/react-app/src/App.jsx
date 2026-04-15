@@ -21,6 +21,7 @@ import TrainerLayout from "./trainer/components/TrainerLayout.jsx";
 import TrainerDashboard from "./trainer/pages/Dashboard.jsx";
 import AssessmentBuilder from "./trainer/pages/AssessmentBuilder.jsx";
 import AssignedUnits from "./trainer/pages/AssignedUnits.jsx";
+import MaterialManagement from "./admin/pages/MaterialManagement.jsx";
 
 function App() {
   return (
@@ -131,6 +132,14 @@ function App() {
           element={
             <AdminLayout>
               <UnitManagement defaultTab="assignments" />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/materials"
+          element={
+            <AdminLayout>
+              <MaterialManagement />
             </AdminLayout>
           }
         />

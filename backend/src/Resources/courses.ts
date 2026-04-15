@@ -62,13 +62,24 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
           res.status(401).json({ message: "Unauthorized" });
           return;
         }
-        // getting active courses
+        const studentRegistrations = await RegisteredCourse.find({
+          studentUserNumber: existingUser.UserNumber,
+        }).lean().exec();
+
+        const registeredUnitIds = studentRegistrations.map((rc) => rc.unitId);
+
+        // getting active courses AND any courses the student explicitly registered for
         let [userCourses] = await Courses.aggregate([
           {
             $match: {
-              courseTitle: existingUser.programme,
-              status: "active",
-              yearOfStudy: existingUser.yearOfStudy,
+              $or: [
+                { _id: { $in: registeredUnitIds } },
+                {
+                  courseTitle: existingUser.programme,
+                  status: "active",
+                  yearOfStudy: existingUser.yearOfStudy,
+                },
+              ],
             },
           },
           {
@@ -110,7 +121,10 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
           : [];
         const registeredCourses = unitIds.length
           ? await RegisteredCourse.find({
-              unitId: { $in: unitIds },
+              $or: [
+                { unitId: { $in: unitIds } },
+                { studentUserNumber: existingUser.UserNumber }
+              ]
             })
               .lean()
               .exec()
