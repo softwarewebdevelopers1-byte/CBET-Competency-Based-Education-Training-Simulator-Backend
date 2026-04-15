@@ -49,16 +49,10 @@ const UserUploadSchema = new mongoose.Schema(
     questions: {
       type: [questionSchema],
       default: [],
-      validate: {
-        validator(value: unknown[]) {
-          return Array.isArray(value) && value.length > 0;
-        },
-        message: "Simulation must include at least one AI-generated question",
-      },
     },
-    questionCount: { type: Number, required: true, min: 1 },
-    totalPoints: { type: Number, required: true, min: 1 },
-    estimatedTimeMinutes: { type: Number, default: 15, min: 1 },
+    questionCount: { type: Number, required: true, min: 0 },
+    totalPoints: { type: Number, required: true, min: 0 },
+    estimatedTimeMinutes: { type: Number, default: 0, min: 0 },
     status: { type: String, default: "active", trim: true },
   },
   { timestamps: true },

@@ -5,7 +5,6 @@ import { readFile, unlink } from "fs/promises";
 import multer from "multer";
 import path from "path";
 import { PDFParse } from "pdf-parse";
-import { Groq } from "groq-sdk/index.mjs";
 import { AuthenticateToken } from "#Verification/access.token";
 import {
   StudentSimulationAttempts,
@@ -13,6 +12,7 @@ import {
 } from "#models/user.upload.model";
 import { User } from "#models/user.model";
 import { UnitAssignment } from "#models/unit.assignment.model";
+import { Courses } from "#models/courses.model";
 import { GenerateOTP } from "#Verification/OTP.verify";
 
 const uploadDirectory = path.resolve("./users_uploads");
@@ -41,14 +41,6 @@ const uploads = multer({
 
 const UserUploadRouter = Router();
 
-type GeneratedQuestion = {
-  prompt: string;
-  options: Array<{ id: string; text: string }>;
-  correctOptionId: string;
-  explanation: string;
-  points: number;
-};
-
 const getStorageClient = (): StorageClient => {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -68,13 +60,6 @@ const getStorageClient = (): StorageClient => {
   });
 };
 
-const getQuestionCount = (rawQuestionCount: unknown): number => {
-  const parsedValue = Number(rawQuestionCount);
-  if (!Number.isFinite(parsedValue)) {
-    return 8;
-  }
-  return Math.min(12, Math.max(3, Math.floor(parsedValue)));
-};
 
 const normalizeSimulationStatus = (rawStatus: unknown): "active" | "inactive" => {
   return String(rawStatus ?? "").trim().toLowerCase() === "inactive"
@@ -144,199 +129,6 @@ const deleteSimulationStorageFile = async (storagePath: string) => {
   }
 };
 
-const normalizeQuestions = (rawQuestions: unknown[]): GeneratedQuestion[] => {
-  return rawQuestions
-    .map((question, index) => {
-      const raw = (question ?? {}) as Record<string, unknown>;
-      const rawOptions = Array.isArray(raw.options) ? raw.options : [];
-      const options = rawOptions
-        .map((option, optionIndex) => {
-          const optionValue = option as Record<string, unknown>;
-          const text = String(optionValue.text ?? "").trim();
-          const fallbackId = String.fromCharCode(
-            65 + optionIndex,
-          ).toLowerCase();
-          const id = String(optionValue.id ?? fallbackId)
-            .trim()
-            .toLowerCase();
-
-          if (!text) {
-            return null;
-          }
-
-          return { id, text };
-        })
-        .filter(Boolean) as Array<{ id: string; text: string }>;
-
-      const correctOptionId = String(raw.correctOptionId ?? "")
-        .trim()
-        .toLowerCase();
-
-      if (
-        !String(raw.prompt ?? "").trim() ||
-        options.length < 2 ||
-        !correctOptionId ||
-        !options.some((option) => option.id === correctOptionId)
-      ) {
-        return null;
-      }
-
-      return {
-        prompt: String(raw.prompt).trim(),
-        options,
-        correctOptionId,
-        explanation:
-          String(raw.explanation ?? "").trim() ||
-          "Review the source PDF and core concept for the correct answer.",
-        points: Math.max(5, Number(raw.points) || 10),
-      };
-    })
-    .filter(Boolean) as GeneratedQuestion[];
-};
-
-const generateQuestionsFromPdf = async (
-  extractedText: string,
-  metadata: {
-    courseTitle: string;
-    unitName: string;
-    unitCode: string;
-    questionCount: number;
-  },
-): Promise<GeneratedQuestion[]> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("Invalid API Key");
-  }
-
-  const groq = new Groq({ apiKey });
-  const trimmedText = extractedText.slice(0, 18000);
-
-  const completion = await groq.chat.completions.create({
-    model: "openai/gpt-oss-20b",
-    temperature: 0.3, // Lower temperature for more consistent formatting
-    response_format: { type: "json_object" }, // Request JSON format if supported
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a JSON generator that creates CBET multiple-choice assessment questions. You MUST return valid, parseable JSON only. Do not include markdown, code blocks, or any text outside the JSON structure.",
-      },
-      {
-        role: "user",
-        content: `Create ${metadata.questionCount} multiple-choice simulation questions for students.
-
-Course title: ${metadata.courseTitle}
-Unit name: ${metadata.unitName}
-Unit code: ${metadata.unitCode}
-
-Requirements:
-- Return strict JSON with the shape {"questions": [...]} and no markdown, no backticks, no extra text.
-- Each question must have: prompt, options, correctOptionId, explanation, points.
-- Each options array must have exactly 4 items, each with id and text.
-- Use 'a', 'b', 'c', 'd' as option ids.
-- correctOptionId must match one option id (e.g., 'a', 'b', 'c', or 'd').
-- Make questions practical and based only on the provided PDF content.
-- Keep each explanation short and clear.
-- Award 10 points per question.
-
-Example format:
-{
-  "questions": [
-    {
-      "prompt": "What is the primary purpose of...?",
-      "options": [
-        {"id": "a", "text": "Option 1"},
-        {"id": "b", "text": "Option 2"},
-        {"id": "c", "text": "Option 3"},
-        {"id": "d", "text": "Option 4"}
-      ],
-      "correctOptionId": "b",
-      "explanation": "The correct answer is B because...",
-      "points": 10
-    }
-  ]
-}
-
-PDF content:
-${trimmedText}`,
-      },
-    ],
-  });
-
-  const rawContent = completion.choices[0]?.message?.content ?? "";
-  
-  // Sanitize the response
-  let sanitizedContent = rawContent.trim();
-  
-  // Remove markdown code blocks
-  sanitizedContent = sanitizedContent.replace(/```json\n?/g, '');
-  sanitizedContent = sanitizedContent.replace(/```\n?/g, '');
-  sanitizedContent = sanitizedContent.replace(/`/g, '');
-  
-  // Find JSON object in the response
-  const jsonStart = sanitizedContent.indexOf("{");
-  const jsonEnd = sanitizedContent.lastIndexOf("}");
-  
-  if (jsonStart < 0 || jsonEnd < 0) {
-    console.error("AI Response (no JSON found):", sanitizedContent.substring(0, 500));
-    throw new Error("AI response did not contain JSON");
-  }
-  
-  let jsonString = sanitizedContent.slice(jsonStart, jsonEnd + 1);
-  
-  // Attempt to fix common JSON issues
-  jsonString = jsonString
-    // Fix trailing commas
-    .replace(/,\s*}/g, '}')
-    .replace(/,\s*]/g, ']')
-    // Fix missing quotes around property names
-    .replace(/([{,]\s*)([a-zA-Z0-9_]+)(\s*:)/g, '$1"$2"$3')
-    // Remove comments if any
-    .replace(/\/\/.*$/gm, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
-  
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonString) as { questions?: unknown[] };
-  } catch (parseError:any) {
-    console.error("JSON Parse Error:", parseError.message);
-    console.error("Problematic JSON string:", jsonString.substring(0, 1000));
-    console.error("Error position around 701:", jsonString.substring(690, 710));
-    
-    // Try one more time with aggressive cleaning
-    const cleanedJsonString = jsonString
-      .replace(/\n/g, ' ')
-      .replace(/\r/g, '')
-      .replace(/\t/g, ' ')
-      .replace(/\s+/g, ' ')
-      .replace(/,\s*}/g, '}')
-      .replace(/,\s*]/g, ']');
-    
-    try {
-      parsed = JSON.parse(cleanedJsonString) as { questions?: unknown[] };
-    } catch (finalError) {
-      throw new Error(`Failed to parse AI response as JSON: ${parseError.message}`);
-    }
-  }
-  
-  // Validate and normalize the questions
-  if (!parsed.questions || !Array.isArray(parsed.questions)) {
-    throw new Error("AI response missing 'questions' array");
-  }
-  
-  const questions = normalizeQuestions(parsed.questions);
-  
-  if (questions.length === 0) {
-    throw new Error("Unable to generate valid simulation questions");
-  }
-  
-  // Ensure we have the requested number of questions
-  if (questions.length < metadata.questionCount) {
-    console.warn(`Generated only ${questions.length} out of ${metadata.questionCount} requested questions`);
-  }
-  
-  return questions;
-};
 
 const getCurrentUser = async (req: Request) => {
   const userNumber =
@@ -387,6 +179,30 @@ const getAssignedUnitForUploader = async (
   }
 
   return assignment;
+};
+
+const resolveYearOfStudy = async (params: {
+  unitCode: string;
+  assignedProgramme: string;
+  fallbackYear: number;
+}): Promise<number> => {
+  const fallbackYear = Math.max(1, params.fallbackYear || 1);
+  const normalizedUnitCode = String(params.unitCode ?? "").trim();
+  const normalizedProgramme = String(params.assignedProgramme ?? "").trim();
+
+  if (!normalizedUnitCode || !normalizedProgramme) {
+    return fallbackYear;
+  }
+
+  const matchedCourse = await Courses.findOne({
+    unitCode: { $regex: new RegExp(`^${normalizedUnitCode}$`, "i") },
+    courseTitle: { $regex: new RegExp(`^${normalizedProgramme}$`, "i") },
+  })
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  return Math.max(1, Number(matchedCourse?.yearOfStudy) || fallbackYear);
 };
 
 const buildSimulationSummary = async (
@@ -480,8 +296,10 @@ UserUploadRouter.post(
       ).trim();
       const description = String(req.body.description ?? "").trim();
       const instructions = String(req.body.instructions ?? "").trim();
-      const questionCount = getQuestionCount(req.body.questionCount);
-      const yearOfStudy = Math.max(1, Number(req.body.yearOfStudy) || 1);
+      const fallbackYearOfStudy = Math.max(
+        1,
+        Number(req.body.yearOfStudy ?? currentUser.yearOfStudy) || 1,
+      );
       const assignment = await getAssignedUnitForUploader(
         currentUser,
         unitCodeInput,
@@ -546,17 +364,11 @@ UserUploadRouter.post(
       const parser = new PDFParse({ url: localFilePath });
       const parsed = await parser.getText();
       await parser.destroy();
-
-      const questions = await generateQuestionsFromPdf(parsed.text, {
-        courseTitle,
-        unitName,
+      const yearOfStudy = await resolveYearOfStudy({
         unitCode,
-        questionCount,
+        assignedProgramme,
+        fallbackYear: fallbackYearOfStudy,
       });
-      const totalPoints = questions.reduce(
-        (sum, question) => sum + question.points,
-        0,
-      );
 
       const createdSimulation = await UsersUploadedPdf.create({
         from: currentUser.UserNumber,
@@ -575,16 +387,16 @@ UserUploadRouter.post(
         storagePath,
         pdfUrl: publicUrlData.publicUrl,
         extractedTextPreview: parsed.text.slice(0, 1200),
-        questions,
-        questionCount: questions.length,
-        totalPoints,
-        estimatedTimeMinutes: Math.max(10, questions.length * 2),
+        questions: [],
+        questionCount: 0,
+        totalPoints: 0,
+        estimatedTimeMinutes: 0,
         status: "active",
       });
 
       res.status(201).json({
         success: true,
-        message: "PDF uploaded and assessment generated successfully",
+        message: "PDF uploaded successfully",
         simulation: {
           id: createdSimulation._id,
           courseTitle: createdSimulation.courseTitle,
@@ -739,6 +551,90 @@ UserUploadRouter.get(
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Unable to fetch assessments" });
+    }
+  },
+);
+
+UserUploadRouter.patch(
+  "/admin/:id",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
+        return;
+      }
+
+      const ownershipQuery = isAdminUser(currentUser.role)
+        ? {}
+        : { from: currentUser.UserNumber };
+      const simulation = await UsersUploadedPdf.findOne({
+        _id: req.params.id,
+        ...ownershipQuery,
+      })
+        .lean()
+        .exec();
+
+      if (!simulation) {
+        res.status(404).json({ error: "Uploaded material not found" });
+        return;
+      }
+
+      const updates: Record<string, unknown> = {};
+      const courseTitle = String(req.body?.courseTitle ?? "").trim();
+      const unitName = String(req.body?.unitName ?? "").trim();
+      const unitCode = String(req.body?.unitCode ?? "").trim();
+      const description = String(req.body?.description ?? "").trim();
+      const instructions = String(req.body?.instructions ?? "").trim();
+      const assignedProgramme = String(req.body?.assignedProgramme ?? "").trim();
+      const assignedDepartment = String(req.body?.assignedDepartment ?? "").trim();
+      const activityTypeInput = String(req.body?.activityType ?? "").trim();
+
+      if (courseTitle) updates.courseTitle = courseTitle;
+      if (unitName) updates.unitName = unitName;
+      if (unitCode) updates.unitCode = unitCode;
+      if (description || req.body?.description === "") updates.description = description;
+      if (instructions || req.body?.instructions === "") updates.instructions = instructions;
+      if (assignedProgramme) updates.assignedProgramme = assignedProgramme;
+      if (assignedDepartment || req.body?.assignedDepartment === "") {
+        updates.assignedDepartment = assignedDepartment;
+      }
+      if (activityTypeInput) {
+        updates.activityType = normalizeActivityType(activityTypeInput);
+      }
+
+      const nextUnitCode = String(updates.unitCode ?? simulation.unitCode);
+      const nextProgramme = String(
+        updates.assignedProgramme ?? simulation.assignedProgramme,
+      );
+      updates.yearOfStudy = await resolveYearOfStudy({
+        unitCode: nextUnitCode,
+        assignedProgramme: nextProgramme,
+        fallbackYear: simulation.yearOfStudy ?? currentUser.yearOfStudy ?? 1,
+      });
+
+      const updatedSimulation = await UsersUploadedPdf.findOneAndUpdate(
+        { _id: req.params.id, ...ownershipQuery },
+        { $set: updates },
+        { new: true, runValidators: true },
+      )
+        .lean()
+        .exec();
+
+      if (!updatedSimulation) {
+        res.status(404).json({ error: "Uploaded material not found" });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Uploaded material updated successfully",
+        simulation: updatedSimulation,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Unable to update uploaded material" });
     }
   },
 );
@@ -904,7 +800,7 @@ UserUploadRouter.get(
             title: `${simulation.unitCode} - ${simulation.unitName}`,
             description:
               simulation.description ||
-              `AI-generated questions from the uploaded ${simulation.unitName} PDF.`,
+              `Uploaded learning material for ${simulation.unitName}.`,
             course: `${simulation.courseTitle} - ${simulation.unitCode}`,
             unitName: simulation.unitName,
             unitCode: simulation.unitCode,
@@ -914,7 +810,7 @@ UserUploadRouter.get(
             estimatedTimeMinutes: simulation.estimatedTimeMinutes,
             instructions: simulation.instructions,
             pdfUrl: simulation.pdfUrl,
-            aiGenerated: true,
+            aiGenerated: simulation.questionCount > 0,
             status: latestAttempt ? "completed" : "pending",
             score: latestAttempt?.score ?? null,
             percentage: latestAttempt?.percentage ?? null,
@@ -1100,6 +996,13 @@ UserUploadRouter.get(
         return;
       }
 
+      if (!Array.isArray(simulation.questions) || simulation.questions.length === 0) {
+        res.status(400).json({
+          error: "This uploaded PDF is material-only and has no assessment questions.",
+        });
+        return;
+      }
+
       const previousAttempt = await StudentSimulationAttempts.findOne({
         simulationId: simulation._id,
         studentUserNumber: currentUser.UserNumber,
@@ -1119,7 +1022,7 @@ UserUploadRouter.get(
           activityType: simulation.activityType || "assessment",
           description:
             simulation.description ||
-            "Answer the AI-generated questions based on the uploaded PDF.",
+            "Review the uploaded PDF material and instructions.",
           instructions:
             simulation.instructions ||
             "Read every question carefully and choose the best answer.",
@@ -1183,6 +1086,13 @@ UserUploadRouter.post(
 
       if (!simulation) {
         res.status(404).json({ error: "Assessment not found" });
+        return;
+      }
+
+      if (!Array.isArray(simulation.questions) || simulation.questions.length === 0) {
+        res.status(400).json({
+          error: "This uploaded PDF is material-only and has no assessment questions.",
+        });
         return;
       }
 
