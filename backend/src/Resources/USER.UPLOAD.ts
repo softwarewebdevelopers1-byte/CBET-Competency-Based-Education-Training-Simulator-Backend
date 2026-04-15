@@ -12,6 +12,7 @@ import {
   UsersUploadedPdf,
 } from "#models/user.upload.model";
 import { User } from "#models/user.model";
+import { UnitAssignment } from "#models/unit.assignment.model";
 import { GenerateOTP } from "#Verification/OTP.verify";
 
 const uploadDirectory = path.resolve("./users_uploads");
@@ -441,6 +442,24 @@ UserUploadRouter.post(
             "courseTitle, unitName, unitCode, and assignedProgramme are required",
         });
         return;
+      }
+
+      if (String(currentUser.role).trim().toLowerCase() === "trainer") {
+        const trainerAssignment = await UnitAssignment.findOne({
+          assignmentType: "lecturer",
+          assigneeUserNumber: currentUser.UserNumber,
+          unitCode: { $regex: new RegExp(`^${unitCode}$`, "i") },
+        })
+          .lean()
+          .exec();
+
+        if (!trainerAssignment) {
+          res.status(403).json({
+            error:
+              "You can only upload documents for units assigned to you. Contact admin to get assigned.",
+          });
+          return;
+        }
       }
 
       const localFilePath = req.file.path;

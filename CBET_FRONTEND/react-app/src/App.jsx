@@ -8,6 +8,7 @@ import { Dashboard } from "./Dashboard/dashboard.jsx";
 import { ErrorPage } from "./others/error.jsx";
 import { Homepage } from "./Dashboard/homePage.jsx";
 import { MyCourses } from "./Dashboard/courses.jsx";
+import { CourseDetail } from "./Dashboard/CourseDetail.jsx";
 import { AchievementsPage } from "./Dashboard/archievement.jsx";
 import { MyPortfolio } from "./Dashboard/myPortifolio.jsx";
 import { InteractiveScenario } from "./Dashboard/interactivepage.jsx";
@@ -39,6 +40,14 @@ function App() {
           element={
             <Dashboard>
               <MyCourses />
+            </Dashboard>
+          }
+        />
+        <Route
+          path="/courses/:courseId"
+          element={
+            <Dashboard>
+              <CourseDetail />
             </Dashboard>
           }
         />

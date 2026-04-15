@@ -1,6 +1,7 @@
 import { Courses } from "#models/courses.model";
 import { RegisteredCourse } from "#models/registered.course.model";
 import { UnitAssignment } from "#models/unit.assignment.model";
+import { UsersUploadedPdf } from "#models/user.upload.model";
 import jwt from "jsonwebtoken";
 import { Router, type Request, type Response } from "express";
 import { User } from "#models/user.model";
@@ -384,6 +385,118 @@ CoursesRouter.post(
           .json({ message: "Invalid token", isLoggedIn: false });
       }
       console.error("Error in /units/:unitId/register:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+);
+
+CoursesRouter.get(
+  "/units/:unitId/documents",
+  async (req: Request, res: Response) => {
+    const accessToken = req.cookies?.CBET7U4D_Host_AccessToken;
+
+    if (!ACCESS_TOKEN_SECRET) {
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
+    if (!accessToken) {
+      return res
+        .status(401)
+        .json({ message: "No token provided", isLoggedIn: false });
+    }
+
+    try {
+      jwt.verify(
+        accessToken,
+        ACCESS_TOKEN_SECRET,
+        async (err: any, load: any) => {
+          if (err) {
+            res.status(401).json({ message: "Token verification failed" });
+            return;
+          }
+
+          const existingUser = await User.findOne({ UserNumber: load.userNumber })
+            .lean()
+            .exec();
+
+          if (!existingUser) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+          }
+
+          const unit = await Courses.findById(req.params.unitId).lean().exec();
+
+          if (!unit) {
+            res.status(404).json({ message: "Unit not found" });
+            return;
+          }
+
+          const documents = await UsersUploadedPdf.find({
+            unitCode: unit.unitCode,
+            courseTitle: unit.courseTitle,
+            status: "active",
+          })
+            .select(
+              "originalFileName unitName unitCode courseTitle pdfUrl description uploadedByName uploadedByRole createdAt questionCount totalPoints estimatedTimeMinutes activityType",
+            )
+            .sort({ createdAt: -1 })
+            .lean()
+            .exec();
+
+          const lecturerAssignment = await UnitAssignment.findOne({
+            unitId: (unit as any)._id,
+            assignmentType: "lecturer",
+          })
+            .lean()
+            .exec();
+
+          return res.status(200).json({
+            success: true,
+            unit: {
+              _id: (unit as any)._id,
+              courseTitle: unit.courseTitle,
+              unitCode: unit.unitCode,
+              unitName: unit.unitName,
+              department: unit.department,
+              yearOfStudy: unit.yearOfStudy,
+              lecturerName: unit.lecturerName || lecturerAssignment?.assigneeName || "",
+              lecturerUserNumber:
+                unit.lecturerUserNumber || lecturerAssignment?.assigneeUserNumber || "",
+            },
+            documents: documents.map((doc: any) => ({
+              _id: doc._id,
+              title: doc.originalFileName,
+              unitName: doc.unitName,
+              unitCode: doc.unitCode,
+              courseTitle: doc.courseTitle,
+              pdfUrl: doc.pdfUrl,
+              description: doc.description || "",
+              uploadedByName: doc.uploadedByName || "System",
+              uploadedByRole: doc.uploadedByRole || "admin",
+              createdAt: doc.createdAt,
+              questionCount: doc.questionCount || 0,
+              totalPoints: doc.totalPoints || 0,
+              estimatedTimeMinutes: doc.estimatedTimeMinutes || 0,
+              activityType: doc.activityType || "assessment",
+            })),
+            count: documents.length,
+          });
+        },
+      );
+    } catch (error: any) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          message: "Token expired",
+          isLoggedIn: false,
+          needsRefresh: true,
+        });
+      }
+      if (error.name === "JsonWebTokenError") {
+        return res
+          .status(401)
+          .json({ message: "Invalid token", isLoggedIn: false });
+      }
+      console.error("Error in /units/:unitId/documents:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },
