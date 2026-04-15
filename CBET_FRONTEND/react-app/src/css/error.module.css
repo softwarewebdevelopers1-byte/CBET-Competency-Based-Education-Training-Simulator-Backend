@@ -251,7 +251,7 @@
 }
 
 /* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
+:global([data-theme="dark"]) {
   .errorCard {
     background: #1a202c;
   }

@@ -16,6 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import styles from "../styles/Sidebar.module.css";
+import { useTheme } from "../../../contexts/ThemeContext";
 
 const clearStoredAuthData = () => {
   localStorage.removeItem("token");
@@ -27,6 +28,7 @@ const clearStoredAuthData = () => {
 };
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
+  const { theme, toggleTheme } = useTheme();
   const menuItems = [
     { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/admin/users", icon: Users, label: "User Management" },
@@ -118,6 +120,17 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         </nav>
 
         <div className={styles.sidebarFooter}>
+
+          <button
+            className={styles.navItem}
+            onClick={toggleTheme}
+            data-tooltip={theme === 'light' ? "Dark Mode" : "Light Mode"}
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            <span className={styles.navLabel}>{theme === 'light' ? "Dark Mode" : "Light Mode"}</span>
+          </button>
+
           <button
             className={`${styles.navItem} ${styles.logoutBtn}`}
             onClick={handleLogout}

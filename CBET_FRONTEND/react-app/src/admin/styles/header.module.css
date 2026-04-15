@@ -308,7 +308,7 @@
 }
 
 /* Dark Mode Support (Optional) */
-@media (prefers-color-scheme: dark) {
+:global([data-theme="dark"]) {
   .adminHeader {
     background: rgba(15, 23, 42, 0.95);
     border-bottom: 1px solid #334155;

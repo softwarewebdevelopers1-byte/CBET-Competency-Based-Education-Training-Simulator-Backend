@@ -592,7 +592,7 @@
 }
 
 /* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
+:global([data-theme="dark"]) {
   .pageHeader h1 {
     color: #f1f5f9;
   }

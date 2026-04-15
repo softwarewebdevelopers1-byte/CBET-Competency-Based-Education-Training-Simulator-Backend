@@ -1,5 +1,7 @@
 import React, { createContext, useEffect, useState } from "react";
 import { Sidebar } from "./sidebar.jsx";
+import { useTheme } from "../contexts/ThemeContext";
+import { Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 export let CourseContext = createContext();
 

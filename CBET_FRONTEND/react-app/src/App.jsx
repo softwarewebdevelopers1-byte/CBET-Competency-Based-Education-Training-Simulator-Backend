@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { LoginRoute } from "./AuthRoutes/login.jsx";
 import AdminLayout from "./admin/components/AdminLayout.jsx";
 import { SignUpRoute } from "./AuthRoutes/signUp.jsx";
@@ -25,7 +26,8 @@ import MaterialManagement from "./admin/pages/MaterialManagement.jsx";
 
 function App() {
   return (
-    <BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -210,6 +212,7 @@ function App() {
         />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
