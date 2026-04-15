@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
 import styles from "../styles/Sidebar.module.css";
 import { useTheme } from "../../contexts/ThemeContext";
