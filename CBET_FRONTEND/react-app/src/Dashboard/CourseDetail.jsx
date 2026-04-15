@@ -27,6 +27,8 @@ export function CourseDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewingPdf, setViewingPdf] = useState(null);
+  const [needsRegistration, setNeedsRegistration] = useState(false);
+  const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -44,6 +46,11 @@ export function CourseDetail() {
         const data = await response.json();
 
         if (!response.ok) {
+          if (response.status === 403 && data.needsRegistration) {
+            setNeedsRegistration(true);
+            setLoading(false);
+            return;
+          }
           throw new Error(
             data.message || data.error || "Unable to load course documents",
           );
@@ -51,6 +58,7 @@ export function CourseDetail() {
 
         setUnit(data.unit || null);
         setDocuments(data.documents || []);
+        setNeedsRegistration(false);
       } catch (fetchError) {
         setError(
           fetchError instanceof Error
@@ -74,6 +82,36 @@ export function CourseDetail() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleRegisterUnit = async () => {
+    try {
+      setRegistering(true);
+      setError("");
+      
+      const response = await fetch(
+        `${API_BASE_URL}/auth/admin/upload/courses/units/${courseId}/register`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to register unit");
+      }
+
+      // Registration successful, reload the page to fetch documents
+      setNeedsRegistration(false);
+      
+      // Trigger a re-render/fetch logic
+      navigate(0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed");
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const handleOpenPdf = (doc) => {
@@ -132,8 +170,37 @@ export function CourseDetail() {
         </div>
       )}
 
-      {/* Documents section */}
-      <div className={styles.sectionHeader}>
+      {needsRegistration ? (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>🔒</div>
+          <h3 className={styles.emptyTitle}>Registration Required</h3>
+          <p className={styles.emptyText} style={{ marginBottom: "1.5rem" }}>
+            You need to register for this unit to view its materials and assessments.
+          </p>
+          <button
+            onClick={handleRegisterUnit}
+            disabled={registering}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.75rem 1.5rem",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              color: "white",
+              fontWeight: 600,
+              border: "none",
+              cursor: registering ? "not-allowed" : "pointer",
+              opacity: registering ? 0.7 : 1,
+            }}
+          >
+            {registering ? "Registering..." : "Register Now"}
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Documents section */}
+          <div className={styles.sectionHeader}>
         <h2 className={styles.sectionTitle}>Course Materials</h2>
         <span className={styles.docCount}>
           {documents.length} document{documents.length !== 1 ? "s" : ""}
@@ -217,6 +284,8 @@ export function CourseDetail() {
             back later!
           </p>
         </div>
+      )}
+      </>
       )}
 
       {/* In-app PDF viewer overlay */}

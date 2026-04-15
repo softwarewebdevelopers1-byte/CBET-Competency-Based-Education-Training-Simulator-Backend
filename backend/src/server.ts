@@ -31,6 +31,7 @@ import { deepSearchRouter } from "#PdfResources/deepSearch.user";
 import { usersGetOwnPDF } from "#PdfResources/users.getPDF";
 import { simpleSearchRoute } from "#PdfResources/simple.search";
 import { CoursesRouter } from "#PdfResources/courses";
+import { UnitDocumentUploadRouter } from "#PdfResources/unit.documents.upload";
 // import { globaLimit } from "#Verification/rate.limit";
 dotenv.config();
 let PORT = Number(process.env.DEV_PORT) || Number(process.env.PORT);
@@ -80,6 +81,7 @@ App.use("/auth/admin/unit-management", AdminUnitManagementRouter);
 // uploading pdf / assessment resources
 App.use("/api/resources/upload/users/data/pdf", UserUploadRouter);
 App.use("/api/resources/assessments", UserUploadRouter);
+App.use("/api/resources/materials", UnitDocumentUploadRouter);
 // getting pdf
 App.use("/api/resources/get/pdf/users", deepSearchRouter);
 App.use("/api/resources/pdf/users/simple/search", simpleSearchRoute);
@@ -103,7 +105,6 @@ App.use(
 );
 App.use((req, res, nxt): Response => {
   return res.status(404).json({ error: "Route not found" });
-  nxt();
 });
 const server = App.listen(PORT, () => {
   console.log(`Server started...\nhttp://localhost:${PORT}...`);

@@ -9,7 +9,6 @@ const API_BASE_URL =
 const INITIAL_UPLOAD_FORM = {
   description: "",
   instructions: "",
-  questionCount: 8,
   yearOfStudy: 1,
   file: null,
 };
@@ -104,8 +103,7 @@ const AssignedUnits = () => {
       payload.append("assignedProgramme", unit.courseTitle);
       payload.append("assignedDepartment", unit.department || "");
       payload.append("yearOfStudy", String(uploadForm.yearOfStudy || unit.yearOfStudy || 1));
-      payload.append("questionCount", String(uploadForm.questionCount));
-      payload.append("activityType", "assessment");
+      payload.append("activityType", "document");
 
       if (uploadForm.description) {
         payload.append("description", uploadForm.description);
@@ -118,7 +116,7 @@ const AssignedUnits = () => {
       }
 
       const response = await fetch(
-        `${API_BASE_URL}/api/resources/assessments`,
+        `${API_BASE_URL}/api/resources/materials`,
         {
           method: "POST",
           credentials: "include",
@@ -131,7 +129,7 @@ const AssignedUnits = () => {
         throw new Error(data.error || "Unable to upload document");
       }
 
-      setUploadSuccess(data.message || "Document uploaded and assessment generated successfully!");
+      setUploadSuccess(data.message || "Document uploaded successfully!");
       setUploadForm(INITIAL_UPLOAD_FORM);
 
       setTimeout(() => {
@@ -328,26 +326,6 @@ const AssignedUnits = () => {
                         </div>
                         <div>
                           <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: "0.3rem" }}>
-                            Questions to generate
-                          </label>
-                          <input
-                            type="number"
-                            name="questionCount"
-                            min="3"
-                            max="12"
-                            value={uploadForm.questionCount}
-                            onChange={handleUploadChange}
-                            style={{
-                              width: "100%",
-                              padding: "0.5rem",
-                              borderRadius: "8px",
-                              border: "1px solid rgba(99,102,241,0.2)",
-                              fontSize: "0.8rem",
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: "0.3rem" }}>
                             Year of Study
                           </label>
                           <input
@@ -406,7 +384,7 @@ const AssignedUnits = () => {
                           }}
                         >
                           <Upload size={14} />
-                          {uploading ? "Uploading & generating AI..." : "Upload PDF"}
+                          {uploading ? "Uploading document..." : "Upload PDF"}
                         </button>
                         <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
                           Pre-filled: {unit.unitCode} • {unit.unitName} • {unit.courseTitle}

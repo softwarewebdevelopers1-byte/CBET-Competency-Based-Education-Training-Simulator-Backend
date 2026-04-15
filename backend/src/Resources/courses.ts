@@ -2,6 +2,7 @@ import { Courses } from "#models/courses.model";
 import { RegisteredCourse } from "#models/registered.course.model";
 import { UnitAssignment } from "#models/unit.assignment.model";
 import { UsersUploadedPdf } from "#models/user.upload.model";
+import { UnitDocumentModel } from "#models/unit.document.model";
 import jwt from "jsonwebtoken";
 import { Router, type Request, type Response } from "express";
 import { User } from "#models/user.model";
@@ -431,17 +432,59 @@ CoursesRouter.get(
             return;
           }
 
-          const documents = await UsersUploadedPdf.find({
-            unitCode: unit.unitCode,
-            courseTitle: unit.courseTitle,
-            status: "active",
-          })
-            .select(
-              "originalFileName unitName unitCode courseTitle pdfUrl description uploadedByName uploadedByRole createdAt questionCount totalPoints estimatedTimeMinutes activityType",
-            )
-            .sort({ createdAt: -1 })
-            .lean()
-            .exec();
+          if (String(existingUser.role).trim().toLowerCase() === "student") {
+            const isRegistered = await RegisteredCourse.exists({
+              unitId: (unit as any)._id,
+              studentUserNumber: existingUser.UserNumber,
+            });
+
+            if (!isRegistered) {
+              return res.status(403).json({
+                success: false,
+                message: "You must register for this unit to view materials.",
+                needsRegistration: true,
+              });
+            }
+          }
+
+          const [uploadedPdfs, standardDocs] = await Promise.all([
+            UsersUploadedPdf.find({
+              unitCode: unit.unitCode,
+              courseTitle: unit.courseTitle,
+              status: "active",
+            })
+              .select(
+                "originalFileName unitName unitCode courseTitle pdfUrl description uploadedByName uploadedByRole createdAt questionCount totalPoints estimatedTimeMinutes activityType",
+              )
+              .sort({ createdAt: -1 })
+              .lean()
+              .exec(),
+            UnitDocumentModel.find({
+              unitCode: unit.unitCode,
+              courseTitle: unit.courseTitle,
+              status: "active",
+            })
+              .select(
+                "originalFileName unitName unitCode courseTitle pdfUrl description uploadedByName uploadedByRole createdAt",
+              )
+              .sort({ createdAt: -1 })
+              .lean()
+              .exec()
+          ]);
+
+          const combinedDocuments = [
+            ...uploadedPdfs.map((doc: any) => ({
+              ...doc,
+              activityType: doc.activityType || "assessment",
+            })),
+            ...standardDocs.map((doc: any) => ({
+              ...doc,
+              activityType: "document",
+              questionCount: 0,
+              totalPoints: 0,
+              estimatedTimeMinutes: 0,
+            }))
+          ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
           const lecturerAssignment = await UnitAssignment.findOne({
             unitId: (unit as any)._id,
@@ -463,7 +506,7 @@ CoursesRouter.get(
               lecturerUserNumber:
                 unit.lecturerUserNumber || lecturerAssignment?.assigneeUserNumber || "",
             },
-            documents: documents.map((doc: any) => ({
+            documents: combinedDocuments.map((doc: any) => ({
               _id: doc._id,
               title: doc.originalFileName,
               unitName: doc.unitName,
@@ -479,7 +522,7 @@ CoursesRouter.get(
               estimatedTimeMinutes: doc.estimatedTimeMinutes || 0,
               activityType: doc.activityType || "assessment",
             })),
-            count: documents.length,
+            count: combinedDocuments.length,
           });
         },
       );
