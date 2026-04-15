@@ -90,8 +90,18 @@ const normalizeActivityType = (rawType: unknown): "assessment" | "scenario" => {
 
 const canManageUploads = (role: unknown) => {
   const normalizedRole = String(role ?? "").trim().toLowerCase();
-  return normalizedRole === "admin" || normalizedRole === "trainer";
+  return (
+    normalizedRole === "admin" ||
+    normalizedRole === "trainer" ||
+    normalizedRole === "student"
+  );
 };
+
+const isAdminUser = (role: unknown) =>
+  String(role ?? "").trim().toLowerCase() === "admin";
+
+const isTrainerUser = (role: unknown) =>
+  String(role ?? "").trim().toLowerCase() === "trainer";
 
 const buildActivityTypeQuery = (rawType: unknown) => {
   const trimmedType = String(rawType ?? "").trim();
@@ -341,6 +351,44 @@ const getCurrentUser = async (req: Request) => {
   return User.findOne({ UserNumber: userNumber }).lean().exec();
 };
 
+const getAssignedUnitForUploader = async (
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
+  unitCodeInput: string,
+  unitNameInput: string,
+) => {
+  const normalizedUnitCode = String(unitCodeInput ?? "").trim();
+  const normalizedUnitName = String(unitNameInput ?? "").trim();
+
+  if (isAdminUser(user.role)) {
+    return null;
+  }
+
+  const assignmentType = isTrainerUser(user.role) ? "lecturer" : "trainee";
+  const assignmentFilters: Record<string, unknown> = {
+    assignmentType,
+    assigneeUserNumber: user.UserNumber,
+  };
+
+  if (normalizedUnitCode) {
+    assignmentFilters.unitCode = {
+      $regex: new RegExp(`^${normalizedUnitCode}$`, "i"),
+    };
+  } else if (normalizedUnitName) {
+    assignmentFilters.unitName = {
+      $regex: new RegExp(`^${normalizedUnitName}$`, "i"),
+    };
+  } else {
+    throw new Error("unit_lookup_required");
+  }
+
+  const assignment = await UnitAssignment.findOne(assignmentFilters).lean().exec();
+  if (!assignment) {
+    return null;
+  }
+
+  return assignment;
+};
+
 const buildSimulationSummary = async (
   simulationId: string,
   totalPoints: number,
@@ -414,7 +462,7 @@ UserUploadRouter.post(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin or trainer privileges required" });
+        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
         return;
       }
 
@@ -423,11 +471,10 @@ UserUploadRouter.post(
         return;
       }
 
-      const courseTitle = String(req.body.courseTitle ?? "").trim();
-      const unitName = String(req.body.unitName ?? "").trim();
-      const unitCode = String(req.body.unitCode ?? "").trim();
+      const unitCodeInput = String(req.body.unitCode ?? "").trim();
+      const unitNameInput = String(req.body.unitName ?? "").trim();
       const activityType = normalizeActivityType(req.body.activityType);
-      const assignedProgramme = String(req.body.assignedProgramme ?? "").trim();
+      let assignedProgramme = String(req.body.assignedProgramme ?? "").trim();
       const assignedDepartment = String(
         req.body.assignedDepartment ?? "",
       ).trim();
@@ -435,6 +482,28 @@ UserUploadRouter.post(
       const instructions = String(req.body.instructions ?? "").trim();
       const questionCount = getQuestionCount(req.body.questionCount);
       const yearOfStudy = Math.max(1, Number(req.body.yearOfStudy) || 1);
+      const assignment = await getAssignedUnitForUploader(
+        currentUser,
+        unitCodeInput,
+        unitNameInput,
+      );
+
+      if (!isAdminUser(currentUser.role) && !assignment) {
+        res.status(403).json({
+          error:
+            "You can only upload documents for units assigned to you. Provide assigned unit code or unit name.",
+        });
+        return;
+      }
+
+      const unitCode = assignment?.unitCode ?? unitCodeInput;
+      const unitName = assignment?.unitName ?? unitNameInput;
+      const courseTitleInput = String(req.body.courseTitle ?? "").trim();
+      const courseTitle = assignment?.courseTitle ?? courseTitleInput;
+
+      if (!assignedProgramme) {
+        assignedProgramme = assignment?.courseTitle ?? courseTitle;
+      }
 
       if (!courseTitle || !unitName || !unitCode || !assignedProgramme) {
         res.status(400).json({
@@ -442,24 +511,6 @@ UserUploadRouter.post(
             "courseTitle, unitName, unitCode, and assignedProgramme are required",
         });
         return;
-      }
-
-      if (String(currentUser.role).trim().toLowerCase() === "trainer") {
-        const trainerAssignment = await UnitAssignment.findOne({
-          assignmentType: "lecturer",
-          assigneeUserNumber: currentUser.UserNumber,
-          unitCode: { $regex: new RegExp(`^${unitCode}$`, "i") },
-        })
-          .lean()
-          .exec();
-
-        if (!trainerAssignment) {
-          res.status(403).json({
-            error:
-              "You can only upload documents for units assigned to you. Contact admin to get assigned.",
-          });
-          return;
-        }
       }
 
       const localFilePath = req.file.path;
@@ -579,7 +630,7 @@ UserUploadRouter.get(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin or trainer privileges required" });
+        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
         return;
       }
 
@@ -592,10 +643,7 @@ UserUploadRouter.get(
         Object.assign(managementQuery, activityTypeQuery);
       }
 
-      if (
-        String(currentUser.role).trim().toLowerCase() === "trainer" ||
-        ownership === "self"
-      ) {
+      if (!isAdminUser(currentUser.role) || ownership === "self") {
         managementQuery.from = currentUser.UserNumber;
       }
 
@@ -702,15 +750,14 @@ UserUploadRouter.patch(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin or trainer privileges required" });
+        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
         return;
       }
 
       const status = normalizeSimulationStatus(req.body?.status);
-      const ownershipQuery =
-        String(currentUser.role).trim().toLowerCase() === "trainer"
-          ? { from: currentUser.UserNumber }
-          : {};
+      const ownershipQuery = isAdminUser(currentUser.role)
+        ? {}
+        : { from: currentUser.UserNumber };
 
       const updatedSimulation = await UsersUploadedPdf.findOneAndUpdate(
         { _id: req.params.id, ...ownershipQuery },
@@ -758,14 +805,13 @@ UserUploadRouter.delete(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin or trainer privileges required" });
+        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
         return;
       }
 
-      const ownershipQuery =
-        String(currentUser.role).trim().toLowerCase() === "trainer"
-          ? { from: currentUser.UserNumber }
-          : {};
+      const ownershipQuery = isAdminUser(currentUser.role)
+        ? {}
+        : { from: currentUser.UserNumber };
 
       const simulation = await UsersUploadedPdf.findOne({
         _id: req.params.id,
