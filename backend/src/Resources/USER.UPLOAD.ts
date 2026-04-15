@@ -1351,7 +1351,7 @@ UserUploadRouter.delete(
       }
 
       try {
-         await StudentSimulationAttempts.deleteMany({ simulationId: documentId }).exec();
+         await StudentSimulationAttempts.deleteMany({ simulationId: document._id }).exec();
       } catch(e) {}
 
       await UsersUploadedPdf.findByIdAndDelete(documentId).exec();
