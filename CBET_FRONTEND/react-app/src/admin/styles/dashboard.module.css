@@ -348,6 +348,7 @@
 @media (max-width: 768px) {
   .pageHeader {
     margin-bottom: 1.5rem;
+    flex-direction: column;
   }
 
   .pageTitle {
@@ -361,6 +362,45 @@
 
   .sectionHeader {
     flex-direction: column;
+  }
+
+  .statCard,
+  .dataCard,
+  .quickActions {
+    padding: 1.1rem;
+  }
+
+  .breakdownContent {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 1.3rem;
+  }
+
+  .pageSubtitle {
+    font-size: 0.88rem;
+  }
+
+  .statsGrid {
+    gap: 0.9rem;
+  }
+
+  .statCard {
+    padding: 1rem;
+    gap: 0.8rem;
+  }
+
+  .statIcon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .statValue {
+    font-size: 1.55rem;
   }
 }
 

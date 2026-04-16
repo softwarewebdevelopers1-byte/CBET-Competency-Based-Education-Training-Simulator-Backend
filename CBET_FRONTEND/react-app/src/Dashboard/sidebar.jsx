@@ -67,6 +67,7 @@ export function Sidebar({
     () => getCourseStats(coursesInfo),
     [coursesInfo],
   );
+  const activeCourses = coursesInProgress;
 
   useEffect(() => {
     if (!userInfo) {

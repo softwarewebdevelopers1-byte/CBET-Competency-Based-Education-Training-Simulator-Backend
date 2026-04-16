@@ -2,7 +2,6 @@ import mongoose, { type Model } from "mongoose";
 
 interface RegisteredCourseInterface {
   unitId: mongoose.Types.ObjectId;
-  courseTitle: string;
   unitCode: string;
   unitName: string;
   studentUserNumber: string;
@@ -20,11 +19,6 @@ const RegisteredCourseSchema = new mongoose.Schema<RegisteredCourseInterface>({
     ref: "courses",
     required: true,
     index: true,
-  },
-  courseTitle: {
-    type: String,
-    required: true,
-    trim: true,
   },
   unitCode: {
     type: String,

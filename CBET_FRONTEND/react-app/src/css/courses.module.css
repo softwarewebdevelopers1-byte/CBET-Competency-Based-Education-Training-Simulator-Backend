@@ -623,7 +623,7 @@
 
 @media (max-width: 768px) {
   .coursesPage {
-    padding: 1rem;
+    padding: 0.9rem;
   }
 
   .header {
@@ -639,6 +639,12 @@
   .searchSection {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .browseBtn,
+  .filterBtn {
+    width: 100%;
+    justify-content: center;
   }
 
   .searchBar {
@@ -678,9 +684,39 @@
   .statusSection {
     flex-wrap: wrap;
   }
+
+  .courseCard {
+    padding: 1.1rem;
+  }
+
+  .courseStats {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 480px) {
+  .pageTitle {
+    font-size: 1.45rem;
+  }
+
+  .pageSubtitle {
+    font-size: 0.9rem;
+  }
+
+  .cardHeader {
+    align-items: flex-start;
+  }
+
+  .courseThumbnail {
+    width: 52px;
+    height: 52px;
+    font-size: 1.55rem;
+  }
+
+  .courseTitle {
+    font-size: 1rem;
+  }
+
   .courseStats {
     flex-wrap: wrap;
     gap: 0.75rem;
@@ -690,16 +726,18 @@
     flex-direction: column;
   }
 
+  .primaryAction,
   .secondaryAction {
     width: 100%;
   }
 
   .tags {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .filterActions {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .viewToggle {

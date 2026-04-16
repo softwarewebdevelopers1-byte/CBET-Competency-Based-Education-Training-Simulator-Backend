@@ -301,12 +301,39 @@
     padding: 1rem;
   }
 
+  .sidebar {
+    width: min(84vw, 300px);
+  }
+
   .navItem {
     padding: 0.875rem 1rem;
   }
 
   .navLabel {
     font-size: 0.9375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: min(88vw, 280px);
+  }
+
+  .sidebarHeader {
+    padding: 0.9rem 0.85rem;
+    min-height: 64px;
+  }
+
+  .sidebarNav {
+    padding: 0 0.55rem;
+  }
+
+  .navItem {
+    padding: 0.8rem 0.85rem;
+  }
+
+  .sidebarFooter {
+    padding: 0.85rem 0.55rem;
   }
 }
 

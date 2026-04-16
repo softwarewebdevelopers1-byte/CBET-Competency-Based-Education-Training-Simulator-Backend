@@ -101,6 +101,21 @@
   .pageSurface {
     padding: 0;
   }
+
+  .contentWrapper {
+    overflow: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .mainContent {
+    min-width: 100%;
+  }
+
+  .pageSurface::after {
+    opacity: 0.18;
+    background-size: 22px 22px;
+  }
 }
 
 /* Animations */

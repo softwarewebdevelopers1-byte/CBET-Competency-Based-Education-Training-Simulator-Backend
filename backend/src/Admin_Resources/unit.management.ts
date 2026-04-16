@@ -274,8 +274,8 @@ AdminUnitManagementRouter.patch(
             { $set: { courseTitle: nextTitle } },
           ).exec(),
           RegisteredCourse.updateMany(
-            { courseTitle: previousTitle },
-            { $set: { courseTitle: nextTitle, programme: nextTitle } },
+            { programme: previousTitle },
+            { $set: { programme: nextTitle } },
           ).exec(),
           UnitDocumentModel.updateMany(
             { courseTitle: previousTitle },
@@ -489,7 +489,6 @@ AdminUnitManagementRouter.patch(
           { unitId: unit._id },
           {
             $set: {
-              courseTitle: nextProgramme,
               unitCode: nextUnitCode,
               unitName: nextUnitName,
               programme: nextProgramme,

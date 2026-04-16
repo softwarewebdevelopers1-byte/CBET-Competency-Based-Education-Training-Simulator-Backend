@@ -152,7 +152,7 @@ export function CourseDetail() {
           <div className={styles.unitMeta}>
             <span className={styles.metaItem}>
               <FiBookOpen size={15} />
-              {unit.courseTitle}
+              {unit.programme}
             </span>
             <span className={styles.metaItem}>
               <FiLayers size={15} />

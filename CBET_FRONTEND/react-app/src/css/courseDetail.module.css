@@ -549,6 +549,8 @@
 
   .unitMeta {
     gap: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .documentsGrid {
@@ -561,18 +563,62 @@
     gap: 0.5rem;
   }
 
+  .pdfHeaderActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .pdfActionBtn,
+  .pdfCloseBtn {
+    flex: 1 1 140px;
+    justify-content: center;
+  }
+
   .pdfHeaderTitle {
     font-size: 0.8rem;
+  }
+
+  .cardFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .viewBtn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
+  .courseDetailPage {
+    padding: 0.85rem;
+  }
+
   .unitHero {
     padding: 1.25rem;
   }
 
   .unitTitle {
     font-size: 1.15rem;
+  }
+
+  .documentsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .documentCard {
+    padding: 1.1rem;
+  }
+
+  .cardTop {
+    gap: 0.75rem;
+  }
+
+  .pdfIcon {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
   }
 
   .cardStats {

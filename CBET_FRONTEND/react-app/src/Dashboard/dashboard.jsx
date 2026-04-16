@@ -33,6 +33,9 @@ export function Dashboard({ children }) {
   const [role, resetRole] = useState("");
   const [courses, setCourses] = useState({});
   const [themeMode, setThemeMode] = useState(getStoredTheme);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false,
+  );
   let location = useNavigate();
   useEffect(() => {
     async function checkAuth() {
@@ -75,6 +78,19 @@ export function Dashboard({ children }) {
     localStorage.setItem("cbet_theme", themeMode);
   }, [themeMode]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const mobileViewport = window.innerWidth <= 768;
+      setIsMobile(mobileViewport);
+      setCollapsed(mobileViewport);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <div className="dashboard">
       <Sidebar
@@ -92,7 +108,7 @@ export function Dashboard({ children }) {
       <div
         className="dashboard-content"
         style={{
-          marginLeft: collapsed ? "80px" : "280px",
+          marginLeft: isMobile ? "0" : collapsed ? "80px" : "280px",
           transition: "margin-left 0.3s ease",
           minHeight: "100vh",
           background:

@@ -151,6 +151,7 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
 
           return {
             ...course,
+            programme: course.courseTitle || existingUser.programme || "",
             instructor: course.trainerName || course.trainerUserNumber || "Not assigned",
             trainerName: course.trainerName || trainerAssignments[0]?.assigneeName || "",
             trainerUserNumber:
@@ -358,7 +359,6 @@ CoursesRouter.post(
             },
             {
               $set: {
-                courseTitle: unit.courseTitle,
                 unitCode: unit.unitCode,
                 unitName: unit.unitName,
                 studentName: existingUser.fullName,
@@ -514,7 +514,7 @@ CoursesRouter.get(
             success: true,
             unit: {
               _id: (unit as any)._id,
-              courseTitle: unit.courseTitle,
+              programme: unit.courseTitle,
               unitCode: unit.unitCode,
               unitName: unit.unitName,
               department: unit.department,

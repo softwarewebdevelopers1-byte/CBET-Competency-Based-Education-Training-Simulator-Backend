@@ -85,7 +85,7 @@ export function MyCourses() {
         const transformedCourses = studentCourses.map((course, index) => ({
           id: course._id || index,
           code: course.unitCode || "N/A",
-          title: course.unitName || course.courseTitle || "Untitled Course",
+          title: course.unitName || "Untitled Course",
           instructor:
             course.trainerName ||
             course.instructor ||
@@ -97,8 +97,8 @@ export function MyCourses() {
           totalModules: course.totalModules || 1,
           completedModules: course.completedModules || 0,
           status: course.status || "in-progress",
-          thumbnail: getThumbnailIcon(course.unitName || course.courseTitle),
-          category: course.department || course.courseTitle || "General",
+          thumbnail: getThumbnailIcon(course.unitName || course.programme),
+          category: course.department || "General",
           enrolledDate:
             course.enrolledDate || new Date().toISOString().split("T")[0],
           lastAccessed: course.lastAccessed || "Recently",
@@ -115,7 +115,7 @@ export function MyCourses() {
           isRegistered: Boolean(course.isRegistered),
           registeredAt: course.registeredAt || null,
           department: course.department,
-          courseTitle: course.courseTitle,
+          programme: course.programme || "",
           unitCode: course.unitCode,
           unitName: course.unitName,
         }));
@@ -192,7 +192,7 @@ export function MyCourses() {
   const extractTags = (course) => {
     const tags = [];
     if (course.department) tags.push(course.department);
-    if (course.courseTitle) tags.push(course.courseTitle.split(" ")[0]);
+    if (course.programme) tags.push(course.programme);
     if (course.unitCode) tags.push(course.unitCode.split("")[0]);
     return tags.slice(0, 3); // Return at most 3 tags
   };
