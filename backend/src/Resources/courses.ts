@@ -8,6 +8,9 @@ import { Router, type Request, type Response } from "express";
 import { User } from "#models/user.model";
 
 export let CoursesRouter = Router();
+const getResourceUnitLabel = (doc: { unitSubtitle?: unknown; unitName?: unknown }) =>
+  String(doc.unitSubtitle ?? doc.unitName ?? "").trim();
+
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 if (!ACCESS_TOKEN_SECRET) {
   throw Error("Raw access token is missing");
@@ -468,7 +471,7 @@ CoursesRouter.get(
               status: "active",
             })
               .select(
-                "originalFileName unitName unitCode courseTitle pdfUrl description uploadedByName uploadedByRole createdAt questionCount totalPoints estimatedTimeMinutes activityType",
+                "originalFileName unitSubtitle unitName unitCode courseTitle pdfUrl description uploadedByName uploadedByRole createdAt questionCount totalPoints estimatedTimeMinutes activityType",
               )
               .sort({ createdAt: -1 })
               .lean()
@@ -523,7 +526,7 @@ CoursesRouter.get(
             documents: combinedDocuments.map((doc: any) => ({
               _id: doc._id,
               title: doc.originalFileName,
-              unitName: doc.unitName,
+              unitName: getResourceUnitLabel(doc),
               unitCode: doc.unitCode,
               courseTitle: doc.courseTitle,
               pdfUrl: doc.pdfUrl,

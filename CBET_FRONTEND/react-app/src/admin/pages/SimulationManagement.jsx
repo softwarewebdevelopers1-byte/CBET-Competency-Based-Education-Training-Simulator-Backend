@@ -14,7 +14,7 @@ import styles from "../styles/simulationManagement.module.css";
 
 const initialForm = {
   courseTitle: "",
-  unitName: "",
+  unitSubtitle: "",
   unitCode: "",
   assignedProgramme: "",
   assignedDepartment: "",
@@ -343,10 +343,10 @@ const SimulationManagement = ({
               />
             </label>
             <label className={styles.field}>
-              <span>Unit Name</span>
+              <span>Unit Subtitle</span>
               <input
-                name="unitName"
-                value={formData.unitName}
+                name="unitSubtitle"
+                value={formData.unitSubtitle}
                 onChange={handleInputChange}
                 required
               />

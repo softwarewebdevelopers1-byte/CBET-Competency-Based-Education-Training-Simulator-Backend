@@ -194,11 +194,17 @@ const normalizeQuestions = (rawQuestions: unknown[]): GeneratedQuestion[] => {
     .filter(Boolean) as GeneratedQuestion[];
 };
 
+const getAssessmentUnitSubtitle = (
+  simulation: { unitSubtitle?: unknown; unitName?: unknown } | null | undefined,
+) => {
+  return String(simulation?.unitSubtitle ?? simulation?.unitName ?? "").trim();
+};
+
 const generateQuestionsFromPdf = async (
   extractedText: string,
   metadata: {
     courseTitle: string;
-    unitName: string;
+    unitSubtitle: string;
     unitCode: string;
     questionCount: number;
   },
@@ -226,7 +232,7 @@ const generateQuestionsFromPdf = async (
         content: `Create ${metadata.questionCount} multiple-choice simulation questions for students.
 
 Course title: ${metadata.courseTitle}
-Unit name: ${metadata.unitName}
+Unit subtitle: ${metadata.unitSubtitle}
 Unit code: ${metadata.unitCode}
 
 Requirements:
@@ -354,10 +360,10 @@ const getCurrentUser = async (req: Request) => {
 const getAssignedUnitForUploader = async (
   user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
   unitCodeInput: string,
-  unitNameInput: string,
+  unitSubtitleInput: string,
 ) => {
   const normalizedUnitCode = String(unitCodeInput ?? "").trim();
-  const normalizedUnitName = String(unitNameInput ?? "").trim();
+  const normalizedUnitSubtitle = String(unitSubtitleInput ?? "").trim();
 
   if (isAdminUser(user.role)) {
     return null;
@@ -373,9 +379,9 @@ const getAssignedUnitForUploader = async (
     assignmentFilters.unitCode = {
       $regex: new RegExp(`^${normalizedUnitCode}$`, "i"),
     };
-  } else if (normalizedUnitName) {
+  } else if (normalizedUnitSubtitle) {
     assignmentFilters.unitName = {
-      $regex: new RegExp(`^${normalizedUnitName}$`, "i"),
+      $regex: new RegExp(`^${normalizedUnitSubtitle}$`, "i"),
     };
   } else {
     throw new Error("unit_lookup_required");
@@ -472,7 +478,7 @@ UserUploadRouter.post(
       }
 
       const unitCodeInput = String(req.body.unitCode ?? "").trim();
-      const unitNameInput = String(req.body.unitName ?? "").trim();
+      const unitSubtitleInput = String(req.body.unitSubtitle ?? "").trim();
       const activityType = normalizeActivityType(req.body.activityType);
       let assignedProgramme = String(req.body.assignedProgramme ?? "").trim();
       const assignedDepartment = String(
@@ -485,7 +491,7 @@ UserUploadRouter.post(
       const assignment = await getAssignedUnitForUploader(
         currentUser,
         unitCodeInput,
-        unitNameInput,
+        unitSubtitleInput,
       );
 
       if (!isAdminUser(currentUser.role) && !assignment) {
@@ -497,7 +503,7 @@ UserUploadRouter.post(
       }
 
       const unitCode = assignment?.unitCode ?? unitCodeInput;
-      const unitName = assignment?.unitName ?? unitNameInput;
+      const unitSubtitle = assignment?.unitName ?? unitSubtitleInput;
       const courseTitleInput = String(req.body.courseTitle ?? "").trim();
       const courseTitle = assignment?.courseTitle ?? courseTitleInput;
 
@@ -505,10 +511,10 @@ UserUploadRouter.post(
         assignedProgramme = assignment?.courseTitle ?? courseTitle;
       }
 
-      if (!courseTitle || !unitName || !unitCode || !assignedProgramme) {
+      if (!courseTitle || !unitSubtitle || !unitCode || !assignedProgramme) {
         res.status(400).json({
           error:
-            "courseTitle, unitName, unitCode, and assignedProgramme are required",
+            "courseTitle, unitSubtitle, unitCode, and assignedProgramme are required",
         });
         return;
       }
@@ -549,7 +555,7 @@ UserUploadRouter.post(
 
       const questions = await generateQuestionsFromPdf(parsed.text, {
         courseTitle,
-        unitName,
+        unitSubtitle,
         unitCode,
         questionCount,
       });
@@ -566,7 +572,7 @@ UserUploadRouter.post(
         assignedDepartment,
         yearOfStudy,
         courseTitle,
-        unitName,
+        unitSubtitle,
         unitCode,
         activityType,
         description,
@@ -588,7 +594,7 @@ UserUploadRouter.post(
         simulation: {
           id: createdSimulation._id,
           courseTitle: createdSimulation.courseTitle,
-          unitName: createdSimulation.unitName,
+          unitSubtitle: createdSimulation.unitSubtitle,
           unitCode: createdSimulation.unitCode,
           activityType: createdSimulation.activityType,
           assignedProgramme: createdSimulation.assignedProgramme,
@@ -599,7 +605,7 @@ UserUploadRouter.post(
         assessment: {
           id: createdSimulation._id,
           courseTitle: createdSimulation.courseTitle,
-          unitName: createdSimulation.unitName,
+          unitSubtitle: createdSimulation.unitSubtitle,
           unitCode: createdSimulation.unitCode,
           activityType: createdSimulation.activityType,
           assignedProgramme: createdSimulation.assignedProgramme,
@@ -698,6 +704,7 @@ UserUploadRouter.get(
 
       const response = await Promise.all(
         simulations.map(async (simulation) => {
+          const unitSubtitle = getAssessmentUnitSubtitle(simulation);
           const summary = await buildSimulationSummary(
             String(simulation._id),
             simulation.totalPoints,
@@ -705,12 +712,13 @@ UserUploadRouter.get(
 
           return {
             id: simulation._id,
-            title: simulation.unitName,
+            title: unitSubtitle,
             type: simulation.courseTitle,
             status: simulation.status,
             activityType: simulation.activityType || "assessment",
             unitCode: simulation.unitCode,
             courseTitle: simulation.courseTitle,
+            unitSubtitle,
             assignedProgramme: simulation.assignedProgramme,
             assignedDepartment: simulation.assignedDepartment,
             yearOfStudy: simulation.yearOfStudy,
@@ -891,6 +899,7 @@ UserUploadRouter.get(
 
       const response = await Promise.all(
         simulations.map(async (simulation) => {
+          const unitSubtitle = getAssessmentUnitSubtitle(simulation);
           const latestAttempt = latestAttemptBySimulation.get(
             String(simulation._id),
           );
@@ -901,12 +910,12 @@ UserUploadRouter.get(
 
           return {
             id: simulation._id,
-            title: `${simulation.unitCode} - ${simulation.unitName}`,
+            title: `${simulation.unitCode} - ${unitSubtitle}`,
             description:
               simulation.description ||
-              `AI-generated questions from the uploaded ${simulation.unitName} PDF.`,
+              `AI-generated questions from the uploaded ${unitSubtitle} PDF.`,
             course: `${simulation.courseTitle} - ${simulation.unitCode}`,
-            unitName: simulation.unitName,
+            unitSubtitle,
             unitCode: simulation.unitCode,
             activityType: simulation.activityType || "assessment",
             questionCount: simulation.questionCount,
@@ -983,6 +992,7 @@ UserUploadRouter.get(
         : [];
 
       const portfolioItems = simulations.map((simulation) => {
+        const unitSubtitle = getAssessmentUnitSubtitle(simulation);
         const attempt = latestAttemptBySimulation.get(String(simulation._id));
         const percentage = Number(attempt?.percentage ?? 0);
         const score = Number(attempt?.score ?? 0);
@@ -1003,7 +1013,7 @@ UserUploadRouter.get(
         return {
           id: String(attempt?._id ?? simulation._id),
           simulationId: String(simulation._id),
-          title: `${simulation.unitCode} - ${simulation.unitName}`,
+          title: `${simulation.unitCode} - ${unitSubtitle}`,
           type: "simulation",
           category: "project",
           description:
@@ -1053,6 +1063,7 @@ UserUploadRouter.get(
           totalPoints,
           percentage,
           unitCode: simulation.unitCode,
+          unitSubtitle,
           courseTitle: simulation.courseTitle,
         };
       });
@@ -1109,12 +1120,13 @@ UserUploadRouter.get(
         .exec();
 
       const previousResult = buildAttemptResult(simulation, previousAttempt);
+      const unitSubtitle = getAssessmentUnitSubtitle(simulation);
 
       const assessmentPayload = {
           id: simulation._id,
-          title: `${simulation.unitCode} - ${simulation.unitName}`,
+          title: `${simulation.unitCode} - ${unitSubtitle}`,
           courseTitle: simulation.courseTitle,
-          unitName: simulation.unitName,
+          unitSubtitle,
           unitCode: simulation.unitCode,
           activityType: simulation.activityType || "assessment",
           description:
@@ -1128,7 +1140,7 @@ UserUploadRouter.get(
           questionCount: simulation.questionCount,
           pdfUrl: simulation.pdfUrl,
           learningObjectives: [
-            `Apply concepts from ${simulation.unitName}`,
+            `Apply concepts from ${unitSubtitle}`,
             "Demonstrate understanding of the uploaded PDF material",
             "Earn points by selecting the most accurate answers",
           ],

@@ -37,7 +37,7 @@ const UserUploadSchema = new mongoose.Schema(
     assignedDepartment: { type: String, default: "", trim: true },
     yearOfStudy: { type: Number, default: 1, min: 1 },
     courseTitle: { type: String, required: true, trim: true },
-    unitName: { type: String, required: true, trim: true },
+    unitSubtitle: { type: String, required: true, trim: true },
     unitCode: { type: String, required: true, trim: true },
     activityType: { type: String, default: "assessment", trim: true },
     description: { type: String, default: "", trim: true },
@@ -79,7 +79,12 @@ const StudentSimulationAttemptSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    studentUserNumber: { type: String, required: true, trim: true, index: true },
+    studentUserNumber: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
     studentName: { type: String, required: true, trim: true },
     answers: {
       type: [
@@ -119,7 +124,8 @@ const UsersUploadedPdf =
   mongoose.model<UsersUploads>("users_pdf", UserUploadSchema);
 
 const StudentSimulationAttempts =
-  (mongoose.models.student_simulation_attempt as Model<StudentSimulationAttempt>) ||
+  (mongoose.models
+    .student_simulation_attempt as Model<StudentSimulationAttempt>) ||
   mongoose.model<StudentSimulationAttempt>(
     "student_simulation_attempt",
     StudentSimulationAttemptSchema,
