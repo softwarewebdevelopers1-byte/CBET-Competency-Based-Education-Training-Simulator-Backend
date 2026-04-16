@@ -132,6 +132,56 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
               .lean()
               .exec()
           : [];
+        const courseFilters = activeCourses.map((course: any) => ({
+          unitCode: course.unitCode,
+          courseTitle: course.courseTitle,
+          status: "active",
+        }));
+        const [documentCounts, assessmentCounts] = courseFilters.length
+          ? await Promise.all([
+              UnitDocumentModel.aggregate([
+                {
+                  $match: {
+                    $or: courseFilters,
+                  },
+                },
+                {
+                  $group: {
+                    _id: {
+                      courseTitle: "$courseTitle",
+                      unitCode: "$unitCode",
+                    },
+                    count: { $sum: 1 },
+                  },
+                },
+              ]),
+              UsersUploadedPdf.aggregate([
+                {
+                  $match: {
+                    $or: courseFilters,
+                  },
+                },
+                {
+                  $group: {
+                    _id: {
+                      courseTitle: "$courseTitle",
+                      unitCode: "$unitCode",
+                    },
+                    count: { $sum: 1 },
+                  },
+                },
+              ]),
+            ])
+          : [[], []];
+        const materialCountMap = new Map<string, number>();
+
+        for (const item of [...documentCounts, ...assessmentCounts]) {
+          const courseTitle = String(item?._id?.courseTitle ?? "").trim();
+          const unitCode = String(item?._id?.unitCode ?? "").trim();
+          const key = `${courseTitle}::${unitCode}`;
+          const currentCount = materialCountMap.get(key) ?? 0;
+          materialCountMap.set(key, currentCount + Number(item?.count ?? 0));
+        }
 
         const coursesWithAssignments = activeCourses.map((course: any) => {
           const relatedAssignments = unitAssignments.filter(
@@ -148,6 +198,9 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
             (registeredCourse) =>
               registeredCourse.studentUserNumber === existingUser.UserNumber,
           );
+          const materialKey = `${String(course.courseTitle ?? "").trim()}::${String(
+            course.unitCode ?? "",
+          ).trim()}`;
 
           return {
             ...course,
@@ -157,6 +210,7 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
             trainerUserNumber:
               course.trainerUserNumber || trainerAssignments[0]?.assigneeUserNumber || "",
             studentCount: relatedRegistrations.length,
+            materials: materialCountMap.get(materialKey) ?? 0,
             isRegistered: Boolean(currentStudentRegistration),
             registeredAt: currentStudentRegistration?.registeredAt || null,
           };
