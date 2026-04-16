@@ -40,6 +40,7 @@ const UserUploadSchema = new mongoose.Schema(
     unitSubtitle: { type: String, required: true, trim: true },
     unitCode: { type: String, required: true, trim: true },
     activityType: { type: String, default: "assessment", trim: true },
+    creationMode: { type: String, default: "ai", trim: true },
     description: { type: String, default: "", trim: true },
     instructions: { type: String, default: "", trim: true },
     originalFileName: { type: String, required: true, trim: true },
@@ -53,7 +54,7 @@ const UserUploadSchema = new mongoose.Schema(
         validator(value: unknown[]) {
           return Array.isArray(value) && value.length > 0;
         },
-        message: "Simulation must include at least one AI-generated question",
+        message: "Simulation must include at least one question",
       },
     },
     questionCount: { type: Number, required: true, min: 1 },

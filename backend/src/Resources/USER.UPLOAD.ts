@@ -76,6 +76,12 @@ const getQuestionCount = (rawQuestionCount: unknown): number => {
   return Math.min(12, Math.max(3, Math.floor(parsedValue)));
 };
 
+const normalizeCreationMode = (rawMode: unknown): "ai" | "manual" => {
+  return String(rawMode ?? "").trim().toLowerCase() === "manual"
+    ? "manual"
+    : "ai";
+};
+
 const normalizeSimulationStatus = (rawStatus: unknown): "active" | "inactive" => {
   return String(rawStatus ?? "").trim().toLowerCase() === "inactive"
     ? "inactive"
@@ -90,11 +96,7 @@ const normalizeActivityType = (rawType: unknown): "assessment" | "scenario" => {
 
 const canManageUploads = (role: unknown) => {
   const normalizedRole = String(role ?? "").trim().toLowerCase();
-  return (
-    normalizedRole === "admin" ||
-    normalizedRole === "trainer" ||
-    normalizedRole === "student"
-  );
+  return normalizedRole === "admin" || normalizedRole === "trainer";
 };
 
 const isAdminUser = (role: unknown) =>
@@ -102,6 +104,44 @@ const isAdminUser = (role: unknown) =>
 
 const isTrainerUser = (role: unknown) =>
   String(role ?? "").trim().toLowerCase() === "trainer";
+
+const buildQuestionReviewPayload = (questions: GeneratedQuestion[]) =>
+  questions.map((question, index) => ({
+    id: `question-${index + 1}`,
+    prompt: question.prompt,
+    points: question.points,
+    explanation: question.explanation,
+    correctOptionId: question.correctOptionId,
+    options: question.options.map((option) => ({
+      id: option.id,
+      text: option.text,
+      isCorrect: option.id === question.correctOptionId,
+    })),
+  }));
+
+const parseManualQuestions = (rawQuestions: unknown): GeneratedQuestion[] => {
+  if (typeof rawQuestions !== "string" || !rawQuestions.trim()) {
+    throw new Error("Manual creation requires at least one question");
+  }
+
+  let parsedQuestions: unknown;
+  try {
+    parsedQuestions = JSON.parse(rawQuestions);
+  } catch {
+    throw new Error("Manual questions must be valid JSON");
+  }
+
+  if (!Array.isArray(parsedQuestions)) {
+    throw new Error("Manual questions must be provided as an array");
+  }
+
+  const questions = normalizeQuestions(parsedQuestions);
+  if (questions.length === 0) {
+    throw new Error("Manual creation requires at least one valid question");
+  }
+
+  return questions;
+};
 
 const buildActivityTypeQuery = (rawType: unknown) => {
   const trimmedType = String(rawType ?? "").trim();
@@ -369,7 +409,11 @@ const getAssignedUnitForUploader = async (
     return null;
   }
 
-  const assignmentType = isTrainerUser(user.role) ? "trainer" : "student";
+  if (!isTrainerUser(user.role)) {
+    return null;
+  }
+
+  const assignmentType = "trainer";
   const assignmentFilters: Record<string, unknown> = {
     assignmentType,
     assigneeUserNumber: user.UserNumber,
@@ -468,7 +512,7 @@ UserUploadRouter.post(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -486,7 +530,8 @@ UserUploadRouter.post(
       ).trim();
       const description = String(req.body.description ?? "").trim();
       const instructions = String(req.body.instructions ?? "").trim();
-      const questionCount = getQuestionCount(req.body.questionCount);
+      const creationMode = normalizeCreationMode(req.body.creationMode);
+      const requestedQuestionCount = getQuestionCount(req.body.questionCount);
       const yearOfStudy = Math.max(1, Number(req.body.yearOfStudy) || 1);
       const assignment = await getAssignedUnitForUploader(
         currentUser,
@@ -553,12 +598,15 @@ UserUploadRouter.post(
       const parsed = await parser.getText();
       await parser.destroy();
 
-      const questions = await generateQuestionsFromPdf(parsed.text, {
-        courseTitle,
-        unitSubtitle,
-        unitCode,
-        questionCount,
-      });
+      const questions =
+        creationMode === "manual"
+          ? parseManualQuestions(req.body.questions)
+          : await generateQuestionsFromPdf(parsed.text, {
+              courseTitle,
+              unitSubtitle,
+              unitCode,
+              questionCount: requestedQuestionCount,
+            });
       const totalPoints = questions.reduce(
         (sum, question) => sum + question.points,
         0,
@@ -575,6 +623,7 @@ UserUploadRouter.post(
         unitSubtitle,
         unitCode,
         activityType,
+        creationMode,
         description,
         instructions,
         originalFileName: req.file.originalname,
@@ -590,17 +639,22 @@ UserUploadRouter.post(
 
       res.status(201).json({
         success: true,
-        message: "PDF uploaded and assessment generated successfully",
+        message:
+          creationMode === "manual"
+            ? "PDF uploaded and manual assessment created successfully"
+            : "PDF uploaded and assessment generated successfully",
         simulation: {
           id: createdSimulation._id,
           courseTitle: createdSimulation.courseTitle,
           unitSubtitle: createdSimulation.unitSubtitle,
           unitCode: createdSimulation.unitCode,
           activityType: createdSimulation.activityType,
+          creationMode: createdSimulation.creationMode,
           assignedProgramme: createdSimulation.assignedProgramme,
           pdfUrl: createdSimulation.pdfUrl,
           questionCount: createdSimulation.questionCount,
           totalPoints: createdSimulation.totalPoints,
+          questions: buildQuestionReviewPayload(questions),
         },
         assessment: {
           id: createdSimulation._id,
@@ -608,10 +662,12 @@ UserUploadRouter.post(
           unitSubtitle: createdSimulation.unitSubtitle,
           unitCode: createdSimulation.unitCode,
           activityType: createdSimulation.activityType,
+          creationMode: createdSimulation.creationMode,
           assignedProgramme: createdSimulation.assignedProgramme,
           pdfUrl: createdSimulation.pdfUrl,
           questionCount: createdSimulation.questionCount,
           totalPoints: createdSimulation.totalPoints,
+          questions: buildQuestionReviewPayload(questions),
         },
       });
     } catch (error) {
@@ -636,7 +692,7 @@ UserUploadRouter.get(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -716,6 +772,7 @@ UserUploadRouter.get(
             type: simulation.courseTitle,
             status: simulation.status,
             activityType: simulation.activityType || "assessment",
+            creationMode: simulation.creationMode || "ai",
             unitCode: simulation.unitCode,
             courseTitle: simulation.courseTitle,
             unitSubtitle,
@@ -728,6 +785,7 @@ UserUploadRouter.get(
             questionCount: simulation.questionCount,
             totalPoints: simulation.totalPoints,
             pdfUrl: simulation.pdfUrl,
+            originalFileName: simulation.originalFileName,
             description: simulation.description,
             instructions: simulation.instructions,
             completedStudents:
@@ -751,6 +809,95 @@ UserUploadRouter.get(
   },
 );
 
+UserUploadRouter.get(
+  "/admin/:id",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin or trainer privileges required" });
+        return;
+      }
+
+      const ownershipQuery = isAdminUser(currentUser.role)
+        ? {}
+        : { from: currentUser.UserNumber };
+
+      const simulation = await UsersUploadedPdf.findOne({
+        _id: req.params.id,
+        ...ownershipQuery,
+      })
+        .lean()
+        .exec();
+
+      if (!simulation) {
+        res.status(404).json({ error: "Assessment not found" });
+        return;
+      }
+
+      const unitSubtitle = getAssessmentUnitSubtitle(simulation);
+      const summary = await buildSimulationSummary(
+        String(simulation._id),
+        simulation.totalPoints,
+      );
+      const completedStudents = await StudentSimulationAttempts.find({
+        simulationId: simulation._id,
+      })
+        .sort({ submittedAt: -1, createdAt: -1 })
+        .lean()
+        .exec();
+
+      const detailPayload = {
+        id: simulation._id,
+        title: unitSubtitle,
+        status: simulation.status,
+        activityType: simulation.activityType || "assessment",
+        creationMode: simulation.creationMode || "ai",
+        unitCode: simulation.unitCode,
+        courseTitle: simulation.courseTitle,
+        unitSubtitle,
+        assignedProgramme: simulation.assignedProgramme,
+        assignedDepartment: simulation.assignedDepartment,
+        yearOfStudy: simulation.yearOfStudy,
+        participants: summary.participants,
+        averageScore: summary.averageScore,
+        completion: summary.completion,
+        questionCount: simulation.questionCount,
+        totalPoints: simulation.totalPoints,
+        estimatedTimeMinutes: simulation.estimatedTimeMinutes,
+        pdfUrl: simulation.pdfUrl,
+        originalFileName: simulation.originalFileName,
+        description: simulation.description,
+        instructions: simulation.instructions,
+        uploadedByName: simulation.uploadedByName,
+        uploadedByRole: simulation.uploadedByRole,
+        extractedTextPreview: simulation.extractedTextPreview || "",
+        questions: buildQuestionReviewPayload(simulation.questions || []),
+        completedStudents: completedStudents.map((attempt) => ({
+          studentName: attempt.studentName,
+          studentUserNumber: attempt.studentUserNumber,
+          score: attempt.score,
+          totalPoints: attempt.totalPoints,
+          percentage: attempt.percentage,
+          submittedAt: attempt.submittedAt,
+        })),
+        createdAt: simulation.createdAt,
+        updatedAt: simulation.updatedAt,
+      };
+
+      res.status(200).json({
+        success: true,
+        simulation: detailPayload,
+        assessment: detailPayload,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Unable to fetch assessment details" });
+    }
+  },
+);
+
 UserUploadRouter.patch(
   "/admin/:id/status",
   AuthenticateToken,
@@ -758,7 +905,7 @@ UserUploadRouter.patch(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -813,7 +960,7 @@ UserUploadRouter.delete(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
