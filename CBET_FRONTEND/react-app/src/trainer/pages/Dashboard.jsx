@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ClipboardCheck, ListChecks } from "lucide-react";
 import styles from "../../admin/styles/dashboard.module.css";
+import {
+  getDashboardCacheKey,
+  readDashboardCache,
+  writeDashboardCache,
+} from "../../utils/browserCache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
@@ -12,10 +17,32 @@ const TrainerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const trainerCode = (() => {
+    try {
+      const rawUser =
+        localStorage.getItem("cbet_user") || localStorage.getItem("admin_user");
+      return JSON.parse(rawUser || "{}")?.code || "trainer";
+    } catch {
+      return "trainer";
+    }
+  })();
+  const cacheKey = getDashboardCacheKey(
+    "trainer",
+    "dashboard",
+    "items",
+    trainerCode,
+  );
 
   useEffect(() => {
     const loadTrainerContent = async () => {
       try {
+        const cachedItems = readDashboardCache(cacheKey);
+        if (cachedItems) {
+          setItems(Array.isArray(cachedItems) ? cachedItems : []);
+          setLoading(false);
+          return;
+        }
+
         setLoading(true);
         setError("");
         const response = await fetch(
@@ -31,7 +58,9 @@ const TrainerDashboard = () => {
           throw new Error(data.error || "Unable to fetch trainer content");
         }
 
-        setItems(data.assessments || data.simulations || []);
+        const nextItems = data.assessments || data.simulations || [];
+        setItems(nextItems);
+        writeDashboardCache(cacheKey, nextItems);
       } catch (fetchError) {
         setError(
           fetchError instanceof Error
@@ -45,7 +74,7 @@ const TrainerDashboard = () => {
     };
 
     loadTrainerContent();
-  }, []);
+  }, [cacheKey]);
 
   const metrics = useMemo(() => {
     const assessments = items.filter(

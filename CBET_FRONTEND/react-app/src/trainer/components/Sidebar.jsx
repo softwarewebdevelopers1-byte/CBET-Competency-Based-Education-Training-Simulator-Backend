@@ -9,14 +9,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import styles from "../../admin/styles/Sidebar.module.css";
+import { clearDashboardCaches } from "../../utils/browserCache";
 
 const clearStoredAuthData = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("cbet_user");
-  localStorage.removeItem("admin_user");
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("cbet_user");
-  sessionStorage.removeItem("admin_user");
+  clearDashboardCaches();
+  localStorage.clear();
+  sessionStorage.clear();
 };
 
 const Sidebar = ({ collapsed, setCollapsed }) => {

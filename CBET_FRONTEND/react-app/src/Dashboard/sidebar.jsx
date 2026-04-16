@@ -16,14 +16,12 @@ import {
   FiTarget,
   FiUser,
 } from "react-icons/fi";
+import { clearDashboardCaches } from "../utils/browserCache";
 
 const clearStoredAuthData = () => {
-  localStorage.removeItem("cbet_user");
-  localStorage.removeItem("token");
-  localStorage.removeItem("admin_user");
-  sessionStorage.removeItem("cbet_user");
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("admin_user");
+  clearDashboardCaches();
+  localStorage.clear();
+  sessionStorage.clear();
 };
 
 const readStoredUser = () => {

@@ -17,6 +17,11 @@ import {
   FiBell,
 } from "react-icons/fi";
 import { CourseContext } from "./dashboard";
+import {
+  getDashboardCacheKey,
+  readDashboardCache,
+  writeDashboardCache,
+} from "../utils/browserCache";
 
 const defaultRecommendedCourses = [
   {
@@ -45,6 +50,12 @@ const defaultRecommendedCourses = [
   },
 ];
 
+const hydrateRecentActivities = (activities = []) =>
+  activities.map((activity) => ({
+    ...activity,
+    icon: <FiCheckCircle />,
+  }));
+
 export function Homepage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
@@ -66,6 +77,19 @@ export function Homepage() {
     role: "student",
     institution: " TVET Institute",
   };
+  const studentCode = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("cbet_user") || "{}")?.code || "student";
+    } catch {
+      return "student";
+    }
+  })();
+  const cacheKey = getDashboardCacheKey(
+    "student",
+    "homepage",
+    "summary",
+    studentCode,
+  );
 
   const getCourseCount = () => {
     try {
@@ -104,6 +128,23 @@ export function Homepage() {
       try {
         const counts = getCourseCount();
         const completedCourses = getCompletedCourses();
+        const cachedDashboard = readDashboardCache(cacheKey);
+
+        if (cachedDashboard) {
+          setSimulationItems(cachedDashboard.simulationItems || []);
+          setStats(cachedDashboard.stats || {});
+          setRecentActivities(
+            hydrateRecentActivities(cachedDashboard.recentActivities || []),
+          );
+          setUpcomingDeadlines(cachedDashboard.upcomingDeadlines || []);
+          setRecommendedCourses(
+            cachedDashboard.recommendedCourses || defaultRecommendedCourses,
+          );
+          setNotifications(cachedDashboard.notifications || []);
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(
           "https://cbet-competency-based-education-training.onrender.com/api/resources/upload/users/data/pdf/student",
           {
@@ -148,15 +189,17 @@ export function Homepage() {
         });
 
         setRecentActivities(
-          completedSimulations.slice(0, 4).map((simulation, index) => ({
-            id: simulation.id || index,
-            title: `Scored ${simulation.percentage || 0}% in ${simulation.title}`,
-            time: simulation.completedDate
-              ? new Date(simulation.completedDate).toLocaleString()
-              : "Recently",
-            icon: <FiCheckCircle />,
-            color: "#10b981",
-          })),
+          hydrateRecentActivities(
+            completedSimulations.slice(0, 4).map((simulation, index) => ({
+              id: simulation.id || index,
+              title: `Scored ${simulation.percentage || 0}% in ${simulation.title}`,
+              time: simulation.completedDate
+                ? new Date(simulation.completedDate).toLocaleString()
+                : "Recently",
+              icon: "completed",
+              color: "#10b981",
+            })),
+          ),
         );
 
         setUpcomingDeadlines(
@@ -184,6 +227,47 @@ export function Homepage() {
         );
 
         setRecommendedCourses(defaultRecommendedCourses);
+        writeDashboardCache(cacheKey, {
+          simulationItems: simulations,
+          stats: {
+            coursesInProgress: counts,
+            completedCourses,
+            pendingAssessments: pendingSimulations.length,
+            averageScore,
+            totalPoints,
+            currentRank: totalPoints >= 300 ? "Gold" : "Starter",
+            streakDays: completedSimulations.length,
+            badgesEarned: completedSimulations.length,
+          },
+          recentActivities: completedSimulations.slice(0, 4).map((simulation, index) => ({
+            id: simulation.id || index,
+            title: `Scored ${simulation.percentage || 0}% in ${simulation.title}`,
+            time: simulation.completedDate
+              ? new Date(simulation.completedDate).toLocaleString()
+              : "Recently",
+            icon: "completed",
+            color: "#10b981",
+          })),
+          upcomingDeadlines: pendingSimulations.slice(0, 3).map((simulation) => ({
+            id: simulation.id,
+            title: simulation.title,
+            course: simulation.course,
+            dueDate: `Estimated ${simulation.estimatedTimeMinutes} mins`,
+            priority: "high",
+          })),
+          recommendedCourses: defaultRecommendedCourses,
+          notifications: simulations.slice(0, 3).map((simulation, index) => ({
+            id: simulation.id || index,
+            message:
+              simulation.score === null
+                ? `New AI simulation available: ${simulation.title}`
+                : `Completed simulation: ${simulation.title}`,
+            time: simulation.createdAt
+              ? new Date(simulation.createdAt).toLocaleString()
+              : "Recently",
+            read: index > 0,
+          })),
+        });
       } catch (error) {
         setStats({
           coursesInProgress: getCourseCount(),
@@ -201,7 +285,7 @@ export function Homepage() {
     };
 
     loadDashboard();
-  }, [coursesCount]);
+  }, [cacheKey, coursesCount]);
 
   if (loading) {
     return (

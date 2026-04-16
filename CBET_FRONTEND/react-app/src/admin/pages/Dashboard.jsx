@@ -11,6 +11,16 @@ import {
   ArrowRight,
 } from "lucide-react";
 import styles from "../styles/dashboard.module.css";
+import {
+  getDashboardCacheKey,
+  readDashboardCache,
+  removeDashboardCache,
+  writeDashboardCache,
+} from "../../utils/browserCache";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  "https://cbet-competency-based-education-training.onrender.com";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -19,13 +29,21 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [promotingYears, setPromotingYears] = useState(false);
+  const cacheKey = getDashboardCacheKey("admin", "dashboard", "users");
 
   const fetchUsers = async () => {
     try {
+      const cachedUsers = readDashboardCache(cacheKey);
+      if (cachedUsers) {
+        setUsers(Array.isArray(cachedUsers) ? cachedUsers : []);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError("");
 
-      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
+      const response = await fetch(`${API_BASE_URL}/auth/admin/users`, {
         method: "GET",
         credentials: "include",
       });
@@ -35,7 +53,9 @@ const AdminDashboard = () => {
         throw new Error(data.error || "Unable to fetch dashboard data");
       }
 
-      setUsers(Array.isArray(data.users) ? data.users : []);
+      const nextUsers = Array.isArray(data.users) ? data.users : [];
+      setUsers(nextUsers);
+      writeDashboardCache(cacheKey, nextUsers);
     } catch (fetchError) {
       setError(
         fetchError instanceof Error
@@ -67,7 +87,7 @@ const AdminDashboard = () => {
       setSuccessMessage("");
 
       const response = await fetch(
-        "https://cbet-competency-based-education-training.onrender.com/auth/admin/users/promote-academic-year",
+        `${API_BASE_URL}/auth/admin/users/promote-academic-year`,
         {
           method: "POST",
           credentials: "include",
@@ -82,6 +102,7 @@ const AdminDashboard = () => {
       setSuccessMessage(
         `Academic year updated. Promoted ${data.promotedCount || 0} students and graduated ${data.graduatedCount || 0}.`,
       );
+      removeDashboardCache(cacheKey);
       await fetchUsers();
     } catch (submitError) {
       setError(
