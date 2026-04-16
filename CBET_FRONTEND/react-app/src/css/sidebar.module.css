@@ -15,6 +15,11 @@
   overflow-y: auto;
 }
 
+.mobileOverlay,
+.mobileMenuButton {
+  display: none;
+}
+
 .sidebar.collapsed {
   width: 80px;
 }
@@ -431,20 +436,48 @@
 /* Hide toggle button on mobile */
 @media (max-width: 768px) {
   .sidebar {
-    width: 68px;
+    width: min(84vw, 280px);
     box-shadow: 4px 0 18px rgba(15, 23, 42, 0.1);
+    transform: translateX(0);
   }
 
   .sidebar.collapsed {
-    width: 68px;
-  }
-
-  .sidebar:not(.collapsed) {
-    width: min(84vw, 280px);
+    transform: translateX(-100%);
   }
 
   .sidebarHeader {
     padding: 1rem 0.85rem;
+  }
+
+  .toggleBtn {
+    display: flex;
+  }
+
+  .mobileOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: none;
+    background: rgba(15, 23, 42, 0.28);
+    z-index: 999;
+    padding: 0;
+  }
+
+  .mobileMenuButton {
+    display: inline-flex;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.28);
   }
 
   .studentInfo {
@@ -477,19 +510,22 @@
 /* Small mobile devices */
 @media (max-width: 480px) {
   .sidebar {
-    width: 62px;
+    width: min(88vw, 260px);
   }
 
   .sidebar.collapsed {
-    width: 62px;
-  }
-
-  .sidebar:not(.collapsed) {
-    width: min(88vw, 260px);
+    transform: translateX(-100%);
   }
 
   .sidebarHeader {
     padding: 0.85rem 0.7rem;
+  }
+
+  .mobileMenuButton {
+    top: 0.85rem;
+    left: 0.85rem;
+    width: 40px;
+    height: 40px;
   }
 
   .logoIcon {

@@ -59,6 +59,9 @@ export function Sidebar({
   onToggleTheme,
 }) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false,
+  );
   const collapsed =
     typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
   const navigate = useNavigate();
@@ -75,6 +78,17 @@ export function Sidebar({
       navigate("/login");
     }
   }, [navigate, userInfo]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileViewport(window.innerWidth <= 768);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (!userInfo) {
     return null;
@@ -130,141 +144,162 @@ export function Sidebar({
   ];
 
   return (
-    <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
-      <div className={styles.sidebarHeader}>
-        {!collapsed ? (
-          <div className={styles.logo}>
-            <span className={styles.logoIcon}>CB</span>
-            <span className={styles.logoText}>CBET Student</span>
-          </div>
-        ) : (
-          <span className={styles.logoIconSmall}>CB</span>
-        )}
-
-        <button onClick={toggleSidebar} className={styles.toggleBtn} type="button">
-          {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+    <>
+      {isMobileViewport && collapsed && (
+        <button
+          onClick={toggleSidebar}
+          className={styles.mobileMenuButton}
+          type="button"
+          aria-label="Open sidebar"
+        >
+          <FiChevronRight />
         </button>
-      </div>
+      )}
 
-      <div className={styles.studentInfo}>
-        <div className={styles.studentAvatar}>
-          {student.name.charAt(0).toUpperCase() || <FiUser />}
+      {isMobileViewport && !collapsed && (
+        <button
+          className={styles.mobileOverlay}
+          type="button"
+          aria-label="Close sidebar"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+        <div className={styles.sidebarHeader}>
+          {!collapsed ? (
+            <div className={styles.logo}>
+              <span className={styles.logoIcon}>CB</span>
+              <span className={styles.logoText}>CBET Student</span>
+            </div>
+          ) : (
+            <span className={styles.logoIconSmall}>CB</span>
+          )}
+
+          <button onClick={toggleSidebar} className={styles.toggleBtn} type="button">
+            {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+          </button>
         </div>
+
+        <div className={styles.studentInfo}>
+          <div className={styles.studentAvatar}>
+            {student.name.charAt(0).toUpperCase() || <FiUser />}
+          </div>
+          {!collapsed && (
+            <div className={styles.studentDetails}>
+              <p className={styles.studentName}>{student.name}</p>
+              <p className={styles.studentProgram}>{student.program}</p>
+              <p className={styles.studentId}>ID: {student.studentId}</p>
+            </div>
+          )}
+        </div>
+
         {!collapsed && (
-          <div className={styles.studentDetails}>
-            <p className={styles.studentName}>{student.name}</p>
-            <p className={styles.studentProgram}>{student.program}</p>
-            <p className={styles.studentId}>ID: {student.studentId}</p>
+          <div className={styles.quickStats}>
+            {sidebarHighlights.map((item, index) => (
+              <React.Fragment key={item.label}>
+                {index > 0 && <div className={styles.statDivider}></div>}
+                <div className={styles.statItem}>
+                  <span className={styles.statValue}>{item.value}</span>
+                  <span className={styles.statLabel}>{item.label}</span>
+                </div>
+              </React.Fragment>
+            ))}
           </div>
         )}
-      </div>
 
-      {!collapsed && (
-        <div className={styles.quickStats}>
-          {sidebarHighlights.map((item, index) => (
-            <React.Fragment key={item.label}>
-              {index > 0 && <div className={styles.statDivider}></div>}
-              <div className={styles.statItem}>
-                <span className={styles.statValue}>{item.value}</span>
-                <span className={styles.statLabel}>{item.label}</span>
+        {!collapsed && (
+          <div className={styles.notifications}>
+            <div className={styles.notificationHeader}>
+              <FiBookOpen />
+              <span>Course Summary</span>
+              <span className={styles.notificationBadge}>{coursesInProgress}</span>
+            </div>
+            <div className={styles.notificationList}>
+              <div className={styles.notificationItem}>
+                <span className={styles.notificationDot}></span>
               </div>
-            </React.Fragment>
-          ))}
-        </div>
-      )}
-
-      {!collapsed && (
-        <div className={styles.notifications}>
-          <div className={styles.notificationHeader}>
-            <FiBookOpen />
-            <span>Course Summary</span>
-            <span className={styles.notificationBadge}>{coursesInProgress}</span>
-          </div>
-          <div className={styles.notificationList}>
-            <div className={styles.notificationItem}>
-              <span className={styles.notificationDot}></span>
-
-            </div>
-            <div className={styles.notificationItem}>
-              <span className={styles.notificationDot}></span>
-              <span className={styles.notificationText}>
-                {completedCourses} course{completedCourses === 1 ? "" : "s"} completed
-              </span>
-            </div>
-            <div className={styles.notificationItem}>
-              <span className={styles.notificationDot}></span>
-              <span className={styles.notificationText}>
-                {coursesInProgress} total enrolled course{coursesInProgress === 1 ? "" : "s"}
-              </span>
+              <div className={styles.notificationItem}>
+                <span className={styles.notificationDot}></span>
+                <span className={styles.notificationText}>
+                  {completedCourses} course{completedCourses === 1 ? "" : "s"} completed
+                </span>
+              </div>
+              <div className={styles.notificationItem}>
+                <span className={styles.notificationDot}></span>
+                <span className={styles.notificationText}>
+                  {coursesInProgress} total enrolled course{coursesInProgress === 1 ? "" : "s"}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      <nav className={styles.nav}>
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `${styles.navItem} ${isActive ? styles.active : ""}`
-            }
-          >
-            <span className={styles.navIcon}>{item.icon}</span>
-            {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className={styles.sidebarFooter}>
-        {!collapsed && (
-          <>
-            <button
-              onClick={onToggleTheme}
-              className={styles.footerActionBtn}
-              type="button"
-            >
-              {themeMode === "dark" ? <FiSun /> : <FiMoon />}
-              <span>{themeMode === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            </button>
-            <NavLink to="/profile" className={styles.footerItem}>
-              <FiUser />
-              <span>My Profile</span>
-            </NavLink>
-            <NavLink to="/settings" className={styles.footerItem}>
-              <FiSettings />
-              <span>Settings</span>
-            </NavLink>
-          </>
         )}
-        <button onClick={handleLogout} className={styles.logoutBtn} type="button">
-          <FiLogOut />
-          {!collapsed && <span>Logout</span>}
-        </button>
-      </div>
 
-      {collapsed && (
-        <div className={styles.collapsedStats}>
-          <div
-            className={styles.collapsedStat}
-            title={`${activeCourses} Active Courses`}
-          >
-            {activeCourses}
-          </div>
-          <div
-            className={styles.collapsedStat}
-            title={`${completedCourses} Completed Courses`}
-          >
-            {completedCourses}
-          </div>
-          <div
-            className={styles.collapsedStat}
-            title={`${coursesInProgress} courses in Progress`}
-          >
-            {coursesInProgress}
-          </div>
+        <nav className={styles.nav}>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `${styles.navItem} ${isActive ? styles.active : ""}`
+              }
+            >
+              <span className={styles.navIcon}>{item.icon}</span>
+              {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className={styles.sidebarFooter}>
+          {!collapsed && (
+            <>
+              <button
+                onClick={onToggleTheme}
+                className={styles.footerActionBtn}
+                type="button"
+              >
+                {themeMode === "dark" ? <FiSun /> : <FiMoon />}
+                <span>{themeMode === "dark" ? "Light Mode" : "Dark Mode"}</span>
+              </button>
+              <NavLink to="/profile" className={styles.footerItem}>
+                <FiUser />
+                <span>My Profile</span>
+              </NavLink>
+              <NavLink to="/settings" className={styles.footerItem}>
+                <FiSettings />
+                <span>Settings</span>
+              </NavLink>
+            </>
+          )}
+          <button onClick={handleLogout} className={styles.logoutBtn} type="button">
+            <FiLogOut />
+            {!collapsed && <span>Logout</span>}
+          </button>
         </div>
-      )}
-    </div>
+
+        {collapsed && !isMobileViewport && (
+          <div className={styles.collapsedStats}>
+            <div
+              className={styles.collapsedStat}
+              title={`${activeCourses} Active Courses`}
+            >
+              {activeCourses}
+            </div>
+            <div
+              className={styles.collapsedStat}
+              title={`${completedCourses} Completed Courses`}
+            >
+              {completedCourses}
+            </div>
+            <div
+              className={styles.collapsedStat}
+              title={`${coursesInProgress} courses in Progress`}
+            >
+              {coursesInProgress}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
