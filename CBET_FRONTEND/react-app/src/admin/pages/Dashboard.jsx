@@ -9,10 +9,8 @@ import {
   GraduationCap,
   Briefcase,
   ArrowRight,
-  RefreshCcw,
 } from "lucide-react";
 import styles from "../styles/dashboard.module.css";
-import { apiClient } from "../../utils/apiClient.js";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -22,19 +20,19 @@ const AdminDashboard = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [promotingYears, setPromotingYears] = useState(false);
 
-  const fetchUsers = async (ignoreCache = false) => {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const data = await apiClient.getWithCache(
-        "https://cbet-competency-based-education-training.onrender.com/auth/admin/users",
-        { method: "GET" },
-        ignoreCache ? 0 : 5 * 60 * 1000
-      );
+      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await response.json();
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to fetch dashboard data");
       }
 
       setUsers(Array.isArray(data.users) ? data.users : []);
@@ -84,8 +82,7 @@ const AdminDashboard = () => {
       setSuccessMessage(
         `Academic year updated. Promoted ${data.promotedCount || 0} students and graduated ${data.graduatedCount || 0}.`,
       );
-      apiClient.invalidateCache("https://cbet-competency-based-education-training.onrender.com/auth/admin/users");
-      await fetchUsers(true);
+      await fetchUsers();
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -189,14 +186,6 @@ const AdminDashboard = () => {
             Live overview of user accounts currently stored in the database.
           </p>
         </div>
-        <button
-          className={styles.actionBtn}
-          onClick={() => fetchUsers(true)}
-          style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-        >
-          <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
       </div>
 
       {error && <div className={styles.errorBanner}>{error}</div>}

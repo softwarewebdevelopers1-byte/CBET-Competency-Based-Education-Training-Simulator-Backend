@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FileText, Trash2, RefreshCw, Eye } from "lucide-react";
 import styles from "../styles/simulationManagement.module.css";
-import { apiClient } from "../../utils/apiClient.js";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
@@ -19,19 +18,19 @@ const MaterialManagement = () => {
   const [success, setSuccess] = useState("");
   const [deletingId, setDeletingId] = useState("");
 
-  const loadMaterials = async (ignoreCache = false) => {
+  const loadMaterials = async () => {
     try {
       setLoading(true);
       setError("");
       
-      const data = await apiClient.getWithCache(
-        `${API_BASE_URL}/api/resources/materials/admin`,
-        { method: "GET" },
-        ignoreCache ? 0 : 5 * 60 * 1000
-      );
+      const response = await fetch(`${API_BASE_URL}/api/resources/materials/admin`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await response.json();
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load materials");
       }
 
       setMaterials(data.materials || []);
@@ -64,7 +63,6 @@ const MaterialManagement = () => {
         throw new Error(data.error || "Unable to delete material");
       }
 
-      apiClient.invalidatePattern("materials");
       setMaterials((current) => current.filter((m) => m._id !== material._id));
       setSuccess("Material deleted successfully");
       
@@ -86,8 +84,8 @@ const MaterialManagement = () => {
           </p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.secondaryBtn} onClick={() => loadMaterials(true)} type="button">
-            <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+          <button className={styles.secondaryBtn} onClick={loadMaterials} type="button">
+            <RefreshCw size={20} />
             Refresh
           </button>
         </div>
