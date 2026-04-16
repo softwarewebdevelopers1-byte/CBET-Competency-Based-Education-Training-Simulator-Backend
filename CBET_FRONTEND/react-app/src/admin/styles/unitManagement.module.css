@@ -246,6 +246,19 @@
   color: #334155;
 }
 
+.assignmentActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.deleteActionButton {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
 .emptyCopy {
   margin: 0;
   color: #64748b;

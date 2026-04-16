@@ -54,15 +54,11 @@ const normalizeStatus = (value: unknown): "active" | "inactive" =>
 
 const normalizeAssignmentType = (
   value: unknown,
-): "trainer" | "student" | null => {
+) : "trainer" | null => {
   const normalized = String(value ?? "").trim().toLowerCase();
 
   if (normalized === "trainer") {
     return "trainer";
-  }
-
-  if (normalized === "student") {
-    return "student";
   }
 
   return null;
@@ -174,7 +170,6 @@ AdminUnitManagementRouter.get(
         programmeOptions: programmeRecords.map((programme) => programme.title),
         units,
         trainers: users.filter((user) => user.role === "trainer"),
-        students: users.filter((user) => user.role === "student"),
         assignments,
       });
     } catch (error) {
@@ -680,7 +675,7 @@ AdminUnitManagementRouter.post(
 
       if (!unitId || !assigneeUserNumber || !assignmentType) {
         res.status(400).json({
-          error: "unitId, assigneeUserNumber, and a valid assignmentType are required",
+          error: "unitId, assigneeUserNumber, and assignmentType=trainer are required",
         });
         return;
       }
@@ -701,7 +696,7 @@ AdminUnitManagementRouter.post(
         return;
       }
 
-      const requiredRole = assignmentType;
+      const requiredRole = "trainer";
 
       if (String(assignee.role).trim().toLowerCase() !== requiredRole) {
         res.status(400).json({
@@ -718,26 +713,23 @@ AdminUnitManagementRouter.post(
         .exec();
 
       if (existingAssignment) {
-        const label = assignmentType === "trainer" ? "trainer" : "student";
         const sameAssignee =
           existingAssignment.assigneeUserNumber === assignee.UserNumber;
         res.status(409).json({
           error: sameAssignee
-            ? `This unit is already assigned to the selected ${label}.`
-            : `This unit already has an assigned ${label}. Use the update action to replace them.`,
+            ? "This unit is already assigned to the selected trainer."
+            : "This unit already has an assigned trainer. Use the update action to replace them.",
         });
         return;
       }
 
-      if (assignmentType === "trainer") {
-        unit.trainerUserNumber = assignee.UserNumber;
-        unit.trainerName = assignee.fullName;
-        await unit.save();
-      }
+      unit.trainerUserNumber = assignee.UserNumber;
+      unit.trainerName = assignee.fullName;
+      await unit.save();
 
       const assignment = await UnitAssignment.create({
         unitId: unit._id,
-        assignmentType,
+        assignmentType: "trainer",
         courseTitle: unit.courseTitle,
         unitCode: unit.unitCode,
         unitName: unit.unitName,
@@ -775,7 +767,7 @@ AdminUnitManagementRouter.patch(
 
       if (!assignmentType || !assigneeUserNumber) {
         res.status(400).json({
-          error: "A valid assignmentType and assigneeUserNumber are required",
+          error: "assignmentType=trainer and assigneeUserNumber are required",
         });
         return;
       }
@@ -815,16 +807,14 @@ AdminUnitManagementRouter.patch(
 
       existingAssignment.assigneeUserNumber = assignee.UserNumber;
       existingAssignment.assigneeName = assignee.fullName;
-      existingAssignment.assigneeRole = assignmentType;
+      existingAssignment.assigneeRole = "trainer";
       existingAssignment.assignedByUserNumber = adminUser.userNumber;
       existingAssignment.assignedAt = new Date();
       await existingAssignment.save();
 
-      if (assignmentType === "trainer") {
-        unit.trainerUserNumber = assignee.UserNumber;
-        unit.trainerName = assignee.fullName;
-        await unit.save();
-      }
+      unit.trainerUserNumber = assignee.UserNumber;
+      unit.trainerName = assignee.fullName;
+      await unit.save();
 
       res.status(200).json({
         message: "Unit assignment updated successfully",
@@ -833,6 +823,55 @@ AdminUnitManagementRouter.patch(
       });
     } catch (error) {
       res.status(500).json({ error: "Unable to update unit assignment" });
+    }
+  },
+);
+
+AdminUnitManagementRouter.delete(
+  "/units/:unitId/assignments/:assignmentId",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminUser = await requireAdminUser(req, res);
+
+      if (!adminUser) {
+        return;
+      }
+
+      const unit = await Courses.findById(req.params.unitId).exec();
+
+      if (!unit) {
+        res.status(404).json({ error: "Unit not found" });
+        return;
+      }
+
+      const assignment = await UnitAssignment.findOne({
+        _id: req.params.assignmentId,
+        unitId: unit._id,
+        assignmentType: "trainer",
+      }).exec();
+
+      if (!assignment) {
+        res.status(404).json({ error: "Assignment not found" });
+        return;
+      }
+
+      await UnitAssignment.deleteOne({ _id: assignment._id }).exec();
+
+      if (
+        String(unit.trainerUserNumber ?? "").trim() ===
+        String(assignment.assigneeUserNumber ?? "").trim()
+      ) {
+        unit.trainerUserNumber = "";
+        unit.trainerName = "";
+        await unit.save();
+      }
+
+      res.status(200).json({
+        message: "Trainer assignment deleted successfully",
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Unable to delete unit assignment" });
     }
   },
 );

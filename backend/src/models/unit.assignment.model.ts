@@ -5,10 +5,10 @@ interface UnitAssignmentInterface {
   courseTitle: string;
   unitCode: string;
   unitName: string;
-  assignmentType: "trainer" | "student";
+  assignmentType: "trainer";
   assigneeUserNumber: string;
   assigneeName: string;
-  assigneeRole: "trainer" | "student";
+  assigneeRole: "trainer";
   assignedByUserNumber: string;
   assignedAt?: Date;
 }
@@ -37,7 +37,7 @@ const UnitAssignmentSchema = new mongoose.Schema<UnitAssignmentInterface>({
   },
   assignmentType: {
     type: String,
-    enum: ["trainer", "student"],
+    enum: ["trainer"],
     required: true,
   },
   assigneeUserNumber: {
@@ -52,7 +52,7 @@ const UnitAssignmentSchema = new mongoose.Schema<UnitAssignmentInterface>({
   },
   assigneeRole: {
     type: String,
-    enum: ["trainer", "student"],
+    enum: ["trainer"],
     required: true,
   },
   assignedByUserNumber: {

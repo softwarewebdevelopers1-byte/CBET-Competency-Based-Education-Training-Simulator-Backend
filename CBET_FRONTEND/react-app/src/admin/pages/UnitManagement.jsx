@@ -47,7 +47,6 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
   const [programmes, setProgrammes] = useState([]);
   const [units, setUnits] = useState([]);
   const [trainers, setTrainers] = useState([]);
-  const [students, setStudents] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -87,7 +86,6 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       setProgrammes(Array.isArray(data.programmes) ? data.programmes : []);
       setUnits(Array.isArray(data.units) ? data.units : []);
       setTrainers(Array.isArray(data.trainers) ? data.trainers : []);
-      setStudents(Array.isArray(data.students) ? data.students : []);
       setAssignments(Array.isArray(data.assignments) ? data.assignments : []);
     } catch (fetchError) {
       setError(
@@ -98,7 +96,6 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       setProgrammes([]);
       setUnits([]);
       setTrainers([]);
-      setStudents([]);
       setAssignments([]);
     } finally {
       setLoading(false);
@@ -119,13 +116,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     [assignments],
   );
 
-  const studentAssignments = useMemo(
-    () => assignments.filter((item) => item.assignmentType === "student"),
-    [assignments],
-  );
-
-  const selectedAssigneeOptions =
-    assignmentForm.assignmentType === "trainer" ? trainers : students;
+  const selectedAssigneeOptions = trainers;
 
   const handleProgrammeChange = (event) => {
     const { name, value } = event.target;
@@ -141,9 +132,8 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     const { name, value } = event.target;
     setAssignmentForm((current) => {
       const nextState = { ...current, [name]: value };
-
       if (name === "assignmentType") {
-        nextState.assigneeUserNumber = "";
+        nextState.assignmentType = "trainer";
       }
 
       return nextState;
@@ -477,11 +467,58 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
   const startAssignmentUpdate = (unitId, assignmentType, assigneeUserNumber) => {
     setAssignmentForm({
       unitId: String(unitId),
-      assignmentType,
+      assignmentType: "trainer",
       assigneeUserNumber,
     });
     setAssignmentMode("update");
     setActiveTab("assignments");
+  };
+
+  const handleDeleteAssignment = async (assignment) => {
+    const confirmed = window.confirm(
+      `Remove trainer "${assignment.assigneeName}" from ${assignment.unitCode} - ${assignment.unitName}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/auth/admin/unit-management/units/${encodeURIComponent(assignment.unitId)}/assignments/${encodeURIComponent(assignment._id)}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to delete assignment");
+      }
+
+      if (
+        assignmentMode === "update" &&
+        String(assignmentForm.unitId) === String(assignment.unitId)
+      ) {
+        resetAssignmentForm();
+      }
+
+      setSuccessMessage(data.message || "Trainer assignment deleted successfully.");
+      await fetchOverview();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete assignment",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -490,7 +527,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
         <div>
           <h1 className={styles.pageTitle}>Course and Unit Management</h1>
           <p className={styles.pageSubtitle}>
-            Create programmes, manage units, replace assigned trainers or students,
+            Create programmes, manage units, replace assigned trainers,
             and remove units when they are no longer needed.
           </p>
         </div>
@@ -646,8 +683,8 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
             <div className={styles.panelHeader}>
               <h2>{assignmentMode === "update" ? "Update Assignment" : "Assign Unit"}</h2>
               <p>
-                Create a new unit assignment or explicitly replace the trainer or
-                student already attached to a unit.
+                Create a trainer assignment, replace the current trainer, or
+                remove the assignment when needed.
               </p>
             </div>
 
@@ -669,19 +706,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
             </label>
 
             <label className={styles.field}>
-              <span>Assignment Type</span>
-              <select
-                name="assignmentType"
-                value={assignmentForm.assignmentType}
-                onChange={handleAssignmentChange}
-              >
-                <option value="trainer">Trainer</option>
-                <option value="student">Student</option>
-              </select>
-            </label>
-
-            <label className={styles.field}>
-              <span>{assignmentForm.assignmentType === "trainer" ? "Trainer" : "Student"}</span>
+              <span>Trainer</span>
               <select
                 name="assigneeUserNumber"
                 value={assignmentForm.assigneeUserNumber}
@@ -716,7 +741,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
           <div className={styles.panel}>
             <div className={styles.panelHeader}>
               <h2>Assignment Summary</h2>
-              <p>Replace current trainers or students from these lists.</p>
+              <p>Replace or remove current trainers from these assignments.</p>
             </div>
 
             <div className={styles.assignmentSection}>
@@ -730,55 +755,32 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                       <span>
                         {assignment.assigneeName} ({assignment.assigneeUserNumber})
                       </span>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        onClick={() =>
-                          startAssignmentUpdate(
-                            assignment.unitId,
-                            "trainer",
-                            assignment.assigneeUserNumber,
-                          )
-                        }
-                      >
-                        Replace Trainer
-                      </button>
+                      <div className={styles.assignmentActions}>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() =>
+                            startAssignmentUpdate(
+                              assignment.unitId,
+                              "trainer",
+                              assignment.assigneeUserNumber,
+                            )
+                          }
+                        >
+                          Replace Trainer
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.secondaryButton} ${styles.deleteActionButton}`}
+                          onClick={() => handleDeleteAssignment(assignment)}
+                        >
+                          Delete Assignment
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
                   <p className={styles.emptyCopy}>No trainers assigned yet.</p>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.assignmentSection}>
-              <h3>Student Assignments</h3>
-              <div className={styles.assignmentList}>
-                {studentAssignments.length > 0 ? (
-                  studentAssignments.map((assignment) => (
-                    <div key={assignment._id} className={styles.assignmentItem}>
-                      <strong>{assignment.unitCode}</strong>
-                      <span>{assignment.unitName}</span>
-                      <span>
-                        {assignment.assigneeName} ({assignment.assigneeUserNumber})
-                      </span>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        onClick={() =>
-                          startAssignmentUpdate(
-                            assignment.unitId,
-                            "student",
-                            assignment.assigneeUserNumber,
-                          )
-                        }
-                      >
-                        Replace Student
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className={styles.emptyCopy}>No students assigned yet.</p>
                 )}
               </div>
             </div>
@@ -945,7 +947,6 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
               {units.length > 0 ? (
                 units.map((unit) => {
                   const trainerAssignment = getAssignmentForUnit(unit._id, "trainer");
-                  const studentAssignment = getAssignmentForUnit(unit._id, "student");
                   const programmeStatus =
                     programmeLookup.get(String(unit.courseTitle).toLowerCase())?.status ||
                     "active";
@@ -961,9 +962,6 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                         </span>
                         <span>
                           Trainer: {unit.trainerName || trainerAssignment?.assigneeName || "Not assigned"}
-                        </span>
-                        <span>
-                          Student: {studentAssignment?.assigneeName || "Not assigned"}
                         </span>
                       </div>
                       <div className={styles.itemActions}>
