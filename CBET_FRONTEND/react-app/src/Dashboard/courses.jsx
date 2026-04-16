@@ -87,9 +87,9 @@ export function MyCourses() {
           code: course.unitCode || "N/A",
           title: course.unitName || course.courseTitle || "Untitled Course",
           instructor:
-            course.lecturerName ||
+            course.trainerName ||
             course.instructor ||
-            course.lecturerUserNumber ||
+            course.trainerUserNumber ||
             "Not assigned",
           description:
             course.description || course.unitName || "No description available",
@@ -109,9 +109,9 @@ export function MyCourses() {
           students: course.students || 0,
           rating: course.rating || 4.0,
           tags: course.tags || extractTags(course),
-          lecturerName: course.lecturerName || "",
-          lecturerUserNumber: course.lecturerUserNumber || "",
-          traineeCount: course.traineeCount || 0,
+          trainerName: course.trainerName || "",
+          trainerUserNumber: course.trainerUserNumber || "",
+          studentCount: course.studentCount || 0,
           isRegistered: Boolean(course.isRegistered),
           registeredAt: course.registeredAt || null,
           department: course.department,
@@ -156,7 +156,7 @@ export function MyCourses() {
                 isRegistered: true,
                 registeredAt:
                   data.registration?.registeredAt || new Date().toISOString(),
-                traineeCount: data.traineeCount ?? course.traineeCount,
+                studentCount: data.studentCount ?? course.studentCount,
               }
             : course,
         ),
@@ -419,7 +419,7 @@ export function MyCourses() {
               </div>
               <div className={styles.statItem}>
                 <FiUsers />
-                <span>{`${course.traineeCount} registered students`}</span>
+                <span>{`${course.studentCount} registered students`}</span>
               </div>
               <div className={styles.statItem}>
                 <FiStar />

@@ -83,7 +83,7 @@ const getAssignedUnitForUploader = async (
     return null;
   }
 
-  const assignmentType = isTrainerUser(user.role) ? "lecturer" : "trainee";
+  const assignmentType = isTrainerUser(user.role) ? "trainer" : "student";
   const assignmentFilters: Record<string, unknown> = {
     assignmentType,
     assigneeUserNumber: user.UserNumber,
@@ -119,7 +119,7 @@ UnitDocumentUploadRouter.post(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !(isAdminUser(currentUser.role) || isTrainerUser(currentUser.role))) {
-        res.status(403).json({ error: "Admin or lecturer privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -270,7 +270,7 @@ UnitDocumentUploadRouter.delete(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !(isAdminUser(currentUser.role) || isTrainerUser(currentUser.role))) {
-        res.status(403).json({ error: "Admin or lecturer privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -292,7 +292,7 @@ UnitDocumentUploadRouter.delete(
            const assignment = await UnitAssignment.findOne({
                unitCode: document.unitCode,
                assigneeUserNumber: currentUser.UserNumber,
-               assignmentType: "lecturer"
+               assignmentType: "trainer"
            }).lean().exec();
            if (assignment) canDelete = true;
         }

@@ -498,7 +498,7 @@ const UserManagement = () => {
               <h2>Create User</h2>
               <p>
                 Students get <strong>student123</strong>. Staff accounts
-                (`admin` and `trainer/trainee`) get <strong>staff123</strong>.
+                (`admin` and `trainer`) get <strong>staff123</strong>.
               </p>
             </div>
 
@@ -532,7 +532,7 @@ const UserManagement = () => {
                     onChange={handleCreateInputChange}
                   >
                     <option value="student">Student</option>
-                    <option value="trainer">Trainer / Trainee</option>
+                    <option value="trainer">Trainer</option>
                     <option value="admin">Admin</option>
                   </select>
                 </label>
@@ -633,7 +633,7 @@ const UserManagement = () => {
                     onChange={handleEditInputChange}
                   >
                     <option value="student">Student</option>
-                    <option value="trainer">Trainer / Trainee</option>
+                    <option value="trainer">Trainer</option>
                     <option value="admin">Admin</option>
                   </select>
                 </label>

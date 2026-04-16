@@ -160,7 +160,7 @@ export function CourseDetail() {
             </span>
             <span className={styles.metaItem}>
               <FiUser size={15} />
-              {unit.lecturerName || "Not assigned"}
+              {unit.trainerName || "Not assigned"}
             </span>
             <span className={styles.metaItem}>
               <FiCalendar size={15} />
@@ -280,7 +280,7 @@ export function CourseDetail() {
           <div className={styles.emptyIcon}>📄</div>
           <h3 className={styles.emptyTitle}>No documents uploaded yet</h3>
           <p className={styles.emptyText}>
-            Your lecturer hasn't uploaded any materials for this unit yet. Check
+            Your trainer hasn't uploaded any materials for this unit yet. Check
             back later!
           </p>
         </div>

@@ -39,15 +39,15 @@ const normalizeProgramme = (value: unknown): string =>
 
 const normalizeAssignmentType = (
   value: unknown,
-): "lecturer" | "trainee" | null => {
+): "trainer" | "student" | null => {
   const normalized = String(value ?? "").trim().toLowerCase();
 
-  if (normalized === "lecturer") {
-    return "lecturer";
+  if (normalized === "trainer") {
+    return "trainer";
   }
 
-  if (normalized === "trainee" || normalized === "student") {
-    return "trainee";
+  if (normalized === "student") {
+    return "student";
   }
 
   return null;
@@ -74,8 +74,8 @@ AdminUnitManagementRouter.get(
             department: true,
             yearOfStudy: true,
             status: true,
-            lecturerUserNumber: true,
-            lecturerName: true,
+            trainerUserNumber: true,
+            trainerName: true,
           },
         )
           .sort({ courseTitle: 1, yearOfStudy: 1, unitCode: 1 })
@@ -117,7 +117,7 @@ AdminUnitManagementRouter.get(
         programmes,
         units,
         trainers: users.filter((user) => user.role === "trainer"),
-        trainees: users.filter((user) => user.role === "student"),
+        students: users.filter((user) => user.role === "student"),
         assignments,
       });
     } catch (error) {
@@ -303,7 +303,7 @@ AdminUnitManagementRouter.post(
         return;
       }
 
-      const requiredRole = assignmentType === "lecturer" ? "trainer" : "student";
+      const requiredRole = assignmentType;
 
       if (String(assignee.role).trim().toLowerCase() !== requiredRole) {
         res.status(400).json({
@@ -312,40 +312,43 @@ AdminUnitManagementRouter.post(
         return;
       }
 
-      if (assignmentType === "lecturer") {
-        await UnitAssignment.deleteMany({
-          unitId: unit._id,
-          assignmentType: "lecturer",
-        }).exec();
+      const existingAssignment = await UnitAssignment.findOne({
+        unitId: unit._id,
+        assignmentType,
+      })
+        .lean()
+        .exec();
 
-        unit.lecturerUserNumber = assignee.UserNumber;
-        unit.lecturerName = assignee.fullName;
+      if (existingAssignment) {
+        const label = assignmentType === "trainer" ? "trainer" : "student";
+        const sameAssignee =
+          existingAssignment.assigneeUserNumber === assignee.UserNumber;
+        res.status(409).json({
+          error: sameAssignee
+            ? `This unit is already assigned to the selected ${label}.`
+            : `This unit already has an assigned ${label}. Remove the current assignment before assigning another one.`,
+        });
+        return;
+      }
+
+      if (assignmentType === "trainer") {
+        unit.trainerUserNumber = assignee.UserNumber;
+        unit.trainerName = assignee.fullName;
         await unit.save();
       }
 
-      const assignment = await UnitAssignment.findOneAndUpdate(
-        {
-          unitId: unit._id,
-          assignmentType,
-          assigneeUserNumber: assignee.UserNumber,
-        },
-        {
-          $set: {
-            courseTitle: unit.courseTitle,
-            unitCode: unit.unitCode,
-            unitName: unit.unitName,
-            assigneeName: assignee.fullName,
-            assigneeRole: requiredRole,
-            assignedByUserNumber: adminUser.userNumber,
-            assignedAt: new Date(),
-          },
-        },
-        {
-          new: true,
-          upsert: true,
-          setDefaultsOnInsert: true,
-        },
-      ).exec();
+      const assignment = await UnitAssignment.create({
+        unitId: unit._id,
+        assignmentType,
+        courseTitle: unit.courseTitle,
+        unitCode: unit.unitCode,
+        unitName: unit.unitName,
+        assigneeUserNumber: assignee.UserNumber,
+        assigneeName: assignee.fullName,
+        assigneeRole: requiredRole,
+        assignedByUserNumber: adminUser.userNumber,
+        assignedAt: new Date(),
+      });
 
       res.status(200).json({
         message: "Unit assignment saved successfully",

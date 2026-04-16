@@ -7,7 +7,7 @@ const ScenarioBuilder = () => {
       activityType="scenario"
       ownership="self"
       pageTitle="Create Interactive Scenarios"
-      pageDescription="Build safe-practice interactive scenarios that your trainees can open from the learner dashboard."
+      pageDescription="Build safe-practice interactive scenarios that your students can open from the learner dashboard."
     />
   );
 };

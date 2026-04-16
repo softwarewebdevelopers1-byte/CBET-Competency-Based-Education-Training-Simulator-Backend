@@ -7,7 +7,7 @@ const AssessmentBuilder = () => {
       activityType="assessment"
       ownership="self"
       pageTitle="Create Assessments"
-      pageDescription="Build and manage the assessments you assign to trainees."
+      pageDescription="Build and manage the assessments you assign to students."
     />
   );
 };

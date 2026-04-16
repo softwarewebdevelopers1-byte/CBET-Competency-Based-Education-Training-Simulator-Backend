@@ -137,8 +137,8 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
           const relatedAssignments = unitAssignments.filter(
             (assignment) => String(assignment.unitId) === String(course._id),
           );
-          const lecturerAssignments = relatedAssignments.filter(
-            (assignment) => assignment.assignmentType === "lecturer",
+          const trainerAssignments = relatedAssignments.filter(
+            (assignment) => assignment.assignmentType === "trainer",
           );
           const relatedRegistrations = registeredCourses.filter(
             (registeredCourse) =>
@@ -151,11 +151,11 @@ CoursesRouter.post("/my/courses", async (req: Request, res: Response) => {
 
           return {
             ...course,
-            instructor: course.lecturerName || course.lecturerUserNumber || "Not assigned",
-            lecturerName: course.lecturerName || lecturerAssignments[0]?.assigneeName || "",
-            lecturerUserNumber:
-              course.lecturerUserNumber || lecturerAssignments[0]?.assigneeUserNumber || "",
-            traineeCount: relatedRegistrations.length,
+            instructor: course.trainerName || course.trainerUserNumber || "Not assigned",
+            trainerName: course.trainerName || trainerAssignments[0]?.assigneeName || "",
+            trainerUserNumber:
+              course.trainerUserNumber || trainerAssignments[0]?.assigneeUserNumber || "",
+            studentCount: relatedRegistrations.length,
             isRegistered: Boolean(currentStudentRegistration),
             registeredAt: currentStudentRegistration?.registeredAt || null,
           };
@@ -226,14 +226,14 @@ CoursesRouter.get(
             return;
           }
 
-          const lecturerAssignments = await UnitAssignment.find({
-            assignmentType: "lecturer",
+          const trainerAssignments = await UnitAssignment.find({
+            assignmentType: "trainer",
             assigneeUserNumber: existingUser.UserNumber,
           })
             .lean()
             .exec();
 
-          const assignedUnitIds = lecturerAssignments.map((item) => item.unitId);
+          const assignedUnitIds = trainerAssignments.map((item) => item.unitId);
           const trainerUnits = assignedUnitIds.length
             ? await Courses.find({ _id: { $in: assignedUnitIds } })
                 .sort({ courseTitle: 1, yearOfStudy: 1, unitCode: 1 })
@@ -250,7 +250,7 @@ CoursesRouter.get(
             : [];
 
           const units = trainerUnits.map((unit) => {
-            const unitTrainees = registeredCourses
+            const unitStudents = registeredCourses
               .filter(
                 (registeredCourse) =>
                   String(registeredCourse.unitId) === String(unit._id),
@@ -263,8 +263,8 @@ CoursesRouter.get(
 
             return {
               ...unit,
-              traineeCount: unitTrainees.length,
-              trainees: unitTrainees,
+              studentCount: unitStudents.length,
+              students: unitStudents,
             };
           });
 
@@ -376,7 +376,7 @@ CoursesRouter.post(
             },
           ).lean();
 
-          const traineeCount = await RegisteredCourse.countDocuments({
+          const studentCount = await RegisteredCourse.countDocuments({
             unitId: (unit as any)._id,
           });
 
@@ -385,7 +385,7 @@ CoursesRouter.post(
             message: "Unit registered successfully",
             registration,
             unitId: String((unit as any)._id),
-            traineeCount,
+            studentCount,
           });
         },
       );
@@ -503,9 +503,9 @@ CoursesRouter.get(
             }))
           ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-          const lecturerAssignment = await UnitAssignment.findOne({
+          const trainerAssignment = await UnitAssignment.findOne({
             unitId: (unit as any)._id,
-            assignmentType: "lecturer",
+            assignmentType: "trainer",
           })
             .lean()
             .exec();
@@ -519,9 +519,9 @@ CoursesRouter.get(
               unitName: unit.unitName,
               department: unit.department,
               yearOfStudy: unit.yearOfStudy,
-              lecturerName: unit.lecturerName || lecturerAssignment?.assigneeName || "",
-              lecturerUserNumber:
-                unit.lecturerUserNumber || lecturerAssignment?.assigneeUserNumber || "",
+              trainerName: unit.trainerName || trainerAssignment?.assigneeName || "",
+              trainerUserNumber:
+                unit.trainerUserNumber || trainerAssignment?.assigneeUserNumber || "",
             },
             documents: combinedDocuments.map((doc: any) => ({
               _id: doc._id,

@@ -65,10 +65,10 @@ const AssignedUnits = () => {
     loadAssignedUnits();
   }, []);
 
-  const traineeTotal = useMemo(
+  const studentTotal = useMemo(
     () =>
       assignedUnits.reduce(
-        (sum, unit) => sum + (unit.traineeCount || 0),
+        (sum, unit) => sum + (unit.studentCount || 0),
         0,
       ),
     [assignedUnits],
@@ -245,7 +245,7 @@ const AssignedUnits = () => {
           </div>
           <div className={styles.statDetails}>
             <span className={styles.statLabel}>Students</span>
-            <span className={styles.statValue}>{traineeTotal}</span>
+            <span className={styles.statValue}>{studentTotal}</span>
             <span className={styles.statHelper}>Students across all your assigned units</span>
           </div>
         </div>
@@ -273,7 +273,7 @@ const AssignedUnits = () => {
                       {unit.courseTitle} • {unit.department} • Year {unit.yearOfStudy}
                     </span>
                     <span className={styles.userListMeta}>
-                      {unit.traineeCount || 0} student{unit.traineeCount === 1 ? "" : "s"} registered
+                      {unit.studentCount || 0} student{unit.studentCount === 1 ? "" : "s"} registered
                     </span>
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
@@ -519,10 +519,10 @@ const AssignedUnits = () => {
                     marginTop: "0.75rem",
                     paddingLeft: "3.5rem",
                   }}>
-                    {unit.trainees?.length > 0 ? (
-                      unit.trainees.map((trainee) => (
+                    {unit.students?.length > 0 ? (
+                      unit.students.map((student) => (
                         <div
-                          key={trainee.userNumber}
+                          key={student.userNumber}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -545,13 +545,13 @@ const AssignedUnits = () => {
                             fontWeight: 700,
                             flexShrink: 0,
                           }}>
-                            {trainee.fullName?.charAt(0) || "S"}
+                            {student.fullName?.charAt(0) || "S"}
                           </div>
-                          <span style={{ fontWeight: 600 }}>{trainee.fullName}</span>
-                          <span style={{ color: "#94a3b8" }}>({trainee.userNumber})</span>
-                          {trainee.registeredAt && (
+                          <span style={{ fontWeight: 600 }}>{student.fullName}</span>
+                          <span style={{ color: "#94a3b8" }}>({student.userNumber})</span>
+                          {student.registeredAt && (
                             <span style={{ color: "#94a3b8", marginLeft: "auto", fontSize: "0.75rem" }}>
-                              Registered {new Date(trainee.registeredAt).toLocaleDateString()}
+                              Registered {new Date(student.registeredAt).toLocaleDateString()}
                             </span>
                           )}
                         </div>

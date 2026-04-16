@@ -369,7 +369,7 @@ const getAssignedUnitForUploader = async (
     return null;
   }
 
-  const assignmentType = isTrainerUser(user.role) ? "lecturer" : "trainee";
+  const assignmentType = isTrainerUser(user.role) ? "trainer" : "student";
   const assignmentFilters: Record<string, unknown> = {
     assignmentType,
     assigneeUserNumber: user.UserNumber,
@@ -468,7 +468,7 @@ UserUploadRouter.post(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
+        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
         return;
       }
 
@@ -636,7 +636,7 @@ UserUploadRouter.get(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
+        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
         return;
       }
 
@@ -758,7 +758,7 @@ UserUploadRouter.patch(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
+        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
         return;
       }
 
@@ -813,7 +813,7 @@ UserUploadRouter.delete(
     try {
       const currentUser = await getCurrentUser(req);
       if (!currentUser || !canManageUploads(currentUser.role)) {
-        res.status(403).json({ error: "Admin, lecturer, or trainee privileges required" });
+        res.status(403).json({ error: "Admin, trainer, or student privileges required" });
         return;
       }
 
@@ -1311,7 +1311,7 @@ UserUploadRouter.delete(
       const isTrainer = String(currentUser.role).trim().toLowerCase() === "trainer";
 
       if (!isAdmin && !isTrainer) {
-        res.status(403).json({ error: "Admin or lecturer privileges required" });
+        res.status(403).json({ error: "Admin or trainer privileges required" });
         return;
       }
 
@@ -1331,7 +1331,7 @@ UserUploadRouter.delete(
            const assignment = await UnitAssignment.findOne({
                unitCode: document.unitCode,
                assigneeUserNumber: currentUser.UserNumber,
-               assignmentType: "lecturer"
+               assignmentType: "trainer"
            }).lean().exec();
            if (assignment) canDelete = true;
         }

@@ -16,7 +16,7 @@ const normalizeRole = (role: string): AllowedRole | null => {
     return "student";
   }
 
-  if (normalizedRole === "trainer" || normalizedRole === "trainee") {
+  if (normalizedRole === "trainer") {
     return "trainer";
   }
 

@@ -4,7 +4,7 @@ const UnitDocumentSchema = new mongoose.Schema(
   {
     from: { type: String, required: true, trim: true },
     uploadedByName: { type: String, required: true, trim: true },
-    uploadedByRole: { type: String, default: "lecturer", trim: true },
+    uploadedByRole: { type: String, default: "trainer", trim: true },
     assignedProgramme: { type: String, required: true, trim: true },
     department: { type: String, default: "", trim: true },
     yearOfStudy: { type: Number, default: 1, min: 1 },

@@ -25,7 +25,7 @@ const INITIAL_SINGLE_UNIT = {
 
 const INITIAL_ASSIGNMENT = {
   unitId: "",
-  assignmentType: "lecturer",
+  assignmentType: "trainer",
   assigneeUserNumber: "",
 };
 
@@ -34,7 +34,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
   const [programmes, setProgrammes] = useState([]);
   const [units, setUnits] = useState([]);
   const [trainers, setTrainers] = useState([]);
-  const [trainees, setTrainees] = useState([]);
+  const [students, setStudents] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -70,7 +70,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       setProgrammes(Array.isArray(data.programmes) ? data.programmes : []);
       setUnits(Array.isArray(data.units) ? data.units : []);
       setTrainers(Array.isArray(data.trainers) ? data.trainers : []);
-      setTrainees(Array.isArray(data.trainees) ? data.trainees : []);
+      setStudents(Array.isArray(data.students) ? data.students : []);
       setAssignments(Array.isArray(data.assignments) ? data.assignments : []);
     } catch (fetchError) {
       setError(
@@ -81,7 +81,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       setProgrammes([]);
       setUnits([]);
       setTrainers([]);
-      setTrainees([]);
+      setStudents([]);
       setAssignments([]);
     } finally {
       setLoading(false);
@@ -92,18 +92,18 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     fetchOverview();
   }, []);
 
-  const traineeAssignments = useMemo(
-    () => assignments.filter((item) => item.assignmentType === "trainee"),
+  const studentAssignments = useMemo(
+    () => assignments.filter((item) => item.assignmentType === "student"),
     [assignments],
   );
 
-  const lecturerAssignments = useMemo(
-    () => assignments.filter((item) => item.assignmentType === "lecturer"),
+  const trainerAssignments = useMemo(
+    () => assignments.filter((item) => item.assignmentType === "trainer"),
     [assignments],
   );
 
   const selectedAssigneeOptions =
-    assignmentForm.assignmentType === "lecturer" ? trainers : trainees;
+    assignmentForm.assignmentType === "trainer" ? trainers : students;
 
   const handleSingleUnitChange = (event) => {
     const { name, value } = event.target;
@@ -264,7 +264,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
         <div>
           <h1 className={styles.pageTitle}>Unit Management</h1>
           <p className={styles.pageSubtitle}>
-            Add units to programmes and assign lecturers or trainees to specific units.
+            Add units to programmes and assign trainers or students to specific units.
           </p>
         </div>
         <div className={styles.metrics}>
@@ -320,7 +320,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
         <div className={styles.grid}>
           <form className={styles.panel} onSubmit={handleAssignmentSubmit}>
             <div className={styles.panelHeader}>
-              <h2>Assign Lecturer or Trainee</h2>
+              <h2>Assign Trainer or Student</h2>
               <p>Choose a unit and link it to a trainer or a student.</p>
             </div>
 
@@ -348,13 +348,13 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                 value={assignmentForm.assignmentType}
                 onChange={handleAssignmentChange}
               >
-                <option value="lecturer">Lecturer</option>
-                <option value="trainee">Trainee</option>
+                <option value="trainer">Trainer</option>
+                <option value="student">Student</option>
               </select>
             </label>
 
             <label className={styles.field}>
-              <span>{assignmentForm.assignmentType === "lecturer" ? "Lecturer" : "Trainee"}</span>
+              <span>{assignmentForm.assignmentType === "trainer" ? "Trainer" : "Student"}</span>
               <select
                 name="assigneeUserNumber"
                 value={assignmentForm.assigneeUserNumber}
@@ -378,14 +378,14 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
           <div className={styles.panel}>
             <div className={styles.panelHeader}>
               <h2>Assignment Summary</h2>
-              <p>Current lecturer and trainee links per unit.</p>
+              <p>Current trainer and student links per unit.</p>
             </div>
 
             <div className={styles.assignmentSection}>
-              <h3>Lecturer Assignments</h3>
+              <h3>Trainer Assignments</h3>
               <div className={styles.assignmentList}>
-                {lecturerAssignments.length > 0 ? (
-                  lecturerAssignments.map((assignment) => (
+                {trainerAssignments.length > 0 ? (
+                  trainerAssignments.map((assignment) => (
                     <div key={assignment._id} className={styles.assignmentItem}>
                       <strong>{assignment.unitCode}</strong>
                       <span>{assignment.unitName}</span>
@@ -395,16 +395,16 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                     </div>
                   ))
                 ) : (
-                  <p className={styles.emptyCopy}>No lecturers assigned yet.</p>
+                  <p className={styles.emptyCopy}>No trainers assigned yet.</p>
                 )}
               </div>
             </div>
 
             <div className={styles.assignmentSection}>
-              <h3>Trainee Assignments</h3>
+              <h3>Student Assignments</h3>
               <div className={styles.assignmentList}>
-                {traineeAssignments.length > 0 ? (
-                  traineeAssignments.map((assignment) => (
+                {studentAssignments.length > 0 ? (
+                  studentAssignments.map((assignment) => (
                     <div key={assignment._id} className={styles.assignmentItem}>
                       <strong>{assignment.unitCode}</strong>
                       <span>{assignment.unitName}</span>
@@ -414,7 +414,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                     </div>
                   ))
                 ) : (
-                  <p className={styles.emptyCopy}>No trainees assigned yet.</p>
+                  <p className={styles.emptyCopy}>No students assigned yet.</p>
                 )}
               </div>
             </div>
