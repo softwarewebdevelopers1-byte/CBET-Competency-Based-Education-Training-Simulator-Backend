@@ -565,7 +565,7 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                 name="title"
                 value={programmeForm.title}
                 onChange={handleProgrammeChange}
-                placeholder="Bsc in Computer Science"
+                placeholder="Diploma in Computer Science"
                 required
               />
             </label>
