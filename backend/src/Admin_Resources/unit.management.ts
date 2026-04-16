@@ -142,26 +142,7 @@ AdminUnitManagementRouter.get(
           .exec(),
       ]);
 
-      const fallbackProgrammeTitles = Array.from(
-        new Set(
-          [
-            ...units.map((unit) => unit.courseTitle),
-            ...users.map((user) => user.programme),
-          ]
-            .map((item) => String(item ?? "").trim())
-            .filter(Boolean),
-        ),
-      );
-
       const programmeMap = new Map<string, ProgrammeSummary>();
-
-      fallbackProgrammeTitles.forEach((title) => {
-        programmeMap.set(title.toLowerCase(), {
-          _id: title,
-          title,
-          status: "active",
-        });
-      });
 
       programmes.forEach((programme) => {
         programmeMap.set(programme.title.toLowerCase(), {

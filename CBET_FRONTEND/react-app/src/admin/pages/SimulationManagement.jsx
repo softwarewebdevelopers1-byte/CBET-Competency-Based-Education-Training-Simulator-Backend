@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 import styles from "../styles/simulationManagement.module.css";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  "https://cbet-competency-based-education-training.onrender.com";
+
 const initialForm = {
+  unitId: "",
   courseTitle: "",
   unitSubtitle: "",
   unitCode: "",
@@ -24,11 +29,6 @@ const initialForm = {
   instructions: "",
   file: null,
 };
-
-const programmeOptions = [
-  "Bsc in Informatics",
-  "Bsc in Computer science",
-];
 
 const formatDate = (value) => {
   if (!value) return "Just now";
@@ -76,6 +76,8 @@ const SimulationManagement = ({
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState(initialForm);
+  const [programmeOptions, setProgrammeOptions] = useState([]);
+  const [unitOptions, setUnitOptions] = useState([]);
   const [statusUpdatingId, setStatusUpdatingId] = useState("");
   const [deletingId, setDeletingId] = useState("");
 
@@ -88,7 +90,7 @@ const SimulationManagement = ({
         ownership,
       });
       const response = await fetch(
-        `https://cbet-competency-based-education-training.onrender.com/api/resources/assessments/admin?${query.toString()}`,
+        `${API_BASE_URL}/api/resources/assessments/admin?${query.toString()}`,
         {
           method: "GET",
           credentials: "include",
@@ -114,11 +116,107 @@ const SimulationManagement = ({
     loadItems();
   }, [activityType, ownership]);
 
+  useEffect(() => {
+    const loadFormOptions = async () => {
+      try {
+        const response =
+          ownership === "self"
+            ? await fetch(`${API_BASE_URL}/auth/admin/upload/courses/trainer/assigned-units`, {
+                method: "GET",
+                credentials: "include",
+              })
+            : await fetch(`${API_BASE_URL}/auth/admin/unit-management/overview`, {
+                method: "GET",
+                credentials: "include",
+              });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || data.message || "Unable to load form options");
+        }
+
+        const units = Array.isArray(data.units) ? data.units : [];
+        const programmes =
+          ownership === "self"
+            ? Array.from(
+                new Set(
+                  units
+                    .map((unit) => String(unit.courseTitle ?? "").trim())
+                    .filter(Boolean),
+                ),
+              ).sort((a, b) => a.localeCompare(b))
+            : (Array.isArray(data.programmes) ? data.programmes : [])
+                .filter((programme) => String(programme.status ?? "active").toLowerCase() === "active")
+                .map((programme) => programme.title);
+
+        setUnitOptions(units);
+        setProgrammeOptions(programmes);
+      } catch (error) {
+        setUnitOptions([]);
+        setProgrammeOptions([]);
+        setErrorMessage((current) => current || error.message || "Unable to load form options");
+      }
+    };
+
+    loadFormOptions();
+  }, [ownership]);
+
+  const filteredUnitOptions = useMemo(
+    () =>
+      unitOptions.filter((unit) =>
+        formData.assignedProgramme
+          ? String(unit.courseTitle ?? "").trim() === formData.assignedProgramme
+          : true,
+      ),
+    [formData.assignedProgramme, unitOptions],
+  );
+
   const handleInputChange = (event) => {
     const { name, value, files } = event.target;
+
+    if (files) {
+      setFormData((current) => ({
+        ...current,
+        [name]: files[0],
+      }));
+      return;
+    }
+
+    if (name === "assignedProgramme") {
+      setFormData((current) => ({
+        ...current,
+        assignedProgramme: value,
+        unitId: "",
+        courseTitle: value,
+        unitSubtitle: "",
+        unitCode: "",
+        assignedDepartment: "",
+      }));
+      return;
+    }
+
+    if (name === "unitId") {
+      const selectedUnit = unitOptions.find(
+        (unit) => String(unit._id) === String(value),
+      );
+
+      setFormData((current) => ({
+        ...current,
+        unitId: value,
+        courseTitle: selectedUnit?.courseTitle || current.assignedProgramme,
+        assignedProgramme: selectedUnit?.courseTitle || current.assignedProgramme,
+        unitSubtitle: selectedUnit?.unitName || "",
+        unitCode: selectedUnit?.unitCode || "",
+        assignedDepartment: selectedUnit?.department || "",
+        yearOfStudy: selectedUnit?.yearOfStudy || current.yearOfStudy,
+      }));
+      return;
+    }
+
     setFormData((current) => ({
       ...current,
-      [name]: files ? files[0] : value,
+      [name]: value,
     }));
   };
 
@@ -326,19 +424,28 @@ const SimulationManagement = ({
               </select>
             </label>
             <label className={styles.field}>
-              <span>Department</span>
-              <input
-                name="assignedDepartment"
-                value={formData.assignedDepartment}
+              <span>Unit</span>
+              <select
+                name="unitId"
+                value={formData.unitId}
                 onChange={handleInputChange}
-              />
+                required
+                disabled={!formData.assignedProgramme}
+              >
+                <option value="">Select unit</option>
+                {filteredUnitOptions.map((unit) => (
+                  <option key={unit._id} value={unit._id}>
+                    {unit.unitCode} - {unit.unitName}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className={styles.field}>
               <span>Course Title</span>
               <input
                 name="courseTitle"
                 value={formData.courseTitle}
-                onChange={handleInputChange}
+                readOnly
                 required
               />
             </label>
@@ -347,7 +454,7 @@ const SimulationManagement = ({
               <input
                 name="unitSubtitle"
                 value={formData.unitSubtitle}
-                onChange={handleInputChange}
+                readOnly
                 required
               />
             </label>
@@ -356,8 +463,16 @@ const SimulationManagement = ({
               <input
                 name="unitCode"
                 value={formData.unitCode}
-                onChange={handleInputChange}
+                readOnly
                 required
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Department</span>
+              <input
+                name="assignedDepartment"
+                value={formData.assignedDepartment}
+                readOnly
               />
             </label>
             <label className={styles.field}>
