@@ -1,8 +1,10 @@
 import React, { createContext, useEffect, useState } from "react";
 import { Sidebar } from "./sidebar.jsx";
 import { useTheme } from "../contexts/ThemeContext";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from "../utils/apiClient.js";
+
 export let CourseContext = createContext();
 
 const clearStoredAuthData = () => {
@@ -32,46 +34,60 @@ export function Dashboard({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [role, resetRole] = useState("");
   const [courses, setCourses] = useState({});
+  const [loading, setLoading] = useState(false);
   const [themeMode, setThemeMode] = useState(getStoredTheme);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false,
   );
   let location = useNavigate();
-  useEffect(() => {
-    async function checkAuth() {
-      let localData = readStoredUser();
-      let res = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/user/check/logged", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      let studentInfo = await res.json();
 
-      if (!res.ok || !localData) {
+  const checkAuth = async (ignoreCache = false) => {
+    try {
+      setLoading(true);
+      let localData = readStoredUser();
+      
+      const studentInfo = await apiClient.getWithCache(
+        "https://cbet-competency-based-education-training.onrender.com/auth/user/check/logged",
+        { method: "POST" },
+        ignoreCache ? 0 : 5 * 60 * 1000
+      );
+
+      if (!studentInfo || studentInfo.error || !localData) {
         clearStoredAuthData();
         location("/login");
         return;
       }
+
       if (studentInfo.role === "student") {
         resetRole(studentInfo.role);
-        location("/dashboard");
-        const res = await fetch(
-          "https://cbet-competency-based-education-training.onrender.com/auth/admin/upload/courses/my/courses",
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        );
-        const data = await res.json();
-        setCourses(data);
-        return;
-      }
+        // location("/dashboard"); // Removed to prevent loop if already there
 
-      clearStoredAuthData();
-      location("/login");
+        const data = await apiClient.getWithCache(
+          "https://cbet-competency-based-education-training.onrender.com/auth/admin/upload/courses/my/courses",
+          { method: "POST" },
+          ignoreCache ? 0 : 5 * 60 * 1000
+        );
+        
+        setCourses(data);
+      } else {
+        clearStoredAuthData();
+        location("/login");
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     checkAuth();
   }, []);
+
+  const handleManualRefresh = () => {
+    apiClient.clearAllCache();
+    checkAuth(true);
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", themeMode);
@@ -104,6 +120,33 @@ export function Dashboard({ children }) {
           )
         }
       />
+
+      <button
+        onClick={handleManualRefresh}
+        className="refresh-button"
+        style={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "2rem",
+          zIndex: 1000,
+          width: "48px",
+          height: "48px",
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+          color: "white",
+          border: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+          transition: "all 0.2s ease",
+          opacity: loading ? 0.7 : 1,
+        }}
+        title="Refresh data"
+      >
+        <RefreshCcw size={20} className={loading ? "animate-spin" : ""} />
+      </button>
 
       <div
         className="dashboard-content"

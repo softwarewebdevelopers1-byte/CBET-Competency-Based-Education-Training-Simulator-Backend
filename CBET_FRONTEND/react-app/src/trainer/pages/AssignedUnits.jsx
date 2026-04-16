@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, Users, Upload, X, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import styles from "../../admin/styles/dashboard.module.css";
+import { apiClient } from "../../utils/apiClient.js";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
@@ -28,40 +29,35 @@ const AssignedUnits = () => {
   const [unitDocuments, setUnitDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
-  useEffect(() => {
-    const loadAssignedUnits = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const loadAssignedUnits = async (ignoreCache = false) => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const response = await fetch(
-          `${API_BASE_URL}/auth/admin/upload/courses/trainer/assigned-units`,
-          {
-            method: "GET",
-            credentials: "include",
-          },
-        );
-        const data = await response.json();
+      const data = await apiClient.getWithCache(
+        `${API_BASE_URL}/auth/admin/upload/courses/trainer/assigned-units`,
+        { method: "GET" },
+        ignoreCache ? 0 : 5 * 60 * 1000
+      );
 
-        if (!response.ok) {
-          throw new Error(
-            data.message || data.error || "Unable to fetch assigned units",
-          );
-        }
-
-        setAssignedUnits(data.units || []);
-      } catch (fetchError) {
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Unable to fetch assigned units",
-        );
-        setAssignedUnits([]);
-      } finally {
-        setLoading(false);
+      if (data.error || data.message === "Error fetching assigned units") {
+        throw new Error(data.error || data.message || "Unable to fetch assigned units");
       }
-    };
 
+      setAssignedUnits(data.units || []);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to fetch assigned units",
+      );
+      setAssignedUnits([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadAssignedUnits();
   }, []);
 
@@ -140,6 +136,7 @@ const AssignedUnits = () => {
 
       if (!res.ok) throw new Error("Failed to delete document");
 
+      apiClient.invalidatePattern("documents");
       setUnitDocuments(prev => prev.filter(d => (d._id || d.id) !== (doc._id || doc.id)));
     } catch (err) {
       alert(err.message);
@@ -196,6 +193,8 @@ const AssignedUnits = () => {
 
       setUploadSuccess(data.message || "Document uploaded successfully!");
       setUploadForm(INITIAL_UPLOAD_FORM);
+      
+      apiClient.invalidatePattern("documents");
 
       setTimeout(() => {
         setUploadingUnitId("");

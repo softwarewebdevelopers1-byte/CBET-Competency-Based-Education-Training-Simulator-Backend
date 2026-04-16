@@ -105,7 +105,8 @@ const buildLabels = (activityType) => {
       singular: "scenario",
       plural: "scenarios",
       create: "Create Scenario",
-      empty: "Upload a PDF to generate the first interactive scenario for students.",
+      empty:
+        "Upload a PDF to generate the first interactive scenario for students.",
       description:
         "Upload unit PDFs, generate AI questions, and assign interactive scenarios to students.",
       icon: Gamepad2,
@@ -146,7 +147,11 @@ const SimulationManagement = ({
   const [reviewingId, setReviewingId] = useState("");
   const [reviewItem, setReviewItem] = useState(null);
 
-  const itemsCacheKey = getCacheKey("simulation-items", ownership, activityType);
+  const itemsCacheKey = getCacheKey(
+    "simulation-items",
+    ownership,
+    activityType,
+  );
   const formOptionsCacheKey = getCacheKey("simulation-form-options", ownership);
 
   const loadItems = async () => {
@@ -174,9 +179,7 @@ const SimulationManagement = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || `Unable to load ${labels.plural}`,
-        );
+        throw new Error(data.error || `Unable to load ${labels.plural}`);
       }
 
       const nextItems = data.assessments || data.simulations || [];
@@ -205,19 +208,27 @@ const SimulationManagement = ({
 
         const response =
           ownership === "self"
-            ? await fetch(`${API_BASE_URL}/auth/admin/upload/courses/trainer/assigned-units`, {
-                method: "GET",
-                credentials: "include",
-              })
-            : await fetch(`${API_BASE_URL}/auth/admin/unit-management/overview`, {
-                method: "GET",
-                credentials: "include",
-              });
+            ? await fetch(
+                `${API_BASE_URL}/auth/admin/upload/courses/trainer/assigned-units`,
+                {
+                  method: "GET",
+                  credentials: "include",
+                },
+              )
+            : await fetch(
+                `${API_BASE_URL}/auth/admin/unit-management/overview`,
+                {
+                  method: "GET",
+                  credentials: "include",
+                },
+              );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || data.message || "Unable to load form options");
+          throw new Error(
+            data.error || data.message || "Unable to load form options",
+          );
         }
 
         const units = Array.isArray(data.units) ? data.units : [];
@@ -231,7 +242,11 @@ const SimulationManagement = ({
                 ),
               ).sort((a, b) => a.localeCompare(b))
             : (Array.isArray(data.programmes) ? data.programmes : [])
-                .filter((programme) => String(programme.status ?? "active").toLowerCase() === "active")
+                .filter(
+                  (programme) =>
+                    String(programme.status ?? "active").toLowerCase() ===
+                    "active",
+                )
                 .map((programme) => programme.title);
 
         setUnitOptions(units);
@@ -240,7 +255,10 @@ const SimulationManagement = ({
       } catch (error) {
         setUnitOptions([]);
         setProgrammeOptions([]);
-        setErrorMessage((current) => current || error.message || "Unable to load form options");
+        setErrorMessage(
+          (current) =>
+            current || error.message || "Unable to load form options",
+        );
       }
     };
 
@@ -290,7 +308,8 @@ const SimulationManagement = ({
         ...current,
         unitId: value,
         courseTitle: selectedUnit?.courseTitle || current.assignedProgramme,
-        assignedProgramme: selectedUnit?.courseTitle || current.assignedProgramme,
+        assignedProgramme:
+          selectedUnit?.courseTitle || current.assignedProgramme,
         unitSubtitle: selectedUnit?.unitName || "",
         unitCode: selectedUnit?.unitCode || "",
         assignedDepartment: selectedUnit?.department || "",
@@ -303,9 +322,13 @@ const SimulationManagement = ({
       setFormData((current) => ({
         ...current,
         creationMode: value,
-        questionCount: value === "manual" ? current.questions.length || 1 : current.questionCount,
+        questionCount:
+          value === "manual"
+            ? current.questions.length || 1
+            : current.questionCount,
         questions:
-          value === "manual" && (!Array.isArray(current.questions) || current.questions.length === 0)
+          value === "manual" &&
+          (!Array.isArray(current.questions) || current.questions.length === 0)
             ? [createEmptyQuestion(0)]
             : current.questions,
       }));
@@ -346,17 +369,24 @@ const SimulationManagement = ({
   const addManualQuestion = () => {
     setFormData((current) => ({
       ...current,
-      questions: [...current.questions, createEmptyQuestion(current.questions.length)],
+      questions: [
+        ...current.questions,
+        createEmptyQuestion(current.questions.length),
+      ],
       questionCount: current.questions.length + 1,
     }));
   };
 
   const removeManualQuestion = (questionIndex) => {
     setFormData((current) => {
-      const nextQuestions = current.questions.filter((_, index) => index !== questionIndex);
+      const nextQuestions = current.questions.filter(
+        (_, index) => index !== questionIndex,
+      );
       return {
         ...current,
-        questions: nextQuestions.length ? nextQuestions : [createEmptyQuestion(0)],
+        questions: nextQuestions.length
+          ? nextQuestions
+          : [createEmptyQuestion(0)],
         questionCount: nextQuestions.length || 1,
       };
     });
@@ -398,18 +428,23 @@ const SimulationManagement = ({
         );
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/resources/assessments`, {
-        method: "POST",
-        credentials: "include",
-        body: payload,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/resources/assessments`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: payload,
+        },
+      );
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || `Unable to create ${labels.singular}`);
       }
 
-      setSuccessMessage(data.message || `${labels.create} generated successfully`);
+      setSuccessMessage(
+        data.message || `${labels.create} generated successfully`,
+      );
       setFormData(initialForm);
       setShowCreateForm(false);
       clearAssessmentCaches(ownership, activityType);
@@ -442,7 +477,9 @@ const SimulationManagement = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `Unable to update ${labels.singular} status`);
+        throw new Error(
+          data.error || `Unable to update ${labels.singular} status`,
+        );
       }
 
       setItems((current) =>
@@ -505,7 +542,8 @@ const SimulationManagement = ({
       setItems((current) => current.filter((entry) => entry.id !== item.id));
       clearAssessmentCaches(ownership, activityType, item.id);
       setSuccessMessage(
-        data.message || `${labels.singular} and related records deleted successfully`,
+        data.message ||
+          `${labels.singular} and related records deleted successfully`,
       );
     } catch (error) {
       setErrorMessage(error.message || `Unable to delete ${labels.singular}`);
@@ -583,7 +621,11 @@ const SimulationManagement = ({
             <Filter size={20} />
             {filterType === "all" ? "Show Active" : "Show All"}
           </button>
-          <button className={styles.secondaryBtn} onClick={loadItems} type="button">
+          <button
+            className={styles.secondaryBtn}
+            onClick={loadItems}
+            type="button"
+          >
             <RefreshCw size={20} />
             Refresh
           </button>
@@ -598,7 +640,9 @@ const SimulationManagement = ({
         </div>
       </div>
 
-      {errorMessage ? <div className={styles.alertError}>{errorMessage}</div> : null}
+      {errorMessage ? (
+        <div className={styles.alertError}>{errorMessage}</div>
+      ) : null}
       {successMessage ? (
         <div className={styles.alertSuccess}>{successMessage}</div>
       ) : null}
@@ -743,7 +787,10 @@ const SimulationManagement = ({
                 <div className={styles.manualBuilderHeader}>
                   <div>
                     <h3>Manual Questions</h3>
-                    <p>Create the questions and answers exactly how students will see them.</p>
+                    <p>
+                      Create the questions and answers exactly how students will
+                      see them.
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -757,7 +804,10 @@ const SimulationManagement = ({
 
                 <div className={styles.questionsList}>
                   {formData.questions.map((question, questionIndex) => (
-                    <div key={question.localId} className={styles.questionEditor}>
+                    <div
+                      key={question.localId}
+                      className={styles.questionEditor}
+                    >
                       <div className={styles.questionEditorHeader}>
                         <strong>Question {questionIndex + 1}</strong>
                         <button
@@ -776,7 +826,11 @@ const SimulationManagement = ({
                           rows="2"
                           value={question.prompt}
                           onChange={(event) =>
-                            handleQuestionChange(questionIndex, "prompt", event.target.value)
+                            handleQuestionChange(
+                              questionIndex,
+                              "prompt",
+                              event.target.value,
+                            )
                           }
                           required
                         />
@@ -829,7 +883,11 @@ const SimulationManagement = ({
                             min="1"
                             value={question.points}
                             onChange={(event) =>
-                              handleQuestionChange(questionIndex, "points", event.target.value)
+                              handleQuestionChange(
+                                questionIndex,
+                                "points",
+                                event.target.value,
+                              )
                             }
                             required
                           />
@@ -857,7 +915,11 @@ const SimulationManagement = ({
               </div>
             ) : null}
           </div>
-          <button className={styles.primaryBtn} type="submit" disabled={uploading}>
+          <button
+            className={styles.primaryBtn}
+            type="submit"
+            disabled={uploading}
+          >
             <Upload size={18} />
             {uploading
               ? formData.creationMode === "manual"
@@ -898,7 +960,9 @@ const SimulationManagement = ({
                   <span className={`${styles.simType} ${styles.technical}`}>
                     {item.courseTitle}
                   </span>
-                  <span className={`${styles.creationBadge} ${styles[item.creationMode || "ai"]}`}>
+                  <span
+                    className={`${styles.creationBadge} ${styles[item.creationMode || "ai"]}`}
+                  >
                     {item.creationMode === "manual" ? "Manual" : "AI"}
                   </span>
                 </div>
@@ -911,7 +975,8 @@ const SimulationManagement = ({
 
               <h3>{item.title}</h3>
               <p className={styles.cardMeta}>
-                {item.unitCode} • {item.assignedProgramme} • Year {item.yearOfStudy}
+                {item.unitCode} • {item.assignedProgramme} • Year{" "}
+                {item.yearOfStudy}
               </p>
 
               <div className={styles.simStats}>
@@ -921,7 +986,9 @@ const SimulationManagement = ({
                 </div>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Avg. Score</span>
-                  <span className={styles.statValue}>{item.averageScore || 0}%</span>
+                  <span className={styles.statValue}>
+                    {item.averageScore || 0}%
+                  </span>
                 </div>
                 <div className={styles.stat}>
                   <span className={styles.statLabel}>Questions</span>
@@ -1033,7 +1100,8 @@ const SimulationManagement = ({
                 <h2>{reviewItem.title}</h2>
                 <p>
                   {reviewItem.unitCode} • {reviewItem.assignedProgramme} •{" "}
-                  {reviewItem.creationMode === "manual" ? "Manual" : "AI"} {labels.singular}
+                  {reviewItem.creationMode === "manual" ? "Manual" : "AI"}{" "}
+                  {labels.singular}
                 </p>
               </div>
               <button
@@ -1056,7 +1124,9 @@ const SimulationManagement = ({
                     title={reviewItem.originalFileName || reviewItem.title}
                   />
                 ) : (
-                  <p className={styles.reviewEmpty}>No PDF available for this {labels.singular}.</p>
+                  <p className={styles.reviewEmpty}>
+                    No PDF available for this {labels.singular}.
+                  </p>
                 )}
               </div>
 
@@ -1064,7 +1134,10 @@ const SimulationManagement = ({
                 <h3>Questions and Answers</h3>
                 <div className={styles.reviewQuestions}>
                   {(reviewItem.questions || []).map((question, index) => (
-                    <div key={question.id || index} className={styles.reviewQuestionCard}>
+                    <div
+                      key={question.id || index}
+                      className={styles.reviewQuestionCard}
+                    >
                       <strong>
                         {index + 1}. {question.prompt}
                       </strong>
@@ -1082,10 +1155,13 @@ const SimulationManagement = ({
                         ))}
                       </div>
                       <p className={styles.reviewExplanation}>
-                        Correct answer: {String(question.correctOptionId || "").toUpperCase()} •{" "}
+                        Correct answer:{" "}
+                        {String(question.correctOptionId || "").toUpperCase()} •{" "}
                         {question.points} pts
                       </p>
-                      <p className={styles.reviewExplanation}>{question.explanation}</p>
+                      <p className={styles.reviewExplanation}>
+                        {question.explanation}
+                      </p>
                     </div>
                   ))}
                 </div>

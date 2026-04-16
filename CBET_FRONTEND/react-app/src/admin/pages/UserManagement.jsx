@@ -11,6 +11,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import styles from "../styles/userManagement.module.css";
+import { apiClient } from "../../utils/apiClient.js";
 
 const INITIAL_FORM_STATE = {
   fullName: "",
@@ -46,20 +47,19 @@ const UserManagement = () => {
   const [editUserForm, setEditUserForm] = useState(INITIAL_EDIT_FORM_STATE);
   const [selectedUserNumber, setSelectedUserNumber] = useState("");
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (ignoreCache = false) => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch("https://cbet-competency-based-education-training.onrender.com/auth/admin/users", {
-        method: "GET",
-        credentials: "include",
-      });
+      const data = await apiClient.getWithCache(
+        "https://cbet-competency-based-education-training.onrender.com/auth/admin/users",
+        { method: "GET" },
+        ignoreCache ? 0 : 5 * 60 * 1000
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to fetch users");
+      if (data.error) {
+        throw new Error(data.error);
       }
 
       setUsers(Array.isArray(data.users) ? data.users : []);
@@ -138,6 +138,7 @@ const UserManagement = () => {
         throw new Error(data.error || "Unable to suspend user");
       }
 
+      apiClient.invalidateCache("https://cbet-competency-based-education-training.onrender.com/auth/admin/users");
       setUsers((currentUsers) =>
         currentUsers.map((user) =>
           user.UserNumber === userId
@@ -184,6 +185,7 @@ const UserManagement = () => {
         throw new Error(data.error || "Unable to restore user");
       }
 
+      apiClient.invalidateCache("https://cbet-competency-based-education-training.onrender.com/auth/admin/users");
       setUsers((currentUsers) =>
         currentUsers.map((user) =>
           user.UserNumber === userId
@@ -249,9 +251,10 @@ const UserManagement = () => {
       setSuccessMessage(
         `User created successfully. Default password: ${data.defaultPassword}`,
       );
+      apiClient.invalidateCache("https://cbet-competency-based-education-training.onrender.com/auth/admin/users");
       setIsCreateModalOpen(false);
       setNewUserForm(INITIAL_FORM_STATE);
-      await fetchUsers();
+      await fetchUsers(true);
     } catch (createError) {
       setError(
         createError instanceof Error
@@ -288,6 +291,7 @@ const UserManagement = () => {
         throw new Error(data.error || "Unable to update user");
       }
 
+      apiClient.invalidateCache("https://cbet-competency-based-education-training.onrender.com/auth/admin/users");
       setUsers((currentUsers) =>
         currentUsers.map((user) =>
           user.UserNumber === selectedUserNumber ? data.user : user,

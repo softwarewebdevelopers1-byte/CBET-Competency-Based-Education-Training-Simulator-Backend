@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ClipboardCheck, ListChecks } from "lucide-react";
+import { ArrowRight, ClipboardCheck, ListChecks, RefreshCcw } from "lucide-react";
 import styles from "../../admin/styles/dashboard.module.css";
+import { apiClient } from "../../utils/apiClient.js";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
@@ -13,37 +14,34 @@ const TrainerDashboard = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadTrainerContent = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await fetch(
-          `${API_BASE_URL}/api/resources/assessments/admin?ownership=self`,
-          {
-            method: "GET",
-            credentials: "include",
-          },
-        );
-        const data = await response.json();
+  const loadTrainerContent = async (ignoreCache = false) => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await apiClient.getWithCache(
+        `${API_BASE_URL}/api/resources/assessments/admin?ownership=self`,
+        { method: "GET" },
+        ignoreCache ? 0 : 5 * 60 * 1000
+      );
 
-        if (!response.ok) {
-          throw new Error(data.error || "Unable to fetch trainer content");
-        }
-
-        setItems(data.assessments || data.simulations || []);
-      } catch (fetchError) {
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Unable to fetch trainer content",
-        );
-        setItems([]);
-      } finally {
-        setLoading(false);
+      if (data.error) {
+        throw new Error(data.error);
       }
-    };
 
+      setItems(data.assessments || data.simulations || []);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to fetch trainer content",
+      );
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadTrainerContent();
   }, []);
 
@@ -92,6 +90,14 @@ const TrainerDashboard = () => {
             Create and manage the assessments assigned to your learners.
           </p>
         </div>
+        <button
+          className={styles.actionBtn}
+          onClick={() => loadTrainerContent(true)}
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+        >
+          <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
       </div>
 
       {error && <div className={styles.errorBanner}>{error}</div>}
