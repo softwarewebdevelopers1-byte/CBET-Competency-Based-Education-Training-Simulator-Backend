@@ -6,8 +6,10 @@ import {
   Filter,
   Gamepad2,
   ClipboardCheck,
+  ClipboardList,
   RefreshCw,
   Power,
+  SquarePen,
   Trash2,
 } from "lucide-react";
 import styles from "../styles/simulationManagement.module.css";
@@ -77,7 +79,7 @@ const clearAssessmentCaches = (ownership, activityType, itemId = "") => {
     .forEach((key) => localStorage.removeItem(key));
 };
 
-const initialForm = {
+const createInitialForm = () => ({
   creationMode: "ai",
   unitId: "",
   courseTitle: "",
@@ -91,7 +93,22 @@ const initialForm = {
   instructions: "",
   file: null,
   questions: [createEmptyQuestion(0)],
-};
+});
+
+const buildEditableQuestions = (questions = []) =>
+  (Array.isArray(questions) ? questions : []).map((question, index) => ({
+    prompt: question.prompt || "",
+    explanation: question.explanation || "",
+    points: question.points || 10,
+    correctOptionId: question.correctOptionId || "a",
+    options: Array.isArray(question.options) && question.options.length
+      ? question.options.map((option, optionIndex) => ({
+          id: option.id || String.fromCharCode(97 + optionIndex),
+          text: option.text || "",
+        }))
+      : createEmptyQuestion(index).options,
+    localId: `question-${Date.now()}-${index}`,
+  }));
 
 const formatDate = (value) => {
   if (!value) return "Just now";
@@ -138,13 +155,14 @@ const SimulationManagement = ({
   const [filterType, setFilterType] = useState("all");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [formData, setFormData] = useState(initialForm);
+  const [formData, setFormData] = useState(createInitialForm());
   const [programmeOptions, setProgrammeOptions] = useState([]);
   const [unitOptions, setUnitOptions] = useState([]);
   const [statusUpdatingId, setStatusUpdatingId] = useState("");
   const [deletingId, setDeletingId] = useState("");
   const [reviewingId, setReviewingId] = useState("");
   const [reviewItem, setReviewItem] = useState(null);
+  const [editingItemId, setEditingItemId] = useState("");
 
   const itemsCacheKey = getCacheKey("simulation-items", ownership, activityType);
   const formOptionsCacheKey = getCacheKey("simulation-form-options", ownership);
@@ -256,6 +274,14 @@ const SimulationManagement = ({
       ),
     [formData.assignedProgramme, unitOptions],
   );
+
+  const isEditing = Boolean(editingItemId);
+
+  const resetForm = () => {
+    setFormData(createInitialForm());
+    setEditingItemId("");
+    setShowCreateForm(false);
+  };
 
   const handleInputChange = (event) => {
     const { name, value, files } = event.target;
@@ -369,53 +395,84 @@ const SimulationManagement = ({
     setSuccessMessage("");
 
     try {
-      const payload = new FormData();
-      Object.entries({
-        ...formData,
-        activityType,
-      }).forEach(([key, value]) => {
-        if (key === "questions") {
-          return;
-        }
-        if (value !== null && value !== undefined && value !== "") {
-          payload.append(key, value);
-        }
-      });
+      const normalizedQuestions = formData.questions.map((question) => ({
+        prompt: question.prompt,
+        explanation: question.explanation,
+        points: Number(question.points) || 10,
+        correctOptionId: question.correctOptionId,
+        options: question.options,
+      }));
 
-      if (formData.creationMode === "manual") {
-        payload.set("questionCount", String(formData.questions.length));
-        payload.append(
-          "questions",
-          JSON.stringify(
-            formData.questions.map((question) => ({
-              prompt: question.prompt,
-              explanation: question.explanation,
-              points: Number(question.points) || 10,
-              correctOptionId: question.correctOptionId,
-              options: question.options,
-            })),
-          ),
-        );
-      }
+      const response = isEditing
+        ? await fetch(`${API_BASE_URL}/api/resources/assessments/admin/${editingItemId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              courseTitle: formData.courseTitle,
+              unitSubtitle: formData.unitSubtitle,
+              unitCode: formData.unitCode,
+              assignedProgramme: formData.assignedProgramme,
+              assignedDepartment: formData.assignedDepartment,
+              yearOfStudy: Number(formData.yearOfStudy) || 1,
+              description: formData.description,
+              instructions: formData.instructions,
+              creationMode: "manual",
+              questions: normalizedQuestions,
+            }),
+          })
+        : await (async () => {
+            const payload = new FormData();
+            Object.entries({
+              ...formData,
+              activityType,
+            }).forEach(([key, value]) => {
+              if (key === "questions") {
+                return;
+              }
+              if (value !== null && value !== undefined && value !== "") {
+                payload.append(key, value);
+              }
+            });
 
-      const response = await fetch(`${API_BASE_URL}/api/resources/assessments`, {
-        method: "POST",
-        credentials: "include",
-        body: payload,
-      });
+            if (formData.creationMode === "manual") {
+              payload.set("questionCount", String(formData.questions.length));
+              payload.append("questions", JSON.stringify(normalizedQuestions));
+            }
+
+            return fetch(`${API_BASE_URL}/api/resources/assessments`, {
+              method: "POST",
+              credentials: "include",
+              body: payload,
+            });
+          })();
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `Unable to create ${labels.singular}`);
+        throw new Error(
+          data.error ||
+            (isEditing
+              ? `Unable to update ${labels.singular}`
+              : `Unable to create ${labels.singular}`),
+        );
       }
 
-      setSuccessMessage(data.message || `${labels.create} generated successfully`);
-      setFormData(initialForm);
-      setShowCreateForm(false);
-      clearAssessmentCaches(ownership, activityType);
+      setSuccessMessage(
+        data.message ||
+          (isEditing
+            ? `${labels.singular} updated successfully`
+            : `${labels.create} generated successfully`),
+      );
+      resetForm();
+      clearAssessmentCaches(ownership, activityType, editingItemId);
       await loadItems();
     } catch (error) {
-      setErrorMessage(error.message || `Unable to create ${labels.singular}`);
+      setErrorMessage(
+        error.message ||
+          (isEditing
+            ? `Unable to update ${labels.singular}`
+            : `Unable to create ${labels.singular}`),
+      );
     } finally {
       setUploading(false);
     }
@@ -549,6 +606,72 @@ const SimulationManagement = ({
     }
   };
 
+  const handleEditItem = async (itemId) => {
+    try {
+      setReviewingId(itemId);
+      setErrorMessage("");
+
+      const detailCacheKey = getCacheKey("simulation-detail", itemId);
+      let nextReviewItem = readCache(detailCacheKey);
+
+      if (!nextReviewItem) {
+        const response = await fetch(
+          `${API_BASE_URL}/api/resources/assessments/admin/${itemId}`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Unable to load ${labels.singular} for editing`);
+        }
+
+        nextReviewItem = data.assessment || data.simulation;
+        writeCache(detailCacheKey, nextReviewItem);
+      }
+
+      const matchingUnit = unitOptions.find(
+        (unit) =>
+          String(unit.unitCode ?? "").trim() ===
+            String(nextReviewItem.unitCode ?? "").trim() &&
+          String(unit.courseTitle ?? "").trim() ===
+            String(nextReviewItem.assignedProgramme ?? nextReviewItem.courseTitle ?? "").trim(),
+      );
+
+      setFormData({
+        creationMode: "manual",
+        unitId: matchingUnit?._id || "",
+        courseTitle: nextReviewItem.courseTitle || "",
+        unitSubtitle: nextReviewItem.unitSubtitle || nextReviewItem.title || "",
+        unitCode: nextReviewItem.unitCode || "",
+        assignedProgramme:
+          nextReviewItem.assignedProgramme || nextReviewItem.courseTitle || "",
+        assignedDepartment: nextReviewItem.assignedDepartment || "",
+        yearOfStudy: nextReviewItem.yearOfStudy || 1,
+        questionCount: Array.isArray(nextReviewItem.questions)
+          ? nextReviewItem.questions.length
+          : 1,
+        description: nextReviewItem.description || "",
+        instructions: nextReviewItem.instructions || "",
+        file: null,
+        questions:
+          buildEditableQuestions(nextReviewItem.questions).length > 0
+            ? buildEditableQuestions(nextReviewItem.questions)
+            : [createEmptyQuestion(0)],
+      });
+      setEditingItemId(itemId);
+      setReviewItem(null);
+      setShowCreateForm(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      setErrorMessage(error.message || `Unable to edit ${labels.singular}`);
+    } finally {
+      setReviewingId("");
+    }
+  };
+
   const filteredItems = useMemo(() => {
     if (filterType === "all") {
       return items;
@@ -589,7 +712,13 @@ const SimulationManagement = ({
           </button>
           <button
             className={styles.primaryBtn}
-            onClick={() => setShowCreateForm((current) => !current)}
+            onClick={() => {
+              if (showCreateForm) {
+                resetForm();
+                return;
+              }
+              setShowCreateForm(true);
+            }}
             type="button"
           >
             <Plus size={20} />
@@ -605,6 +734,25 @@ const SimulationManagement = ({
 
       {showCreateForm ? (
         <form className={styles.uploadPanel} onSubmit={handleCreateItem}>
+          <div className={styles.formHeaderRow}>
+            <div>
+              <h3>{isEditing ? `Edit ${labels.singular}` : labels.create}</h3>
+              <p>
+                {isEditing
+                  ? `Update the ${labels.singular} questions, answers, and details below.`
+                  : `Upload the source PDF and configure the ${labels.singular} details.`}
+              </p>
+            </div>
+            {isEditing ? (
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={resetForm}
+              >
+                Cancel Edit
+              </button>
+            ) : null}
+          </div>
           <div className={styles.formGrid}>
             <label className={styles.field}>
               <span>Creation Mode</span>
@@ -612,6 +760,7 @@ const SimulationManagement = ({
                 name="creationMode"
                 value={formData.creationMode}
                 onChange={handleInputChange}
+                disabled={isEditing}
               >
                 <option value="ai">AI Generated</option>
                 <option value="manual">Manual Creation</option>
@@ -696,7 +845,7 @@ const SimulationManagement = ({
                 required
               />
             </label>
-            {formData.creationMode === "ai" ? (
+            {!isEditing && formData.creationMode === "ai" ? (
               <label className={styles.field}>
                 <span>Question Count</span>
                 <input
@@ -710,16 +859,18 @@ const SimulationManagement = ({
                 />
               </label>
             ) : null}
-            <label className={`${styles.field} ${styles.fieldWide}`}>
-              <span>PDF File</span>
-              <input
-                name="file"
-                type="file"
-                accept="application/pdf"
-                onChange={handleInputChange}
-                required
-              />
-            </label>
+            {!isEditing ? (
+              <label className={`${styles.field} ${styles.fieldWide}`}>
+                <span>PDF File</span>
+                <input
+                  name="file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleInputChange}
+                  required
+                />
+              </label>
+            ) : null}
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span>Description</span>
               <textarea
@@ -738,7 +889,7 @@ const SimulationManagement = ({
                 onChange={handleInputChange}
               />
             </label>
-            {formData.creationMode === "manual" ? (
+            {formData.creationMode === "manual" || isEditing ? (
               <div className={`${styles.fieldWide} ${styles.manualBuilder}`}>
                 <div className={styles.manualBuilderHeader}>
                   <div>
@@ -858,12 +1009,16 @@ const SimulationManagement = ({
             ) : null}
           </div>
           <button className={styles.primaryBtn} type="submit" disabled={uploading}>
-            <Upload size={18} />
+            {isEditing ? <SquarePen size={18} /> : <Upload size={18} />}
             {uploading
-              ? formData.creationMode === "manual"
+              ? isEditing
+                ? `Saving ${labels.singular} changes...`
+                : formData.creationMode === "manual"
                 ? "Uploading PDF and saving manual questions..."
                 : "Uploading PDF and generating AI..."
-              : formData.creationMode === "manual"
+              : isEditing
+                ? `Save ${labels.singular} changes`
+                : formData.creationMode === "manual"
                 ? "Create Manual Assessment"
                 : "Upload PDF"}
           </button>
@@ -990,11 +1145,20 @@ const SimulationManagement = ({
                   <button
                     className={styles.iconBtn}
                     type="button"
+                    title={`Edit ${labels.singular}`}
+                    onClick={() => handleEditItem(item.id)}
+                    disabled={reviewingId === item.id || uploading}
+                  >
+                    <SquarePen size={16} />
+                  </button>
+                  <button
+                    className={styles.iconBtn}
+                    type="button"
                     title={`Review ${labels.singular}`}
                     onClick={() => handleReviewItem(item.id)}
                     disabled={reviewingId === item.id}
                   >
-                    <Eye size={16} />
+                    <ClipboardList size={16} />
                   </button>
                   <button
                     className={styles.iconBtn}
@@ -1036,13 +1200,23 @@ const SimulationManagement = ({
                   {reviewItem.creationMode === "manual" ? "Manual" : "AI"} {labels.singular}
                 </p>
               </div>
-              <button
-                type="button"
-                className={styles.secondaryBtn}
-                onClick={() => setReviewItem(null)}
-              >
-                Close
-              </button>
+              <div className={styles.reviewHeaderActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={() => handleEditItem(reviewItem.id)}
+                >
+                  <SquarePen size={16} />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={() => setReviewItem(null)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
             <div className={styles.reviewContent}>

@@ -152,6 +152,22 @@ const parseManualQuestions = (rawQuestions: unknown): GeneratedQuestion[] => {
   return questions;
 };
 
+const parseQuestionsForUpdate = (rawQuestions: unknown): GeneratedQuestion[] => {
+  if (Array.isArray(rawQuestions)) {
+    const questions = normalizeQuestions(rawQuestions);
+    if (questions.length === 0) {
+      throw new Error("Assessment update requires at least one valid question");
+    }
+    return questions;
+  }
+
+  if (typeof rawQuestions === "string") {
+    return parseManualQuestions(rawQuestions);
+  }
+
+  throw new Error("Questions must be provided as a JSON array or JSON string");
+};
+
 const buildActivityTypeQuery = (rawType: unknown) => {
   const trimmedType = String(rawType ?? "").trim();
   if (!trimmedType) {
@@ -897,6 +913,155 @@ UserUploadRouter.get(
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Unable to fetch assessment details" });
+    }
+  },
+);
+
+UserUploadRouter.patch(
+  "/admin/:id",
+  AuthenticateToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || !canManageUploads(currentUser.role)) {
+        res.status(403).json({ error: "Admin or trainer privileges required" });
+        return;
+      }
+
+      const ownershipQuery = isAdminUser(currentUser.role)
+        ? {}
+        : { from: currentUser.UserNumber };
+
+      const existingSimulation = await UsersUploadedPdf.findOne({
+        _id: req.params.id,
+        ...ownershipQuery,
+      }).exec();
+
+      if (!existingSimulation) {
+        res.status(404).json({ error: "Assessment not found" });
+        return;
+      }
+
+      const nextCourseTitle = String(
+        req.body?.courseTitle ?? existingSimulation.courseTitle,
+      ).trim();
+      const nextUnitSubtitle = String(
+        req.body?.unitSubtitle ?? existingSimulation.unitSubtitle,
+      ).trim();
+      const nextUnitCode = String(
+        req.body?.unitCode ?? existingSimulation.unitCode,
+      ).trim();
+      const nextAssignedProgramme = String(
+        req.body?.assignedProgramme ?? existingSimulation.assignedProgramme,
+      ).trim();
+      const nextAssignedDepartment = String(
+        req.body?.assignedDepartment ?? existingSimulation.assignedDepartment,
+      ).trim();
+      const nextDescription = String(
+        req.body?.description ?? existingSimulation.description,
+      ).trim();
+      const nextInstructions = String(
+        req.body?.instructions ?? existingSimulation.instructions,
+      ).trim();
+      const nextYearOfStudy = Math.max(
+        1,
+        Number(req.body?.yearOfStudy ?? existingSimulation.yearOfStudy) || 1,
+      );
+      const hasQuestionUpdate = req.body?.questions !== undefined;
+      const nextQuestions = hasQuestionUpdate
+        ? parseQuestionsForUpdate(req.body.questions)
+        : normalizeQuestions(
+            Array.isArray(existingSimulation.questions)
+              ? (existingSimulation.questions as unknown[])
+              : [],
+          );
+
+      if (
+        !nextCourseTitle ||
+        !nextUnitSubtitle ||
+        !nextUnitCode ||
+        !nextAssignedProgramme ||
+        nextQuestions.length === 0
+      ) {
+        res.status(400).json({
+          error:
+            "courseTitle, unitSubtitle, unitCode, assignedProgramme, and at least one question are required",
+        });
+        return;
+      }
+
+      const nextCreationMode = hasQuestionUpdate
+        ? "manual"
+        : normalizeCreationMode(
+            req.body?.creationMode ?? existingSimulation.creationMode,
+          );
+      const nextTotalPoints = nextQuestions.reduce(
+        (sum, question) => sum + question.points,
+        0,
+      );
+
+      existingSimulation.courseTitle = nextCourseTitle;
+      existingSimulation.unitSubtitle = nextUnitSubtitle;
+      existingSimulation.unitCode = nextUnitCode;
+      existingSimulation.assignedProgramme = nextAssignedProgramme;
+      existingSimulation.assignedDepartment = nextAssignedDepartment;
+      existingSimulation.description = nextDescription;
+      existingSimulation.instructions = nextInstructions;
+      existingSimulation.yearOfStudy = nextYearOfStudy;
+      existingSimulation.creationMode = nextCreationMode;
+      existingSimulation.set("questions", nextQuestions);
+      existingSimulation.questionCount = nextQuestions.length;
+      existingSimulation.totalPoints = nextTotalPoints;
+      existingSimulation.estimatedTimeMinutes = Math.max(
+        10,
+        nextQuestions.length * 2,
+      );
+
+      await existingSimulation.save();
+
+      const unitSubtitle = getAssessmentUnitSubtitle(existingSimulation);
+
+      res.status(200).json({
+        success: true,
+        message: "Assessment updated successfully",
+        simulation: {
+          id: existingSimulation._id,
+          title: unitSubtitle,
+          courseTitle: existingSimulation.courseTitle,
+          unitSubtitle,
+          unitCode: existingSimulation.unitCode,
+          assignedProgramme: existingSimulation.assignedProgramme,
+          assignedDepartment: existingSimulation.assignedDepartment,
+          yearOfStudy: existingSimulation.yearOfStudy,
+          creationMode: existingSimulation.creationMode,
+          description: existingSimulation.description,
+          instructions: existingSimulation.instructions,
+          questionCount: existingSimulation.questionCount,
+          totalPoints: existingSimulation.totalPoints,
+          updatedAt: existingSimulation.updatedAt,
+          questions: buildQuestionReviewPayload(nextQuestions),
+        },
+        assessment: {
+          id: existingSimulation._id,
+          title: unitSubtitle,
+          courseTitle: existingSimulation.courseTitle,
+          unitSubtitle,
+          unitCode: existingSimulation.unitCode,
+          assignedProgramme: existingSimulation.assignedProgramme,
+          assignedDepartment: existingSimulation.assignedDepartment,
+          yearOfStudy: existingSimulation.yearOfStudy,
+          creationMode: existingSimulation.creationMode,
+          description: existingSimulation.description,
+          instructions: existingSimulation.instructions,
+          questionCount: existingSimulation.questionCount,
+          totalPoints: existingSimulation.totalPoints,
+          updatedAt: existingSimulation.updatedAt,
+          questions: buildQuestionReviewPayload(nextQuestions),
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Unable to update assessment" });
     }
   },
 );
