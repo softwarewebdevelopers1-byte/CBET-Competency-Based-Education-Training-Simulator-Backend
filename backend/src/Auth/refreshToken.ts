@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { RefreshToken } from "#models/token.model";
 import type { JwtLoad } from "#JwtPayloadInterface/jwt";
 import { compare } from "bcrypt";
+import { SESSION_DURATION, SESSION_DURATION_MS } from "#Verification/access.token";
 
 const RefreshRouter = Router();
 const isProd = process.env.NODE_ENV === "production";
@@ -52,13 +53,13 @@ RefreshRouter.post("/", async (req: Request, res: Response): Promise<void> => {
 
     // Generate new access token
     const newAccessToken = jwt.sign(cleanPayload, accessSecret, {
-      expiresIn: "15m",
+      expiresIn: SESSION_DURATION,
     });
 
     // Send new access token in cookie
     res.cookie("CBET7U4D_Host_AccessToken", newAccessToken, {
       httpOnly: true,
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: SESSION_DURATION_MS,
       secure: isProd,
       sameSite: isProd ? "none" as const : "lax" as const,
     });

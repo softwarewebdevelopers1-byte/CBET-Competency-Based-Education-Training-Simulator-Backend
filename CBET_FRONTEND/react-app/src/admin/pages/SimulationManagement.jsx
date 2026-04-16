@@ -5,7 +5,7 @@ import {
   Eye,
   Filter,
   Gamepad2,
-  FileText,
+  ClipboardCheck,
   RefreshCw,
   Power,
   Trash2,
@@ -120,7 +120,7 @@ const buildLabels = (activityType) => {
     empty: "Upload a PDF to generate the first AI assessment for students.",
     description:
       "Upload unit PDFs, generate AI questions, and assign assessments to students.",
-    icon: FileText,
+    icon: ClipboardCheck,
   };
 };
 

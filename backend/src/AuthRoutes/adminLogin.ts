@@ -7,6 +7,7 @@ import { loginAdminLimit } from "#Verification/rate.limit";
 import {
   generateAccessToken,
   generateRefreshToken,
+  SESSION_DURATION_MS,
 } from "#Verification/access.token";
 import { AdminRefreshToken } from "#models/token.model";
 let LogAdminRouter = Router();
@@ -52,10 +53,7 @@ class LoginFlow {
         res.clearCookie("Host_wqc_Auth_4rt__DeviceId");
         //
         let AccessToken = generateAccessToken(req);
-        // duration for refresh token
-        const duration = 1 * 24 * 60 * 60 * 1000;
-        // duration for access token
-        const duration2 = 60 * 1000 * 15;
+        const sessionDuration = SESSION_DURATION_MS;
 
         let RefreshTokenAccess = generateRefreshToken(req);
         let DeviceId = uuidv4();
@@ -68,27 +66,27 @@ class LoginFlow {
         // sending access token as cookie
         res.cookie("dCa_Host_AccessToken", AccessToken, {
           httpOnly: true,
-          maxAge: duration2,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "strict",
         });
         res.cookie("Q_user_1334G_XG", UserNumber, {
           httpOnly: true,
-          maxAge: duration,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "strict",
         });
         // sending refresh token as cookie
         res.cookie("ptq2_was_auth_RefreshToken", RefreshTokenAccess, {
           httpOnly: true,
-          maxAge: duration,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "strict",
         });
         // sending device Id as cookie
         res.cookie("Host_wqc_Auth_4rt__DeviceId", DeviceId, {
           httpOnly: true,
-          maxAge: duration,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "strict",
         });

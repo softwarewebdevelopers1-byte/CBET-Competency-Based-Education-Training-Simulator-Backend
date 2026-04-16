@@ -7,6 +7,7 @@ import { loginLimit } from "#Verification/rate.limit";
 import {
   generateAccessToken,
   generateRefreshToken,
+  SESSION_DURATION_MS,
 } from "#Verification/access.token";
 import { RefreshToken } from "#models/token.model";
 let logRouter = Router();
@@ -56,10 +57,7 @@ class LoginFlow {
         res.clearCookie("user_1UA_XG");
         //
         let AccessToken = generateAccessToken(req);
-        // duration for refresh token
-        // const duration = 7 * 24 * 60 * 60 * 1000;
-        // duration for access token
-        const duration2 = 60 * 1000 * 15;
+        const sessionDuration = SESSION_DURATION_MS;
 
         let RefreshTokenAccess = generateRefreshToken(req);
         let DeviceId = uuidv4();
@@ -80,17 +78,16 @@ class LoginFlow {
         );
         // sending access token as cookie
 
-        // access token uses shorter maxAge
         res.cookie("CBET7U4D_Host_AccessToken", AccessToken, {
           httpOnly: true,
-          maxAge: duration2,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "none",
         });
 
         res.cookie("user_1UA_XG", UserNumber, {
           httpOnly: true,
-          maxAge: duration2,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "none",
         });
@@ -98,7 +95,7 @@ class LoginFlow {
         // sending refresh token as cookie
         res.cookie("CBET_3ga_auth_RefreshToken", RefreshTokenAccess, {
           httpOnly: true,
-          maxAge: duration2,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "none",
         });
@@ -106,7 +103,7 @@ class LoginFlow {
         // sending device Id as cookie
         res.cookie("Host_AU1_Auth_2Wa__DeviceId", DeviceId, {
           httpOnly: true,
-          maxAge: duration2,
+          maxAge: sessionDuration,
           secure: true,
           sameSite: "none",
         });

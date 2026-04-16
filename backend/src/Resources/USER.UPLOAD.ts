@@ -68,6 +68,15 @@ const getStorageClient = (): StorageClient => {
   });
 };
 
+const getSupabaseBucket = () => {
+  const bucket = String(process.env.SUPABASE_BUCKET ?? "CBET").trim();
+  if (!bucket) {
+    throw new Error("bucket name is required");
+  }
+
+  return bucket;
+};
+
 const getQuestionCount = (rawQuestionCount: unknown): number => {
   const parsedValue = Number(rawQuestionCount);
   if (!Number.isFinite(parsedValue)) {
@@ -171,10 +180,7 @@ const deleteSimulationStorageFile = async (storagePath: string) => {
     return;
   }
 
-  const bucket = process.env.SUPABASE_BUCKET;
-  if (!bucket) {
-    throw new Error("bucket name is required");
-  }
+  const bucket = getSupabaseBucket();
 
   const storageClient = getStorageClient();
   const { error } = await storageClient.from(bucket).remove([trimmedStoragePath]);
@@ -566,10 +572,7 @@ UserUploadRouter.post(
 
       const localFilePath = req.file.path;
       const storageClient = getStorageClient();
-      const bucket = process.env.SUPABASE_BUCKET;
-      if (!bucket) {
-        throw new Error("bucket name is required");
-      }
+      const bucket = getSupabaseBucket();
       const fileName = `${Date.now()}-${GenerateOTP()}-${req.file.originalname}`;
       const storagePath = `${assignedProgramme}/${unitCode}/${fileName}`;
       const fileBuffer = await readFile(localFilePath);
@@ -591,7 +594,7 @@ UserUploadRouter.post(
       }
 
       const { data: publicUrlData } = storageClient
-        .from("campusHub_PDF")
+        .from(bucket)
         .getPublicUrl(storagePath);
 
       const parser = new PDFParse({ url: localFilePath });
@@ -1499,10 +1502,8 @@ UserUploadRouter.delete(
                apikey: serviceKey,
                Authorization: `Bearer ${serviceKey}`,
             });
-            const bucket = process.env.SUPABASE_BUCKET;
-            if (bucket) {
-               await storageClient.from(bucket).remove([document.storagePath]);
-            }
+            const bucket = getSupabaseBucket();
+            await storageClient.from(bucket).remove([document.storagePath]);
           }
         } catch (storageError) {
           console.error("Failed to delete assessment from storage:", storageError);

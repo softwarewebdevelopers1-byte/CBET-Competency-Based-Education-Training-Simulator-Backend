@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ClipboardCheck, FileText } from "lucide-react";
+import { ArrowRight, ClipboardCheck, ListChecks } from "lucide-react";
 import styles from "../../admin/styles/dashboard.module.css";
 
 const API_BASE_URL =
@@ -68,7 +68,7 @@ const TrainerDashboard = () => {
       color: "blue",
     },
     {
-      icon: FileText,
+      icon: ListChecks,
       label: "Assessments",
       value: metrics.assessments,
       helper: "AI-generated assessments",

@@ -3,6 +3,8 @@ import type { Response, Request, NextFunction } from "express";
 import type { JwtLoad } from "#JwtPayloadInterface/jwt";
 // creating type alias type explicit
 type tokens = string;
+const SESSION_DURATION = "1d";
+const SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 // function for creating an access token
 function generateAccessToken(req: Request): tokens {
   // casting user to string
@@ -13,7 +15,7 @@ function generateAccessToken(req: Request): tokens {
   if (AccessTokenSecret) {
     // assigning user to an access token
     const AccessToken = jwt.sign(User, AccessTokenSecret, {
-      expiresIn: "15d",
+      expiresIn: SESSION_DURATION,
     });
     return AccessToken;
   } else {
@@ -25,7 +27,9 @@ function generateRefreshToken(req: Request): tokens {
   let User = { name: req.body.UserNumber };
   const RefreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
   if (RefreshTokenSecret) {
-    let RefreshToken = jwt.sign(User, RefreshTokenSecret, { expiresIn: "7d" });
+    let RefreshToken = jwt.sign(User, RefreshTokenSecret, {
+      expiresIn: SESSION_DURATION,
+    });
     return RefreshToken;
   } else {
     return "No token";
@@ -96,5 +100,7 @@ export {
   generateAccessToken,
   generateRefreshToken,
   authenticateAdmin,
+  SESSION_DURATION,
+  SESSION_DURATION_MS,
 };
 //# sourceMappingURL=access.token.js.map

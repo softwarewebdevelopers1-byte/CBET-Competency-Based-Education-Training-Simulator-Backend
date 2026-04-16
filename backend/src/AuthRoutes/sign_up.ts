@@ -4,7 +4,10 @@ import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { signUpLimit } from "#Verification/rate.limit";
-import { generateAccessToken } from "#Verification/access.token";
+import {
+  generateAccessToken,
+  SESSION_DURATION_MS,
+} from "#Verification/access.token";
 dotenv.config();
 class SignUpFlow {
   SignUp = async (req: Request, res: Response) => {
@@ -33,7 +36,7 @@ class SignUpFlow {
       let accessToken = generateAccessToken(req);
       res.cookie("CBET7U4D_Host_AccessToken", accessToken, {
         httpOnly: true,
-        maxAge: 60 * 1000 * 5,
+        maxAge: SESSION_DURATION_MS,
         secure: true,
         sameSite: "none",
       });

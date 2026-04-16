@@ -52,6 +52,15 @@ const getStorageClient = (): StorageClient => {
   });
 };
 
+const getSupabaseBucket = () => {
+  const bucket = String(process.env.SUPABASE_BUCKET ?? "CBET").trim();
+  if (!bucket) {
+    throw new Error("bucket name is required");
+  }
+
+  return bucket;
+};
+
 const getCurrentUser = async (req: Request) => {
   const userNumber =
     String(
@@ -168,10 +177,7 @@ UnitDocumentUploadRouter.post(
 
       const localFilePath = req.file.path;
       const storageClient = getStorageClient();
-      const bucket = process.env.SUPABASE_BUCKET;
-      if (!bucket) {
-        throw new Error("bucket name is required");
-      }
+      const bucket = getSupabaseBucket();
       const fileName = `${Date.now()}-${GenerateOTP()}-${req.file.originalname}`;
       const storagePath = `${assignedProgramme}/${unitCode}/materials/${fileName}`;
       const fileBuffer = await readFile(localFilePath);
@@ -193,11 +199,8 @@ UnitDocumentUploadRouter.post(
       }
 
       const { data: publicUrlData } = storageClient
-        .from("campusHub_PDF") // fallback if your bucket is different from public url bucket
+        .from(bucket)
         .getPublicUrl(storagePath);
-        
-      // Ensure we use the correct bucket for the URL if they match
-      const pdfUrl = publicUrlData.publicUrl.replace("campusHub_PDF", bucket);
 
       const createdDocument = await UnitDocumentModel.create({
         from: currentUser.UserNumber,
@@ -212,7 +215,7 @@ UnitDocumentUploadRouter.post(
         description,
         originalFileName: req.file.originalname,
         storagePath,
-        pdfUrl: pdfUrl,
+        pdfUrl: publicUrlData.publicUrl,
         status: "active",
       });
 
@@ -307,10 +310,8 @@ UnitDocumentUploadRouter.delete(
       if (document.storagePath) {
         try {
           const storageClient = getStorageClient();
-          const bucket = process.env.SUPABASE_BUCKET;
-          if (bucket) {
-            await storageClient.from(bucket).remove([document.storagePath]);
-          }
+          const bucket = getSupabaseBucket();
+          await storageClient.from(bucket).remove([document.storagePath]);
         } catch (storageError) {
           console.error("Failed to delete file from storage:", storageError);
           // We continue deleting the DB record even if storage deletion fails
