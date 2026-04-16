@@ -144,7 +144,20 @@
   color: #1e293b;
 }
 
+.searchField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.searchField span {
+  font-weight: 600;
+  color: #1e293b;
+}
+
 .field input,
+.searchField input,
 .field select,
 .field textarea,
 .previewBox {
@@ -270,6 +283,31 @@
   gap: 12px;
 }
 
+.scrollableList {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-top: 18px;
+}
+
+.scrollableList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollableList::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+.scrollableList::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}
+
+.scrollableList::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 .entityItem {
   display: flex;
   justify-content: space-between;
@@ -312,5 +350,9 @@
   .metrics,
   .inlineFields {
     grid-template-columns: 1fr;
+  }
+
+  .scrollableList {
+    max-height: 420px;
   }
 }

@@ -60,6 +60,8 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
   const [bulkUnitsText, setBulkUnitsText] = useState("");
   const [assignmentForm, setAssignmentForm] = useState(INITIAL_ASSIGNMENT);
   const [assignmentMode, setAssignmentMode] = useState("create");
+  const [programmeSearchTerm, setProgrammeSearchTerm] = useState("");
+  const [unitSearchTerm, setUnitSearchTerm] = useState("");
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -167,6 +169,44 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       new Map(programmes.map((programme) => [programme.title.toLowerCase(), programme])),
     [programmes],
   );
+
+  const filteredProgrammes = useMemo(() => {
+    const normalizedSearch = programmeSearchTerm.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return programmes;
+    }
+
+    return programmes.filter((programme) => {
+      const title = String(programme.title ?? "").toLowerCase();
+      const status = String(programme.status ?? "").toLowerCase();
+      return title.includes(normalizedSearch) || status.includes(normalizedSearch);
+    });
+  }, [programmeSearchTerm, programmes]);
+
+  const filteredUnits = useMemo(() => {
+    const normalizedSearch = unitSearchTerm.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return units;
+    }
+
+    return units.filter((unit) => {
+      const searchableParts = [
+        unit.courseTitle,
+        unit.unitCode,
+        unit.unitName,
+        unit.department,
+        unit.trainerName,
+        unit.status,
+        `year ${unit.yearOfStudy}`,
+      ];
+
+      return searchableParts.some((value) =>
+        String(value ?? "").toLowerCase().includes(normalizedSearch),
+      );
+    });
+  }, [unitSearchTerm, units]);
 
   const handleProgrammeSubmit = async (event) => {
     event.preventDefault();
@@ -641,9 +681,19 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
               <p>Rename or delete any programme from here.</p>
             </div>
 
-            <div className={styles.entityList}>
-              {programmes.length > 0 ? (
-                programmes.map((programme) => (
+            <label className={styles.searchField}>
+              <span>Search Programmes</span>
+              <input
+                type="search"
+                value={programmeSearchTerm}
+                onChange={(event) => setProgrammeSearchTerm(event.target.value)}
+                placeholder="Search by programme title or status"
+              />
+            </label>
+
+            <div className={`${styles.entityList} ${styles.scrollableList}`}>
+              {filteredProgrammes.length > 0 ? (
+                filteredProgrammes.map((programme) => (
                   <div key={programme._id} className={styles.entityItem}>
                     <div>
                       <strong>{programme.title}</strong>
@@ -669,6 +719,8 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                     </div>
                   </div>
                 ))
+              ) : programmes.length > 0 ? (
+                <p className={styles.emptyCopy}>No programmes match your search.</p>
               ) : (
                 <p className={styles.emptyCopy}>No programmes available yet.</p>
               )}
@@ -943,9 +995,19 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
               <p>Edit a unit, delete it, or jump into assignment replacement.</p>
             </div>
 
-            <div className={styles.entityList}>
-              {units.length > 0 ? (
-                units.map((unit) => {
+            <label className={styles.searchField}>
+              <span>Search Units</span>
+              <input
+                type="search"
+                value={unitSearchTerm}
+                onChange={(event) => setUnitSearchTerm(event.target.value)}
+                placeholder="Search by programme, unit code, unit name, trainer, or department"
+              />
+            </label>
+
+            <div className={`${styles.entityList} ${styles.scrollableList}`}>
+              {filteredUnits.length > 0 ? (
+                filteredUnits.map((unit) => {
                   const trainerAssignment = getAssignmentForUnit(unit._id, "trainer");
                   const programmeStatus =
                     programmeLookup.get(String(unit.courseTitle).toLowerCase())?.status ||
@@ -985,6 +1047,8 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                     </div>
                   );
                 })
+              ) : units.length > 0 ? (
+                <p className={styles.emptyCopy}>No units match your search.</p>
               ) : (
                 <p className={styles.emptyCopy}>No units available yet.</p>
               )}
