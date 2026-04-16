@@ -34,7 +34,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const menuItems = [
     { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/admin/users", icon: Users, label: "User Management" },
-    { path: "/admin/unit-assignments", icon: Link2, label: "Unit Management" },
+    { path: "/admin/unit-assignments", icon: Link2, label: "Course & Unit Management" },
     { path: "/admin/materials", icon: BookOpen, label: "Learning Materials" },
     { path: "/admin/assessments", icon: FileText, label: "Assessments" },
     { path: "/admin/portfolio", icon: FolderOpen, label: "Portfolio Review" },

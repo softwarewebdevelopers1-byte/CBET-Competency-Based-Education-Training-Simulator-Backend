@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link2, PlusSquare, Upload } from "lucide-react";
+import {
+  BookOpen,
+  Link2,
+  Pencil,
+  PlusSquare,
+  Save,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import styles from "../styles/unitManagement.module.css";
 
 const API_BASE_URL =
@@ -13,6 +21,11 @@ const buildBulkTextFromUnits = (units) =>
         `${unit.unitCode}, ${unit.unitName}, ${unit.department}, ${unit.yearOfStudy || 1}`,
     )
     .join("\n");
+
+const INITIAL_PROGRAMME = {
+  title: "",
+  status: "active",
+};
 
 const INITIAL_SINGLE_UNIT = {
   programme: "",
@@ -40,10 +53,14 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [programmeForm, setProgrammeForm] = useState(INITIAL_PROGRAMME);
+  const [editingProgrammeId, setEditingProgrammeId] = useState("");
   const [singleUnitForm, setSingleUnitForm] = useState(INITIAL_SINGLE_UNIT);
+  const [editingUnitId, setEditingUnitId] = useState("");
   const [bulkProgramme, setBulkProgramme] = useState("");
   const [bulkUnitsText, setBulkUnitsText] = useState("");
   const [assignmentForm, setAssignmentForm] = useState(INITIAL_ASSIGNMENT);
+  const [assignmentMode, setAssignmentMode] = useState("create");
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -92,9 +109,9 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     fetchOverview();
   }, []);
 
-  const studentAssignments = useMemo(
-    () => assignments.filter((item) => item.assignmentType === "student"),
-    [assignments],
+  const programmeOptions = useMemo(
+    () => programmes.map((programme) => programme.title),
+    [programmes],
   );
 
   const trainerAssignments = useMemo(
@@ -102,8 +119,18 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     [assignments],
   );
 
+  const studentAssignments = useMemo(
+    () => assignments.filter((item) => item.assignmentType === "student"),
+    [assignments],
+  );
+
   const selectedAssigneeOptions =
     assignmentForm.assignmentType === "trainer" ? trainers : students;
+
+  const handleProgrammeChange = (event) => {
+    const { name, value } = event.target;
+    setProgrammeForm((current) => ({ ...current, [name]: value }));
+  };
 
   const handleSingleUnitChange = (event) => {
     const { name, value } = event.target;
@@ -123,20 +150,133 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     });
   };
 
-  const handleCreateSingleUnit = async (event) => {
+  const resetProgrammeForm = () => {
+    setProgrammeForm(INITIAL_PROGRAMME);
+    setEditingProgrammeId("");
+  };
+
+  const resetUnitForm = () => {
+    setSingleUnitForm(INITIAL_SINGLE_UNIT);
+    setEditingUnitId("");
+  };
+
+  const resetAssignmentForm = () => {
+    setAssignmentForm(INITIAL_ASSIGNMENT);
+    setAssignmentMode("create");
+  };
+
+  const getAssignmentForUnit = (unitId, assignmentType) =>
+    assignments.find(
+      (assignment) =>
+        assignment.assignmentType === assignmentType &&
+        String(assignment.unitId) === String(unitId),
+    );
+
+  const programmeLookup = useMemo(
+    () =>
+      new Map(programmes.map((programme) => [programme.title.toLowerCase(), programme])),
+    [programmes],
+  );
+
+  const handleProgrammeSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
     setError("");
     setSuccessMessage("");
 
     try {
+      const isEditing = Boolean(editingProgrammeId);
+      const endpoint = isEditing
+        ? `${API_BASE_URL}/auth/admin/unit-management/programmes/${encodeURIComponent(editingProgrammeId)}`
+        : `${API_BASE_URL}/auth/admin/unit-management/programmes`;
+      const response = await fetch(endpoint, {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(programmeForm),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to save programme");
+      }
+
+      setSuccessMessage(data.message || "Programme saved successfully.");
+      resetProgrammeForm();
+      await fetchOverview();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to save programme",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteProgramme = async (programme) => {
+    const confirmed = window.confirm(
+      `Delete programme "${programme.title}" and all related units, assignments, documents, and assessments?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
       const response = await fetch(
-        `${API_BASE_URL}/auth/admin/unit-management/programmes/${encodeURIComponent(singleUnitForm.programme)}/units`,
+        `${API_BASE_URL}/auth/admin/unit-management/programmes/${encodeURIComponent(programme._id)}`,
         {
-          method: "POST",
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to delete programme");
+      }
+
+      if (editingProgrammeId === programme._id) {
+        resetProgrammeForm();
+      }
+
+      setSuccessMessage(data.message || "Programme deleted successfully.");
+      await fetchOverview();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete programme",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateOrUpdateUnit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const isEditing = Boolean(editingUnitId);
+      const response = await fetch(
+        isEditing
+          ? `${API_BASE_URL}/auth/admin/unit-management/units/${encodeURIComponent(editingUnitId)}`
+          : `${API_BASE_URL}/auth/admin/unit-management/programmes/${encodeURIComponent(singleUnitForm.programme)}/units`,
+        {
+          method: isEditing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
+            courseTitle: singleUnitForm.programme,
             unitCode: singleUnitForm.unitCode,
             unitName: singleUnitForm.unitName,
             department: singleUnitForm.department,
@@ -148,15 +288,18 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to add unit");
+        throw new Error(data.error || "Unable to save unit");
       }
 
-      setSuccessMessage("Unit added to programme successfully.");
-      setSingleUnitForm(INITIAL_SINGLE_UNIT);
+      setSuccessMessage(
+        data.message ||
+          (isEditing ? "Unit updated successfully." : "Unit added successfully."),
+      );
+      resetUnitForm();
       await fetchOverview();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Unable to add unit",
+        submitError instanceof Error ? submitError.message : "Unable to save unit",
       );
     } finally {
       setSubmitting(false);
@@ -219,6 +362,50 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     }
   };
 
+  const handleDeleteUnit = async (unit) => {
+    const confirmed = window.confirm(
+      `Delete unit "${unit.unitCode} - ${unit.unitName}" and all its registrations, assignments, documents, and assessments?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/auth/admin/unit-management/units/${encodeURIComponent(unit._id)}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to delete unit");
+      }
+
+      if (editingUnitId === unit._id) {
+        resetUnitForm();
+      }
+
+      setSuccessMessage(data.message || "Unit deleted successfully.");
+      await fetchOverview();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete unit",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAssignmentSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
@@ -227,9 +414,11 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/auth/admin/unit-management/units/${encodeURIComponent(assignmentForm.unitId)}/assignments`,
+        assignmentMode === "update"
+          ? `${API_BASE_URL}/auth/admin/unit-management/units/${encodeURIComponent(assignmentForm.unitId)}/assignments/${encodeURIComponent(assignmentForm.assignmentType)}`
+          : `${API_BASE_URL}/auth/admin/unit-management/units/${encodeURIComponent(assignmentForm.unitId)}/assignments`,
         {
-          method: "POST",
+          method: assignmentMode === "update" ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
@@ -244,8 +433,13 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
         throw new Error(data.error || "Unable to save assignment");
       }
 
-      setSuccessMessage("Unit assignment saved successfully.");
-      setAssignmentForm(INITIAL_ASSIGNMENT);
+      setSuccessMessage(
+        data.message ||
+          (assignmentMode === "update"
+            ? "Unit assignment updated successfully."
+            : "Unit assignment saved successfully."),
+      );
+      resetAssignmentForm();
       await fetchOverview();
     } catch (submitError) {
       setError(
@@ -258,13 +452,46 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
     }
   };
 
+  const startProgrammeEdit = (programme) => {
+    setProgrammeForm({
+      title: programme.title,
+      status: programme.status || "active",
+    });
+    setEditingProgrammeId(programme._id);
+    setActiveTab("courses");
+  };
+
+  const startUnitEdit = (unit) => {
+    setSingleUnitForm({
+      programme: unit.courseTitle,
+      unitCode: unit.unitCode,
+      unitName: unit.unitName,
+      department: unit.department,
+      yearOfStudy: String(unit.yearOfStudy || 1),
+      status: unit.status || "active",
+    });
+    setEditingUnitId(unit._id);
+    setActiveTab("single-add");
+  };
+
+  const startAssignmentUpdate = (unitId, assignmentType, assigneeUserNumber) => {
+    setAssignmentForm({
+      unitId: String(unitId),
+      assignmentType,
+      assigneeUserNumber,
+    });
+    setAssignmentMode("update");
+    setActiveTab("assignments");
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Unit Management</h1>
+          <h1 className={styles.pageTitle}>Course and Unit Management</h1>
           <p className={styles.pageSubtitle}>
-            Add units to programmes and assign trainers or students to specific units.
+            Create programmes, manage units, replace assigned trainers or students,
+            and remove units when they are no longer needed.
           </p>
         </div>
         <div className={styles.metrics}>
@@ -285,6 +512,13 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
 
       <div className={styles.tabBar}>
         <button
+          className={`${styles.tabButton} ${activeTab === "courses" ? styles.activeTab : ""}`}
+          onClick={() => setActiveTab("courses")}
+          type="button"
+        >
+          <BookOpen size={16} /> Courses
+        </button>
+        <button
           className={`${styles.tabButton} ${activeTab === "assignments" ? styles.activeTab : ""}`}
           onClick={() => setActiveTab("assignments")}
           type="button"
@@ -296,14 +530,14 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
           onClick={() => setActiveTab("bulk-add")}
           type="button"
         >
-          <Upload size={16} /> Add Units to Programme
+          <Upload size={16} /> Add Units in Bulk
         </button>
         <button
           className={`${styles.tabButton} ${activeTab === "single-add" ? styles.activeTab : ""}`}
           onClick={() => setActiveTab("single-add")}
           type="button"
         >
-          <PlusSquare size={16} /> Add One Unit
+          <PlusSquare size={16} /> Add or Edit Unit
         </button>
       </div>
 
@@ -316,12 +550,105 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
         <div className={styles.loadingState}>Loading unit management data...</div>
       ) : null}
 
+      {!loading && activeTab === "courses" ? (
+        <div className={styles.grid}>
+          <form className={styles.panel} onSubmit={handleProgrammeSubmit}>
+            <div className={styles.panelHeader}>
+              <h2>{editingProgrammeId ? "Edit Programme" : "Create Programme"}</h2>
+              <p>Add a new programme or rename/deactivate an existing one.</p>
+            </div>
+
+            <label className={styles.field}>
+              <span>Programme Title</span>
+              <input
+                type="text"
+                name="title"
+                value={programmeForm.title}
+                onChange={handleProgrammeChange}
+                placeholder="Bsc in Computer Science"
+                required
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>Status</span>
+              <select
+                name="status"
+                value={programmeForm.status}
+                onChange={handleProgrammeChange}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </label>
+
+            <div className={styles.actionRow}>
+              <button className={styles.primaryButton} type="submit" disabled={submitting}>
+                <Save size={16} /> {submitting ? "Saving..." : editingProgrammeId ? "Update Programme" : "Create Programme"}
+              </button>
+              {editingProgrammeId ? (
+                <button
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={resetProgrammeForm}
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+
+          <div className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2>Programme List</h2>
+              <p>Rename or delete any programme from here.</p>
+            </div>
+
+            <div className={styles.entityList}>
+              {programmes.length > 0 ? (
+                programmes.map((programme) => (
+                  <div key={programme._id} className={styles.entityItem}>
+                    <div>
+                      <strong>{programme.title}</strong>
+                      <span>{programme.unitCount || 0} units • {programme.status}</span>
+                    </div>
+                    <div className={styles.itemActions}>
+                      <button
+                        type="button"
+                        className={styles.iconButton}
+                        onClick={() => startProgrammeEdit(programme)}
+                        title="Edit programme"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.iconButton} ${styles.deleteButton}`}
+                        onClick={() => handleDeleteProgramme(programme)}
+                        title="Delete programme"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className={styles.emptyCopy}>No programmes available yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {!loading && activeTab === "assignments" ? (
         <div className={styles.grid}>
           <form className={styles.panel} onSubmit={handleAssignmentSubmit}>
             <div className={styles.panelHeader}>
-              <h2>Assign Trainer or Student</h2>
-              <p>Choose a unit and link it to a trainer or a student.</p>
+              <h2>{assignmentMode === "update" ? "Update Assignment" : "Assign Unit"}</h2>
+              <p>
+                Create a new unit assignment or explicitly replace the trainer or
+                student already attached to a unit.
+              </p>
             </div>
 
             <label className={styles.field}>
@@ -370,15 +697,26 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
               </select>
             </label>
 
-            <button className={styles.primaryButton} type="submit" disabled={submitting}>
-              {submitting ? "Saving..." : "Save Assignment"}
-            </button>
+            <div className={styles.actionRow}>
+              <button className={styles.primaryButton} type="submit" disabled={submitting}>
+                <Save size={16} /> {submitting ? "Saving..." : assignmentMode === "update" ? "Update Assignment" : "Save Assignment"}
+              </button>
+              {assignmentMode === "update" ? (
+                <button
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={resetAssignmentForm}
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
           </form>
 
           <div className={styles.panel}>
             <div className={styles.panelHeader}>
               <h2>Assignment Summary</h2>
-              <p>Current trainer and student links per unit.</p>
+              <p>Replace current trainers or students from these lists.</p>
             </div>
 
             <div className={styles.assignmentSection}>
@@ -392,6 +730,19 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                       <span>
                         {assignment.assigneeName} ({assignment.assigneeUserNumber})
                       </span>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() =>
+                          startAssignmentUpdate(
+                            assignment.unitId,
+                            "trainer",
+                            assignment.assigneeUserNumber,
+                          )
+                        }
+                      >
+                        Replace Trainer
+                      </button>
                     </div>
                   ))
                 ) : (
@@ -411,6 +762,19 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
                       <span>
                         {assignment.assigneeName} ({assignment.assigneeUserNumber})
                       </span>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() =>
+                          startAssignmentUpdate(
+                            assignment.unitId,
+                            "student",
+                            assignment.assigneeUserNumber,
+                          )
+                        }
+                      >
+                        Replace Student
+                      </button>
                     </div>
                   ))
                 ) : (
@@ -473,11 +837,11 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
       ) : null}
 
       {!loading && activeTab === "single-add" ? (
-        <div className={styles.gridSingle}>
-          <form className={styles.panel} onSubmit={handleCreateSingleUnit}>
+        <div className={styles.grid}>
+          <form className={styles.panel} onSubmit={handleCreateOrUpdateUnit}>
             <div className={styles.panelHeader}>
-              <h2>Add One Unit to a Programme</h2>
-              <p>Create a single programme unit with its year and department.</p>
+              <h2>{editingUnitId ? "Edit Unit" : "Add One Unit to a Programme"}</h2>
+              <p>Create a unit, update its details, or prepare it for reassignment.</p>
             </div>
 
             <label className={styles.field}>
@@ -555,15 +919,84 @@ const UnitManagement = ({ defaultTab = "assignments" }) => {
               </label>
             </div>
 
-            <button className={styles.primaryButton} type="submit" disabled={submitting}>
-              {submitting ? "Saving..." : "Add Unit"}
-            </button>
+            <div className={styles.actionRow}>
+              <button className={styles.primaryButton} type="submit" disabled={submitting}>
+                <Save size={16} /> {submitting ? "Saving..." : editingUnitId ? "Update Unit" : "Add Unit"}
+              </button>
+              {editingUnitId ? (
+                <button
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={resetUnitForm}
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
           </form>
+
+          <div className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2>Unit List</h2>
+              <p>Edit a unit, delete it, or jump into assignment replacement.</p>
+            </div>
+
+            <div className={styles.entityList}>
+              {units.length > 0 ? (
+                units.map((unit) => {
+                  const trainerAssignment = getAssignmentForUnit(unit._id, "trainer");
+                  const studentAssignment = getAssignmentForUnit(unit._id, "student");
+                  const programmeStatus =
+                    programmeLookup.get(String(unit.courseTitle).toLowerCase())?.status ||
+                    "active";
+
+                  return (
+                    <div key={unit._id} className={styles.entityItem}>
+                      <div>
+                        <strong>
+                          {unit.unitCode} - {unit.unitName}
+                        </strong>
+                        <span>
+                          {unit.courseTitle} • {unit.department} • Year {unit.yearOfStudy} • {unit.status} • Programme {programmeStatus}
+                        </span>
+                        <span>
+                          Trainer: {unit.trainerName || trainerAssignment?.assigneeName || "Not assigned"}
+                        </span>
+                        <span>
+                          Student: {studentAssignment?.assigneeName || "Not assigned"}
+                        </span>
+                      </div>
+                      <div className={styles.itemActions}>
+                        <button
+                          type="button"
+                          className={styles.iconButton}
+                          onClick={() => startUnitEdit(unit)}
+                          title="Edit unit"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.iconButton} ${styles.deleteButton}`}
+                          onClick={() => handleDeleteUnit(unit)}
+                          title="Delete unit"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className={styles.emptyCopy}>No units available yet.</p>
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
 
       <datalist id="programme-options">
-        {programmes.map((programme) => (
+        {programmeOptions.map((programme) => (
           <option key={programme} value={programme} />
         ))}
       </datalist>

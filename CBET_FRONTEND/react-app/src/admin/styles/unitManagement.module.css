@@ -185,6 +185,41 @@
   cursor: not-allowed;
 }
 
+.secondaryButton,
+.iconButton {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.secondaryButton {
+  padding: 12px 18px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.deleteButton {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.actionRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
 .assignmentSection {
   margin-top: 20px;
 }
@@ -214,6 +249,40 @@
 .emptyCopy {
   margin: 0;
   color: #64748b;
+}
+
+.entityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entityItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.entityItem strong {
+  display: block;
+  color: #0f172a;
+}
+
+.entityItem span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+}
+
+.itemActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 960px) {
